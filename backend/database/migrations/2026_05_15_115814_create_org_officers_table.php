@@ -16,19 +16,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('org_officers', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('user_id'); // Targets identity account
-            $table->uuid('org_id');  // Targets organization context where control permission applies
+            $table->engine = 'InnoDB';
+            $table->char('id', 36)->primary();
+            $table->char('user_id', 36);
+            $table->char('org_id', 36);
 
-            $table->string('position'); // Display title (e.g., President, Secretary)
-
-            // Security verification boolean. Deactivation immediately cuts authorization routines.
+            $table->string('position', 100);
             $table->boolean('is_active')->default(true);
-
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('org_id')->references('id')->on('organizations')->onDelete('cascade');
+
+            $table->unique(['user_id', 'org_id'], 'uq_officer');
         });
     }
 

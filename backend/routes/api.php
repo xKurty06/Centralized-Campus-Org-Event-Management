@@ -1,0 +1,58 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\ManageController;
+use App\Http\Controllers\Api\AdminController;
+
+// Public
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/{id}', [EventController::class, 'show']);
+Route::get('/organizations', [EventController::class, 'organizations']);
+Route::get('/organizations/{id}', [EventController::class, 'organization']);
+
+// Protected
+Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckActiveUser::class])->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me', [AuthController::class, 'me']);
+
+    Route::get('/my-events', [EventController::class, 'myEvents']);
+    Route::post('/events/{id}/register', [EventController::class, 'register']);
+    Route::post('/events/{id}/payment-upload', [EventController::class, 'paymentUpload']);
+
+    // Manage routes (Officer) — CheckOfficer should validate org ownership where applicable
+    Route::prefix('manage')->middleware(\App\Http\Middleware\CheckOfficer::class)->group(function () {
+        Route::get('/dashboard', [ManageController::class, 'dashboard']);
+        Route::get('/org-profile', [ManageController::class, 'orgProfile']);
+        Route::put('/org-profile', [ManageController::class, 'updateOrgProfile']);
+        Route::post('/events', [ManageController::class, 'createEvent']);
+        Route::put('/events/{id}', [ManageController::class, 'updateEvent']);
+        Route::delete('/events/{id}', [ManageController::class, 'deleteEvent']);
+        Route::get('/participants/{event_id}', [ManageController::class, 'participants']);
+        Route::put('/participants/{reg_id}/approve-proof', [ManageController::class, 'approveProof']);
+        Route::put('/participants/{reg_id}/reject-proof', [ManageController::class, 'rejectProof']);
+        Route::post('/verify/{event_id}/search', [ManageController::class, 'verifySearch']);
+        Route::put('/verify/{event_id}/confirm-payment/{reg_id}', [ManageController::class, 'confirmPayment']);
+        Route::put('/verify/{event_id}/checkin/{reg_id}', [ManageController::class, 'checkin']);
+        Route::post('/verify/{event_id}/sync', [ManageController::class, 'sync']);
+    });
+
+    // Admin routes
+    Route::prefix('admin')->middleware(\App\Http\Middleware\CheckOverseer::class)->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        Route::get('/organizations', [AdminController::class, 'organizations']);
+        Route::get('/organizations/{id}', [AdminController::class, 'organization']);
+        Route::put('/organizations/{id}/accreditation', [AdminController::class, 'toggleAccreditation']);
+        Route::put('/organizations/{id}', [AdminController::class, 'updateOrg']);
+        Route::get('/events', [AdminController::class, 'events']);
+        Route::delete('/events/{id}', [AdminController::class, 'deleteEvent']);
+        Route::get('/users', [AdminController::class, 'users']);
+        Route::put('/users/{id}/deactivate', [AdminController::class, 'deactivateUser']);
+        Route::put('/users/{id}/role', [AdminController::class, 'updateUserRole']);
+    });
+});

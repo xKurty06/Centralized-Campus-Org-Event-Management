@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create('payment_proofs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('reg_id'); // Target validation anchor
-            $table->text('image_url'); // Path pointer to financial asset payload
+            $table->text('image_url')->nullable(); // Path pointer to financial asset payload; nullable to allow placeholder rows
             $table->timestamp('uploaded_at')->useCurrent();
             
             // Workflow assessment metrics

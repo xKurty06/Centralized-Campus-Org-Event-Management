@@ -12,12 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('departments', function (Blueprint $table) {
-            $table->id(); // Integer Auto-Incrementing Primary Key
+            $table->engine = 'InnoDB';
 
-            $table->string('name'); // Full name (e.g., "College of Engineering and Information Technology")
-            $table->string('code')->unique(); // Unique short code (e.g., "CEIT")
+            // UNSIGNED INT AUTO_INCREMENT PRIMARY KEY
+            $table->increments('id');
 
-            $table->timestamps(); // Generates created_at and updated_at tracking columns
+            $table->string('name', 150);
+            $table->string('code', 20)->unique();
+
+            $table->timestamps();
         });
     }
 

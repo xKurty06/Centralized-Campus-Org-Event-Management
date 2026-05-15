@@ -14,9 +14,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('org_categories', function (Blueprint $table) {
-            $table->id();
-            // Restricts categorization to structural pillars specified by institutional rules.
-            $table->enum('name', ['Academic', 'Non-Academic', 'Religious']);
+            $table->engine = 'InnoDB';
+            $table->increments('id');
+            $table->enum('name', ['Academic', 'Non-Academic', 'Religious'])->unique();
             $table->timestamps();
         });
     }
