@@ -10,11 +10,28 @@ class VenuesSeeder extends Seeder
     public function run(): void
     {
         $venues = [
-            'SMT Hall', 'AVR 1', 'AVR 2', 'Gymnasium', 'Function Hall', 'Open Grounds', 'Library Conference Room', 'CCS Laboratory', 'Engineering Building'
+            'Rolle Hall',
+            'ICON',
+            'Quadrangle',
+            'Grandstand',
+            'Campus Oval',
+            'Softball Field',
+            'Open Court',
+            'Gymnasium',
+            'Hostel',
+            'Administration',
+            'University Chapel',
+            'Bahay ng Alumni',
+            'International House',
+            'Laya\'t Diwa',
+            'University Resort',
         ];
 
         foreach ($venues as $name) {
-            DB::table('venues')->updateOrInsert(['name' => $name], ['name' => $name, 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('venues')->updateOrInsert(
+                ['name' => $name],
+                ['name' => $name, 'created_at' => now(), 'updated_at' => now()]
+            );
         }
     }
 }

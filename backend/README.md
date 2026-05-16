@@ -1,3 +1,44 @@
+# Campus Org & Event Management System — Backend
+
+## Requirements
+- PHP 8.2+
+- Composer
+- XAMPP (MySQL + Apache)
+- Laravel 11
+
+## Setup
+1. Clone the repository
+2. Run: `composer install`
+3. Copy `.env.example` to `.env` and fill in DB credentials
+4. Run: `php artisan key:generate`
+5. Run: `php artisan migrate`
+6. Run: `php artisan db:seed`
+7. Run: `php artisan serve`
+
+## Environment Variables (.env)
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=campus_system
+DB_USERNAME=root
+DB_PASSWORD=
+
+SANCTUM_STATEFUL_DOMAINS=localhost:3000
+SESSION_DOMAIN=localhost
+FRONTEND_URL=http://localhost:3000
+```
+
+## Seeded Lookup Data
+After seeding, the following are pre-loaded:
+- All CvSU departments
+- All venues
+- Event categories
+- Org categories
+
+## Notes
+- API routes are versioned under `/api/v1/` (see `routes/api.php`).
+- CORS is configured in `config/cors.php` to allow `http://localhost:3000`.
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

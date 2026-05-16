@@ -5,10 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\ChangePasswordRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -32,7 +37,7 @@ class AuthController extends Controller
 
             $token = $user->createToken('api-token')->plainTextToken;
 
-            return response()->json(['success' => true, 'data' => ['user' => $user, 'token' => $token]]);
+            return response()->json(['success' => true, 'data' => ['user' => new UserResource($user), 'token' => $token]], 201);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
         }
@@ -58,7 +63,7 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
-            return response()->json(['success' => true, 'data' => ['user' => $user, 'token' => $token]]);
+            return response()->json(['success' => true, 'data' => ['user' => new UserResource($user), 'token' => $token]], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
         }
@@ -69,7 +74,7 @@ class AuthController extends Controller
         try {
             $user = $req->user();
             $user->currentAccessToken()->delete();
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
         }
@@ -79,12 +84,54 @@ class AuthController extends Controller
     {
         try {
             $user = $req->user();
-            // Load dept and org memberships
-            $user->dept = DB::table('departments')->where('id', $user->dept_id)->first();
-            $user->org_memberships = DB::table('org_officers')->where('user_id', $user->id)->get();
-            return response()->json(['success' => true, 'data' => $user]);
+            return response()->json(['success' => true, 'data' => new UserResource($user)], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
+        }
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $req)
+    {
+        try {
+            $status = Password::sendResetLink($req->only('email'));
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json(['success' => true, 'message' => 'Reset link sent to your email.'], 200);
+            }
+            return response()->json(['success' => false, 'error' => 'Unable to send reset link.'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function resetPassword(ResetPasswordRequest $req)
+    {
+        try {
+            $status = Password::reset(
+                $req->only('email', 'password', 'password_confirmation', 'token'),
+                function (User $user, string $password) {
+                    $user->update(['password_hash' => Hash::make($password)]);
+                }
+            );
+            if ($status === Password::PASSWORD_RESET) {
+                return response()->json(['success' => true, 'message' => 'Password reset successful.'], 200);
+            }
+            return response()->json(['success' => false, 'error' => 'Invalid or expired token.'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function changePassword(ChangePasswordRequest $req)
+    {
+        try {
+            $user = $req->user();
+            if (!Hash::check($req->current_password, $user->password_hash)) {
+                return response()->json(['success' => false, 'error' => 'Current password is incorrect.'], 400);
+            }
+            $user->update(['password_hash' => Hash::make($req->new_password)]);
+            return response()->json(['success' => true, 'message' => 'Password updated successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
 }
