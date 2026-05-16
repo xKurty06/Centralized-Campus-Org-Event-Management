@@ -44,7 +44,7 @@ SALIKOP is a web-based platform designed to centralize the management of student
 - **Frontend:** Next.js, Tailwind CSS
 - **Backend:** Laravel (PHP)
 - **Database:** MySQL
-- **Deployment Target:** Campus-hosted web environment or local development server
+- **Deployment Target:** TBA
 
 ## Purpose and Impact
 SALIKOP aims to improve campus event coordination by providing one central digital environment for discovering events, registering participants, and verifying payments at the venue. The system supports more efficient communication between student organizations and their audience while reducing manual errors and administrative overhead.
@@ -52,7 +52,6 @@ SALIKOP aims to improve campus event coordination by providing one central digit
 ## Folder Structure
 - `/app` — Frontend application code
 - `/backend` — Laravel backend application and API
-- `/backend/context` — Project concept, modules, pages, and database design documents
 
 ## Notes
-This README summarizes the overall system, course context, and the final project requirement as a database-driven web application. For detailed implementation notes, review the files in `/backend/context`.
+This README summarizes the overall system, course context, and the final project requirement as a database-driven web application.
