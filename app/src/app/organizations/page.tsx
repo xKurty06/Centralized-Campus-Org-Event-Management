@@ -26,31 +26,31 @@ interface Organization {
    Mock data
    ---------------------------------------------------------------- */
 const MOCK_ORGS: Organization[] = [
-  { id: 'csso', name: 'Computer Science Society',       acronym: 'CSSO', category: 'Academic',     description: 'A community of CS students dedicated to advancing technology, innovation, and professional growth through workshops, competitions, and industry talks.', adviser: 'Prof. Maria Santos',    members: 120, eventsThisYear: 8,  status: 'Active',    color: 'bg-blue-100 text-blue-700'     },
-  { id: 'gdsc', name: 'Google Developer Student Club',  acronym: 'GDSC', category: 'Academic',     description: 'Empowering students to bridge the gap between theory and practice through Google technologies, open-source projects, and developer communities.',        adviser: 'Prof. Juan Cruz',      members: 95,  eventsThisYear: 6,  status: 'Active',    color: 'bg-red-100 text-red-700'       },
-  { id: 'ite',  name: 'IT Educators Society',           acronym: 'ITES', category: 'Academic',     description: 'Focused on developing future IT educators through seminars, training, and collaborative research on information technology in education.',                adviser: 'Dr. Rosa Reyes',       members: 60,  eventsThisYear: 4,  status: 'Active',    color: 'bg-indigo-100 text-indigo-700' },
-  { id: 'agri', name: 'Agriculture Students Assoc.',    acronym: 'ASA',  category: 'Academic',     description: 'Promoting agricultural sciences, sustainable farming, and rural development through outreach programs, field demonstrations, and academic activities.',    adviser: 'Prof. Carlos Lim',     members: 80,  eventsThisYear: 5,  status: 'Active',    color: 'bg-green-100 text-green-700'   },
-  { id: 'usc',  name: 'University Student Council',     acronym: 'USC',  category: 'Non-Academic', description: 'The official governing body of CvSU students, representing the student body in matters of policy, welfare, and campus-wide activities.',                  adviser: 'Dr. Jose Reyes',       members: 200, eventsThisYear: 12, status: 'Active',    color: 'bg-yellow-100 text-yellow-700' },
-  { id: 'rcy',  name: 'Red Cross Youth',                acronym: 'RCY',  category: 'Non-Academic', description: 'A humanitarian organization training students in first aid, disaster response, and community service. Open to all CvSU students.',                       adviser: 'Prof. Ana Rivera',     members: 150, eventsThisYear: 10, status: 'Active',    color: 'bg-red-50 text-red-600'        },
-  { id: 'vc',   name: 'CvSU Volunteers Club',           acronym: 'VC',   category: 'Non-Academic', description: 'Dedicated to community outreach, environmental advocacy, and social development projects that benefit both the campus and surrounding communities.',      adviser: 'Prof. Lea Torres',     members: 110, eventsThisYear: 9,  status: 'Active',    color: 'bg-teal-100 text-teal-700'     },
-  { id: 'saca', name: 'Sining at Kulturang CvSU',       acronym: 'SACA', category: 'Non-Academic', description: 'Celebrating Filipino arts, culture, and heritage through performances, festivals, and cultural immersion activities that showcase CvSU talent.',          adviser: 'Dr. Gloria Bautista',  members: 85,  eventsThisYear: 7,  status: 'Active',    color: 'bg-pink-100 text-pink-700'     },
-  { id: 'cwts', name: 'Civic Welfare Training Corps',   acronym: 'CWTS', category: 'Non-Academic', description: 'Building socially responsible citizens through civic engagement, disaster preparedness, and community development programs.',                             adviser: 'Prof. Ramon Garcia',   members: 300, eventsThisYear: 6,  status: 'Active',    color: 'bg-orange-100 text-orange-700' },
-  { id: 'ccf',  name: 'Campus Christian Fellowship',    acronym: 'CCF',  category: 'Religious',    description: 'A Christ-centered community fostering spiritual growth, fellowship, and service among CvSU students through Bible studies, worship nights, and outreach.', adviser: 'Rev. Pablo Dela Cruz', members: 180, eventsThisYear: 15, status: 'Active',    color: 'bg-amber-100 text-amber-700'   },
-  { id: 'yfc',  name: 'Youth for Christ',               acronym: 'YFC',  category: 'Religious',    description: 'Committed to reaching students with the gospel of Jesus Christ through discipleship, leadership formation, and servant evangelism.',                      adviser: 'Rev. Grace Santos',    members: 140, eventsThisYear: 11, status: 'Active',    color: 'bg-purple-100 text-purple-700' },
-  { id: 'uccp', name: 'United Campus Catholic Parish',  acronym: 'UCCP', category: 'Religious',    description: 'Serving the Catholic student community through mass, retreats, religious formations, and charitable activities rooted in Catholic social teaching.',       adviser: 'Fr. Miguel Ramos',     members: 90,  eventsThisYear: 8,  status: 'Suspended', color: 'bg-gray-100 text-gray-500'     },
+  { id: 'csso', name: 'Computer Science Society', acronym: 'CSSO', category: 'Academic', description: 'A community of CS students dedicated to advancing technology, innovation, and professional growth through workshops, competitions, and industry talks.', adviser: 'Prof. Maria Santos', members: 120, eventsThisYear: 8, status: 'Active', color: 'bg-blue-100 text-blue-700' },
+  { id: 'gdsc', name: 'Google Developer Student Club', acronym: 'GDSC', category: 'Academic', description: 'Empowering students to bridge the gap between theory and practice through Google technologies, open-source projects, and developer communities.', adviser: 'Prof. Juan Cruz', members: 95, eventsThisYear: 6, status: 'Active', color: 'bg-red-100 text-red-700' },
+  { id: 'ite', name: 'IT Educators Society', acronym: 'ITES', category: 'Academic', description: 'Focused on developing future IT educators through seminars, training, and collaborative research on information technology in education.', adviser: 'Dr. Rosa Reyes', members: 60, eventsThisYear: 4, status: 'Active', color: 'bg-indigo-100 text-indigo-700' },
+  { id: 'agri', name: 'Agriculture Students Assoc.', acronym: 'ASA', category: 'Academic', description: 'Promoting agricultural sciences, sustainable farming, and rural development through outreach programs, field demonstrations, and academic activities.', adviser: 'Prof. Carlos Lim', members: 80, eventsThisYear: 5, status: 'Active', color: 'bg-green-100 text-green-700' },
+  { id: 'usc', name: 'University Student Council', acronym: 'USC', category: 'Non-Academic', description: 'The official governing body of CvSU students, representing the student body in matters of policy, welfare, and campus-wide activities.', adviser: 'Dr. Jose Reyes', members: 200, eventsThisYear: 12, status: 'Active', color: 'bg-yellow-100 text-yellow-700' },
+  { id: 'rcy', name: 'Red Cross Youth', acronym: 'RCY', category: 'Non-Academic', description: 'A humanitarian organization training students in first aid, disaster response, and community service. Open to all CvSU students.', adviser: 'Prof. Ana Rivera', members: 150, eventsThisYear: 10, status: 'Active', color: 'bg-red-50 text-red-600' },
+  { id: 'vc', name: 'CvSU Volunteers Club', acronym: 'VC', category: 'Non-Academic', description: 'Dedicated to community outreach, environmental advocacy, and social development projects that benefit both the campus and surrounding communities.', adviser: 'Prof. Lea Torres', members: 110, eventsThisYear: 9, status: 'Active', color: 'bg-teal-100 text-teal-700' },
+  { id: 'saca', name: 'Sining at Kulturang CvSU', acronym: 'SACA', category: 'Non-Academic', description: 'Celebrating Filipino arts, culture, and heritage through performances, festivals, and cultural immersion activities that showcase CvSU talent.', adviser: 'Dr. Gloria Bautista', members: 85, eventsThisYear: 7, status: 'Active', color: 'bg-pink-100 text-pink-700' },
+  { id: 'cwts', name: 'Civic Welfare Training Corps', acronym: 'CWTS', category: 'Non-Academic', description: 'Building socially responsible citizens through civic engagement, disaster preparedness, and community development programs.', adviser: 'Prof. Ramon Garcia', members: 300, eventsThisYear: 6, status: 'Active', color: 'bg-orange-100 text-orange-700' },
+  { id: 'ccf', name: 'Campus Christian Fellowship', acronym: 'CCF', category: 'Religious', description: 'A Christ-centered community fostering spiritual growth, fellowship, and service among CvSU students through Bible studies, worship nights, and outreach.', adviser: 'Rev. Pablo Dela Cruz', members: 180, eventsThisYear: 15, status: 'Active', color: 'bg-amber-100 text-amber-700' },
+  { id: 'yfc', name: 'Youth for Christ', acronym: 'YFC', category: 'Religious', description: 'Committed to reaching students with the gospel of Jesus Christ through discipleship, leadership formation, and servant evangelism.', adviser: 'Rev. Grace Santos', members: 140, eventsThisYear: 11, status: 'Active', color: 'bg-purple-100 text-purple-700' },
+  { id: 'uccp', name: 'United Campus Catholic Parish', acronym: 'UCCP', category: 'Religious', description: 'Serving the Catholic student community through mass, retreats, religious formations, and charitable activities rooted in Catholic social teaching.', adviser: 'Fr. Miguel Ramos', members: 90, eventsThisYear: 8, status: 'Suspended', color: 'bg-gray-100 text-gray-500' },
 ];
 
 const CATEGORY_TABS: { value: OrgCategory | 'All'; label: string }[] = [
-  { value: 'All',          label: 'All'          },
-  { value: 'Academic',     label: 'Academic'     },
+  { value: 'All', label: 'All' },
+  { value: 'Academic', label: 'Academic' },
   { value: 'Non-Academic', label: 'Non-Academic' },
-  { value: 'Religious',    label: 'Religious'    },
+  { value: 'Religious', label: 'Religious' },
 ];
 
 const CATEGORY_META: Record<OrgCategory, { description: string; color: string; bg: string }> = {
-  'Academic':     { description: 'Department-based and discipline-specific organizations', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200'   },
+  'Academic': { description: 'Department-based and discipline-specific organizations', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
   'Non-Academic': { description: 'Student government, civic, cultural, and special interest groups', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-  'Religious':    { description: 'Faith-based communities and campus ministry organizations', color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
+  'Religious': { description: 'Faith-based communities and campus ministry organizations', color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
 };
 
 /* ----------------------------------------------------------------
@@ -90,11 +90,11 @@ function FilterDropdown({
         <span>{isActive ? selected?.label : placeholder}</span>
         {isActive ? (
           <span onClick={(e) => { e.stopPropagation(); onChange(''); }} className="w-4 h-4 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-40">
-            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
           </span>
         ) : (
           <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="none">
-            <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </button>
@@ -110,7 +110,7 @@ function FilterDropdown({
               {opt.label}
               {opt.value === value && (
                 <svg className="w-3.5 h-3.5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
             </button>
@@ -158,19 +158,19 @@ function OrgCard({ org }: { org: Organization }) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[12px] text-gray-400">
             <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
             {org.members}
           </div>
           <div className="flex items-center gap-1 text-[12px] text-gray-400">
             <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-              <path d="M6 2v2M14 2v2M3 8h14M5 4h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M6 2v2M14 2v2M3 8h14M5 4h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
             {org.eventsThisYear} events
           </div>
         </div>
         <svg className="w-4 h-4 text-gray-300 group-hover:text-green-600 group-hover:translate-x-0.5 transition-all" viewBox="0 0 20 20" fill="none">
-          <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
     </Link>
@@ -195,8 +195,8 @@ function CategoryHeader({ category }: { category: OrgCategory }) {
    Page
    ---------------------------------------------------------------- */
 export default function OrganizationsPage() {
-  const [search,       setSearch]       = useState('');
-  const [activeTab,    setActiveTab]    = useState<OrgCategory | 'All'>('All');
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<OrgCategory | 'All'>('All');
   const [statusFilter, setStatusFilter] = useState('');
 
   const filtered = useMemo(() => {
@@ -246,7 +246,7 @@ export default function OrganizationsPage() {
         <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex flex-col gap-3">
           <div className="relative">
             <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="none">
-              <path d="M9 17A8 8 0 109 1a8 8 0 000 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M9 17A8 8 0 109 1a8 8 0 000 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <input
               type="text"
@@ -257,32 +257,32 @@ export default function OrganizationsPage() {
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
               </button>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-400 mr-1">
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
               Filters
             </div>
             <FilterDropdown
               placeholder="Status"
               value={statusFilter}
               onChange={setStatusFilter}
-              icon={<svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M10 6v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+              icon={<svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" /><path d="M10 6v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}
               options={[
-                { value: '',          label: 'All Status' },
-                { value: 'Active',    label: 'Active'     },
-                { value: 'Suspended', label: 'Suspended'  },
+                { value: '', label: 'All Status' },
+                { value: 'Active', label: 'Active' },
+                { value: 'Suspended', label: 'Suspended' },
               ]}
             />
             {hasFilters && (
               <>
                 <div className="h-5 w-px bg-gray-200 mx-1" />
                 <button onClick={clearAll} className="text-[12px] font-medium text-red-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                   Clear
                 </button>
               </>
@@ -319,7 +319,7 @@ export default function OrganizationsPage() {
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
               <svg className="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </div>
             <p className="text-[15px] font-semibold text-gray-700">No organizations found</p>
