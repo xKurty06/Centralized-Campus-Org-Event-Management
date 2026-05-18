@@ -10,7 +10,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "CvSali — Org & Event Management System",
+  title: "Salikop — Org & Event Management System",
   description:
     "The official Cavite State University platform for student organizations, campus events, and participant management.",
 };

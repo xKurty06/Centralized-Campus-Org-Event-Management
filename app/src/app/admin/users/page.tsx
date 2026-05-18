@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 
 /* ----------------------------------------------------------------
    Types
@@ -88,22 +89,26 @@ export default function AdminUsersPage() {
     }
 
     return (
-        <div className="page-shell">
-            <Navbar role="admin" user={{ name: 'Admin User', schoolId: '0000-0-00000', department: 'OSA' }} />
+        <AdminShell>
+            <main className="flex flex-col gap-6 animate-fade-in">
 
-            <main className="max-w-[1280px] mx-auto px-6 py-10">
-
-                {/* ── Header ── */}
-                <div className="flex items-start justify-between gap-4 mb-8">
-                    <div>
-                        <nav className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mb-2">
-                            <Link href="/admin/dashboard" className="hover:text-[var(--color-primary)]">Dashboard</Link>
-                            <span>/</span>
-                            <span className="text-[var(--color-text-secondary)]">Users</span>
-                        </nav>
-                        <h1 className="text-2xl font-bold text-[var(--color-text)]">User Management</h1>
-                        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Manage roles, access, and account status for all platform users.</p>
-                    </div>
+                {/* Page header */}
+                <div>
+                    <p
+                        className="text-xs font-semibold uppercase tracking-widest mb-1"
+                        style={{ color: "var(--color-text-muted)" }}
+                    >
+                        Admin
+                    </p>
+                    <h1
+                        className="text-[22px] font-bold tracking-tight"
+                        style={{ color: "var(--color-text)" }}
+                    >
+                        Users
+                    </h1>
+                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                        Manage user accounts and their permissions.
+                    </p>
                 </div>
 
                 {/* ── Stat Cards ── */}
@@ -296,7 +301,7 @@ export default function AdminUsersPage() {
                     </div>
                 </>
             )}
-        </div>
+        </AdminShell>
     );
 }
 

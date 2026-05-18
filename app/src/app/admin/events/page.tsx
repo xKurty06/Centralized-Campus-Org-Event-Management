@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 
 /* ----------------------------------------------------------------
    Types
@@ -110,21 +111,29 @@ export default function AdminEventsPage() {
     }
 
     return (
-        <div className="page-shell">
-            <Navbar role="admin" user={{ name: 'Admin User', schoolId: '0000-0-00000', department: 'OSA' }} />
-
-            <main className="max-w-[1280px] mx-auto px-6 py-10">
+        <AdminShell>
+            <main className="flex flex-col gap-6 animate-fade-in">
 
                 {/* ── Header ── */}
-                <div className="mb-8">
-                    <nav className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mb-2">
-                        <Link href="/admin/dashboard" className="hover:text-[var(--color-primary)]">Dashboard</Link>
-                        <span>/</span>
-                        <span className="text-[var(--color-text-secondary)]">Events</span>
-                    </nav>
-                    <h1 className="text-2xl font-bold text-[var(--color-text)]">Event Moderation</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)] mt-1">Review all published events across the platform. Remove or flag events as needed.</p>
+                {/* ── Header ── */}
+                <div>
+                    <p
+                        className="text-xs font-semibold uppercase tracking-widest mb-1"
+                        style={{ color: "var(--color-text-muted)" }}
+                    >
+                        Admin
+                    </p>
+                    <h1
+                        className="text-[22px] font-bold tracking-tight"
+                        style={{ color: "var(--color-text)" }}
+                    >
+                        Events
+                    </h1>
+                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                        Review all published events across the platform. Remove or flag events as needed.
+                    </p>
                 </div>
+
 
                 {/* ── Stats ── */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -357,7 +366,7 @@ export default function AdminEventsPage() {
                     </div>
                 </>
             )}
-        </div>
+        </AdminShell>
     );
 }
 

@@ -222,16 +222,25 @@ export default function EventDetailPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '2021-00142', department: 'BSCS 3A' }} />
 
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8">
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-3">
 
         {/* ── Breadcrumb ── */}
-        <div className="flex items-center gap-2 text-[13px] text-gray-400 mb-6">
-          <Link href="/events" className="hover:text-green-700 transition-colors no-underline">Events</Link>
-          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-            <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="text-gray-600 font-medium truncate max-w-xs">{event.title}</span>
-        </div>
+        <Link
+              href="/events"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M15 19l-7-7 7-7"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+
+              Back to Events  
+            </Link>
 
         {/* ── Banner ── */}
         <div className={`w-full h-56 lg:h-64 rounded-2xl ${event.bannerColor} flex items-center justify-center mb-8 relative overflow-hidden`}>
@@ -455,7 +464,7 @@ export default function EventDetailPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-gray-200 bg-white mt-12">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · Office of Student Affairs</p>
+          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
           <div className="flex items-center gap-4">
             <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
             <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>

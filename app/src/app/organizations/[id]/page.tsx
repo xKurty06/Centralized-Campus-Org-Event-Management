@@ -384,7 +384,7 @@ export default function OrgProfilePage() {
       {/* ── Footer ── */}
       <footer className="border-t border-gray-200 bg-white mt-8">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · Office of Student Affairs</p>
+          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
           <div className="flex items-center gap-4">
             <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
             <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>

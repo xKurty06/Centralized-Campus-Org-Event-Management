@@ -120,7 +120,7 @@ export default function AdminOrgDetailPage() {
         <div className="page-shell">
             <Navbar role="admin" user={{ name: 'Admi    n User', schoolId: '0000-0-00000', department: 'OSA' }} />
 
-            <main className="max-w-[1280px] mx-auto px-6 py-10">
+            <main className="max-w-[1240px] mx-auto px-6 py-10">
 
                 {/* ── Breadcrumb ── */}
                 <nav className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mb-6">

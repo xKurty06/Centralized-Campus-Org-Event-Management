@@ -369,7 +369,7 @@ export default function LoginPage() {
             <BrandLogo size={46} />
             <div className="text-left">
               <p className="text-lg font-bold leading-tight" style={{ color: 'var(--color-text)' }}>
-                CvSali
+                Salikop
               </p>
               <p className="text-[11px] font-medium uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
                 Student Events Portal
@@ -440,7 +440,7 @@ export default function LoginPage() {
           }
         </p>
         <p className="text-center mt-2.5 text-[11px] tracking-wide" style={{ color: 'var(--color-border)' }}>
-          CvSali v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
+          Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
         </p>
       </div>
     </div>
