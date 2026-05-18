@@ -408,11 +408,10 @@ export default function AdminOrgDetailPage() {
                             <label className="form-label">School ID</label>
                             <input
                                 type="text"
-                                placeholder="e.g. 2023-1-00123"
+                                placeholder="e.g. 202405123"
                                 value={addSchoolId}
                                 onChange={(e) => setAddSchoolId(e.target.value)}
                             />
-                            <span className="form-hint">Must match a verified @cvsu.edu.ph account.</span>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Position / Title</label>
