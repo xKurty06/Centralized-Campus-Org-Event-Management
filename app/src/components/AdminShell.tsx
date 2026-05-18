@@ -108,9 +108,8 @@ function Sidebar({
 
     return (
         <aside
-            className={`sidebar fixed top-0 left-0 z-40 flex h-screen flex-col ${
-                isMounted ? 'transition-all duration-300' : ''
-            }`}
+            className={`sidebar fixed top-0 left-0 z-40 flex h-screen flex-col ${isMounted ? 'transition-all duration-300' : ''
+                }`}
             style={{
                 width: collapsed
                     ? 'var(--sidebar-collapsed-width)'
@@ -290,12 +289,12 @@ function Sidebar({
                             style={
                                 active
                                     ? {
-                                          background: 'var(--color-primary-muted)',
-                                          color: 'var(--color-primary)',
-                                      }
+                                        background: 'var(--color-primary-muted)',
+                                        color: 'var(--color-primary)',
+                                    }
                                     : {
-                                          color: 'var(--color-text-secondary)',
-                                      }
+                                        color: 'var(--color-text-secondary)',
+                                    }
                             }
                         >
                             <span className="shrink-0 flex items-center justify-center">
@@ -303,11 +302,10 @@ function Sidebar({
                             </span>
 
                             <span
-                                className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${
-                                    collapsed
+                                className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
                                         ? 'w-0 max-w-0 opacity-0 ml-0'
                                         : 'flex-1 opacity-100 ml-3'
-                                }`}
+                                    }`}
                             >
                                 {item.label}
                             </span>
@@ -352,11 +350,10 @@ function Sidebar({
                     </svg>
 
                     <span
-                        className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${
-                            collapsed
+                        className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
                                 ? 'w-0 max-w-0 opacity-0 ml-0'
                                 : 'opacity-100 ml-3'
-                        }`}
+                            }`}
                     >
                         Back to Events
                     </span>
@@ -381,11 +378,10 @@ function Sidebar({
                     </div>
 
                     <div
-                        className={`overflow-hidden transition-all duration-200 ${
-                            collapsed
+                        className={`overflow-hidden transition-all duration-200 ${collapsed
                                 ? 'w-0 max-w-0 opacity-0 ml-0'
                                 : 'flex-1 opacity-100 ml-3'
-                        }`}
+                            }`}
                     >
                         <p
                             className="text-[12.5px] font-semibold truncate leading-tight"
@@ -477,9 +473,8 @@ export default function AdminShell({
             />
 
             <div
-                className={`flex flex-col flex-1 min-w-0 ${
-                    isMounted ? 'transition-all duration-300' : ''
-                }`}
+                className={`flex flex-col flex-1 min-w-0 ${isMounted ? 'transition-all duration-300' : ''
+                    }`}
                 style={{
                     paddingLeft: collapsed
                         ? 'var(--sidebar-collapsed-width)'
