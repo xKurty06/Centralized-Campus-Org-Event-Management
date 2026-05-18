@@ -217,6 +217,12 @@ export default function AdminDashboardPage() {
             {/* ── Header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
+                    <p
+                        className="text-xs font-semibold uppercase tracking-widest mb-1"
+                        style={{ color: "var(--color-text-muted)" }}
+                    >
+                        Admin
+                    </p>
                     <h1 className="text-[22px] font-bold text-[var(--color-text)]">Dashboard</h1>
                     <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">Platform-wide activity overview — Cavite State University</p>
                 </div>

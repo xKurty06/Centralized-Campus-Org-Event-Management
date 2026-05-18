@@ -81,7 +81,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
       <div className="mx-auto max-w-[1280px] px-6 lg:px-12 h-[64px] flex items-center justify-between gap-6">
 
         {/* ── Brand ── */}
-        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
+        <Link href="/events" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
           <div className="w-8 h-8 rounded-lg bg-green-700 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="7" stroke="white" strokeWidth="1.6"/>
@@ -89,7 +89,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
             </svg>
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-[15px] font-bold text-green-700 tracking-tight">CvSali</span>
+            <span className="text-[15px] font-bold text-green-700 tracking-tight">Salikop</span>
             <span className="text-[10px] font-normal text-gray-400 hidden sm:block">Cavite State University</span>
           </div>
         </Link>

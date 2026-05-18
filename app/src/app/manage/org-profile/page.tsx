@@ -15,7 +15,7 @@ import Navbar from '@/components/Navbar';
    ---------------------------------------------------------------- */
 
 type OrgCategory = 'Academic' | 'Non-Academic' | 'Religious';
-type SaveState   = 'idle' | 'saving' | 'saved' | 'error';
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 interface OrgProfile {
   id: string;
@@ -54,9 +54,9 @@ function getInitials(name: string) {
 }
 
 const CATEGORY_META: Record<OrgCategory, { color: string; bg: string }> = {
-  'Academic':     { color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200'     },
+  'Academic': { color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
   'Non-Academic': { color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-  'Religious':    { color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
+  'Religious': { color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
 };
 
 /* ----------------------------------------------------------------
@@ -73,25 +73,40 @@ function FormCard({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
+function ConnectionBadge({ isOnline }: { isOnline: boolean }) {
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-300
+      ${isOnline
+        ? 'bg-green-50 text-green-700 border-green-200'
+        : 'bg-amber-50 text-amber-700 border-amber-200'
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`} />
+      {isOnline ? 'Online' : 'Offline Mode'}
+    </div>
+  );
+}
+
 /* ----------------------------------------------------------------
    Page
    ---------------------------------------------------------------- */
 export default function ManageOrgProfilePage() {
   const org = MOCK_ORG;
 
-  const [name,        setName]        = useState(org.name);
+  const [name, setName] = useState(org.name);
   const [description, setDescription] = useState(org.description);
-  const [adviser,     setAdviser]     = useState(org.adviser);
+  const [adviser, setAdviser] = useState(org.adviser);
   const [logoPreview, setLogoPreview] = useState<string | null>(org.logo_url);
-  const [logoFile,    setLogoFile]    = useState<File | null>(null);
-  const [saveState,   setSaveState]   = useState<SaveState>('idle');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [isOnline, setIsOnline] = useState(true);
 
   const isDirty =
-    name        !== org.name        ||
+    name !== org.name ||
     description !== org.description ||
-    adviser     !== org.adviser     ||
-    logoFile    !== null;
+    adviser !== org.adviser ||
+    logoFile !== null;
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -128,33 +143,71 @@ export default function ManageOrgProfilePage() {
   const catMeta = CATEGORY_META[org.category];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[var(--color-bg)] font-sans">
       <Navbar role="officer" user={{ name: 'Maria Clara Santos', schoolId: '2021-00101', department: 'BSCS 4A' }} />
 
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6">
+      <main className="max-w-[1240px] mx-auto px-6 py-8 flex flex-col gap-6">
 
         {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
-              <Link href="/manage/dashboard" className="hover:text-green-700 no-underline transition-colors">Dashboard</Link>
-              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span className="text-gray-600 font-medium">Org Profile</span>
-            </div>
-            <h1 className="text-[26px] font-bold text-gray-900 tracking-tight">Edit Org Profile</h1>
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+
+          {/* LEFT */}
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/manage/dashboard"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M15 19l-7-7 7-7"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+
+              Back to Dashboard
+            </Link>
+
+            <h1 className="text-[26px] font-bold text-[var(--color-text)] tracking-tight">
+              Edit Org Profile
+            </h1>
           </div>
-          <Link
-            href={`/organizations/${org.id}`}
-            target="_blank"
-            className="flex items-center gap-2 text-[13px] font-semibold text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700 px-4 py-2 rounded-lg transition-all no-underline self-start flex-shrink-0"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-              <path d="M2 10c1.73-2.49 4.58-5 8-5s6.27 2.51 8 5c-1.73 2.49-4.58 5-8 5s-6.27-2.51-8-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-            </svg>
-            View public profile
-          </Link>
+
+          {/* RIGHT */}
+          {/* RIGHT */}
+          <div className="flex flex-col items-start lg:items-end gap-2 self-start lg:self-auto">
+
+            <ConnectionBadge isOnline={isOnline} />
+
+            <Link
+              href={`/organizations/${org.id}`}
+              target="_blank"
+              className="flex items-center gap-2 text-[13px] font-semibold text-text-secondary border border-border hover:bg-surface-2 hover:text-text px-4 py-2 rounded-lg transition-all no-underline"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M2 10c1.73-2.49 4.58-5 8-5s6.27 2.51 8 5c-1.73 2.49-4.58 5-8 5s-6.27-2.51-8-5z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx="10"
+                  cy="10"
+                  r="2.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+              </svg>
+
+              View public profile
+            </Link>
+          </div>
+
         </div>
+
 
         {/* ── Accreditation read-only strip ── */}
         <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -182,7 +235,7 @@ export default function ManageOrgProfilePage() {
         {org.accreditation_status === 'Suspended' && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3.5">
             <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none">
-              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <div>
               <p className="text-[13px] font-semibold text-red-700">Organization is suspended</p>
@@ -267,12 +320,12 @@ export default function ManageOrgProfilePage() {
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
                     >
                       <svg className="w-3 h-3 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                     </button>
                   )}
                 </div>
-                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden"/>
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
@@ -292,7 +345,7 @@ export default function ManageOrgProfilePage() {
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 text-[12px] font-bold text-blue-700 overflow-hidden">
                     {logoPreview
-                      ? <img src={logoPreview} alt="" className="w-full h-full object-cover"/>
+                      ? <img src={logoPreview} alt="" className="w-full h-full object-cover" />
                       : getInitials(name)
                     }
                   </div>
@@ -306,7 +359,7 @@ export default function ManageOrgProfilePage() {
                 </p>
                 <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100">
                   <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                   <p className="text-[11px] text-gray-400 truncate">Adviser: {adviser || '—'}</p>
                 </div>
@@ -318,7 +371,7 @@ export default function ManageOrgProfilePage() {
               {saveState === 'saved' && (
                 <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
                   <svg className="w-4 h-4 text-green-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <p className="text-[12px] font-semibold text-green-700">Profile saved successfully</p>
                 </div>
@@ -326,7 +379,7 @@ export default function ManageOrgProfilePage() {
               {saveState === 'error' && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
                   <svg className="w-4 h-4 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   <p className="text-[12px] font-semibold text-red-600">Save failed. Try again.</p>
                 </div>
@@ -339,15 +392,15 @@ export default function ManageOrgProfilePage() {
                 {saveState === 'saving' ? (
                   <>
                     <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
                     Saving...
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-                      <path d="M16.5 3.5l-10 10L3 17l3.5-3.5 10-10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M16.5 3.5l-10 10L3 17l3.5-3.5 10-10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Save changes
                   </>
@@ -367,7 +420,7 @@ export default function ManageOrgProfilePage() {
             {/* Read-only note */}
             <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-3">
               <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <p className="text-[11px] text-blue-700 leading-relaxed">
                 <span className="font-semibold">Category and accreditation status</span> are controlled by the OSA and cannot be edited here.

@@ -354,7 +354,7 @@ export default function ManageDashboardPage() {
                     ${tab === t.key ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                 >
                   {t.label}
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-white bg-opacity-20 text-gray-500' : 'bg-gray-100 text-gray-500'}`}>
                     {t.count}
                   </span>
                 </button>

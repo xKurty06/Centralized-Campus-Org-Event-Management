@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import React from "react";
 import Navbar from "@/components/Navbar";
+import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,20 @@ function fmtTime(iso: string) {
 }
 
 // ─── Small Components ─────────────────────────────────────────────────────────
+
+function ConnectionBadge({ isOnline }: { isOnline: boolean }) {
+    return (
+        <div className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-300
+      ${isOnline
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-amber-50 text-amber-700 border-amber-200'
+            }`}
+        >
+            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`} />
+            {isOnline ? 'Online' : 'Offline Mode'}
+        </div>
+    );
+}
 
 function Card({
     title,
@@ -190,6 +205,7 @@ export default function ParticipantsPage() {
     const [activeTab, setActiveTab] = useState<Tab>("all");
     const [proofs, setProofs] = useState<PaymentProof[]>(MOCK_PROOFS);
     const [search, setSearch] = useState("");
+    const [isOnline, setIsOnline] = useState(true);
 
     const filteredRegistrants = useMemo(() => {
         const q = search.toLowerCase();
@@ -238,7 +254,7 @@ export default function ParticipantsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#f7f8fa] font-sans">
+        <div className="min-h-screen bg-[var(--color-bg)] font-sans">
             <Navbar
                 role="officer"
                 user={{
@@ -248,28 +264,45 @@ export default function ParticipantsPage() {
                 }}
             />
 
-            <main className="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-6">
-                {/* Event Info */}
-                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-                    <div>
-                        <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
-                            {MOCK_EVENT.title}
-                        </h1>
+            <main className="max-w-[1240px] mx-auto px-6 py-8 flex flex-col gap-6">
 
-                        <p className="text-[13px] text-gray-400 mt-1">
-                            {fmt(MOCK_EVENT.start_date)} · Event ID:{" "}
-                            <span className="font-mono">{eventId}</span>
-                        </p>
+                {/* Header */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <Link
+                            href="/manage/dashboard"
+                            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline flex-shrink-0 px-0.5 py-1"
+                        >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Back to Dashboard
+                        </Link>
+
+                        <ConnectionBadge isOnline={isOnline} />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <button className="h-10 px-4 rounded-xl border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                            Export CSV
-                        </button>
+                    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                        <div>
+                            <h1 className="text-[24px] font-bold text-[var(--color-text)] tracking-tight">
+                                {MOCK_EVENT.title}
+                            </h1>
 
-                        <button className="h-10 px-4 rounded-xl bg-gray-900 text-white text-[13px] font-medium hover:bg-black transition-colors">
-                            Send Announcement
-                        </button>
+                            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
+                                {fmt(MOCK_EVENT.start_date)} · Event ID:{" "}
+                                <span className="font-mono">{eventId}</span>
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button className="h-10 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[13px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] transition-colors">
+                                Export CSV
+                            </button>
+
+                            <button className="h-10 px-4 rounded-xl bg-[var(--color-primary)] text-white text-[13px] font-medium hover:opacity-90 transition-all">
+                                Send Announcement
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -278,50 +311,48 @@ export default function ParticipantsPage() {
                     <Card
                         title="Total Registered"
                         value={MOCK_REGISTRANTS.length}
-                        color="text-gray-900"
+                        color="text-[var(--color-text)]"
                     />
 
                     <Card
                         title="Payment Confirmed"
                         value={confirmedCount}
-                        color="text-emerald-700"
+                        color="text-green-600"
                     />
 
                     <Card
                         title="Pending Payment"
                         value={unpaidCount}
-                        color="text-amber-700"
+                        color="text-amber-600"
                     />
 
                     <Card
                         title="Checked In"
                         value={checkedInCount}
-                        color="text-blue-700"
+                        color="text-[var(--color-primary)]"
                     />
                 </div>
 
                 {/* Tabs + Search */}
-                <div className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-4">
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 flex flex-col gap-4">
                     <div className="flex flex-wrap items-center gap-2">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
-                                className={`relative flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-medium transition-all ${
-                                    activeTab === tab.key
-                                        ? "bg-gray-900 text-white"
-                                        : "text-gray-500 hover:bg-gray-50"
-                                }`}
+                                className={`relative flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-medium transition-all ${activeTab === tab.key
+                                    ? "bg-[var(--color-primary)] text-white"
+                                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)]"
+                                    }`}
                             >
                                 {tab.label}
 
                                 {tab.count !== undefined && (
                                     <span
-                                        className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
-                                            activeTab === tab.key
-                                                ? "bg-white/20 text-white"
-                                                : "bg-gray-100 text-gray-600"
-                                        }`}
+                                        className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === tab.key
+                                            ? "bg-white/20 text-white"
+                                            : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]"
+                                            }`}
                                     >
                                         {tab.count}
                                     </span>
@@ -332,7 +363,7 @@ export default function ParticipantsPage() {
 
                     <div className="relative">
                         <svg
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -350,62 +381,67 @@ export default function ParticipantsPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search registrants..."
-                            className="w-full h-11 pl-10 pr-4 text-[13px] bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 transition-all"
+                            className="w-full h-11 pl-10 pr-4 text-[13px]
+                        bg-[var(--color-surface-2)]
+                        border border-[var(--color-border)]
+                        rounded-xl outline-none
+                        focus:ring-2
+                        focus:ring-[var(--color-primary-muted)]
+                        focus:border-[var(--color-primary)]
+                        transition-all"
                         />
                     </div>
                 </div>
 
                 {/* Table */}
                 {activeTab === "all" && (
-                    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="bg-gray-50/70 border-b border-gray-100">
-                                        <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-6 py-3">
+                                    <tr className="bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-6 py-3">
                                             Student
                                         </th>
 
-                                        <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden md:table-cell">
                                             Department
                                         </th>
 
-                                        <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                                             Registered
                                         </th>
 
-                                        <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">
                                             Method
                                         </th>
 
-                                        <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">
                                             Payment
                                         </th>
 
-                                        <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
                                             Attendance
                                         </th>
                                     </tr>
                                 </thead>
 
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-[var(--color-border)]">
                                     {filteredRegistrants.map((r) => (
                                         <tr
                                             key={r.id}
-                                            className="hover:bg-gray-50/50 transition-colors"
+                                            className="hover:bg-[var(--color-surface-2)] transition-colors"
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <Avatar
-                                                        name={r.full_name}
-                                                    />
+                                                    <Avatar name={r.full_name} />
 
                                                     <div>
-                                                        <p className="text-[13px] font-medium text-gray-900">
+                                                        <p className="text-[13px] font-medium text-[var(--color-text)]">
                                                             {r.full_name}
                                                         </p>
 
-                                                        <p className="text-[11px] text-gray-400 font-mono">
+                                                        <p className="text-[11px] text-[var(--color-text-muted)] font-mono">
                                                             {r.school_id}
                                                         </p>
                                                     </div>
@@ -413,23 +449,21 @@ export default function ParticipantsPage() {
                                             </td>
 
                                             <td className="px-4 py-4 hidden md:table-cell">
-                                                <span className="text-[12px] text-gray-500">
+                                                <span className="text-[12px] text-[var(--color-text-secondary)]">
                                                     {r.department} · Y
                                                     {r.year_level}
                                                 </span>
                                             </td>
 
                                             <td className="px-4 py-4 hidden lg:table-cell">
-                                                <span className="text-[12px] text-gray-500">
+                                                <span className="text-[12px] text-[var(--color-text-secondary)]">
                                                     {fmt(r.reg_date)}
                                                 </span>
                                             </td>
 
                                             <td className="px-4 py-4">
                                                 <MethodBadge
-                                                    method={
-                                                        r.payment_selection
-                                                    }
+                                                    method={r.payment_selection}
                                                 />
                                             </td>
 
@@ -441,9 +475,7 @@ export default function ParticipantsPage() {
 
                                             <td className="px-4 py-4 hidden lg:table-cell">
                                                 <AttendanceBadge
-                                                    status={
-                                                        r.attendance_status
-                                                    }
+                                                    status={r.attendance_status}
                                                 />
                                             </td>
                                         </tr>
@@ -452,156 +484,23 @@ export default function ParticipantsPage() {
                             </table>
                         </div>
 
-                        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between">
-                            <p className="text-[12px] text-gray-400">
+                        <div className="px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-surface-2)] flex items-center justify-between">
+                            <p className="text-[12px] text-[var(--color-text-muted)]">
                                 Showing{" "}
-                                <span className="font-semibold text-gray-700">
+                                <span className="font-semibold text-[var(--color-text)]">
                                     {filteredRegistrants.length}
                                 </span>{" "}
                                 registrants
                             </p>
 
-                            <button className="text-[12px] font-medium text-emerald-600 hover:text-emerald-700">
+                            <button className="text-[12px] font-medium text-[var(--color-primary)] hover:opacity-80">
                                 View Full Analytics →
                             </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Proof Review */}
-                {activeTab === "proof" && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {proofs.map((proof) => (
-                            <div
-                                key={proof.id}
-                                className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md transition-all"
-                            >
-                                <div className="bg-gray-50 h-44 overflow-hidden">
-                                    <img
-                                        src={proof.image_url}
-                                        alt="Payment proof"
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-
-                                <div className="p-4">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <Avatar name={proof.full_name} />
-
-                                        <div>
-                                            <p className="text-[13px] font-medium text-gray-900">
-                                                {proof.full_name}
-                                            </p>
-
-                                            <p className="text-[11px] text-gray-400 font-mono">
-                                                {proof.school_id}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[11px] text-gray-400">
-                                            {fmt(proof.uploaded_at)}
-                                        </span>
-
-                                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                                            Pending Review
-                                        </span>
-                                    </div>
-
-                                    <div className="flex gap-2 mt-4">
-                                        <button
-                                            onClick={() =>
-                                                setProofs((prev) =>
-                                                    prev.map((p) =>
-                                                        p.id === proof.id
-                                                            ? {
-                                                                  ...p,
-                                                                  status: "Rejected",
-                                                              }
-                                                            : p
-                                                    )
-                                                )
-                                            }
-                                            className="flex-1 h-10 rounded-xl bg-red-50 text-red-600 border border-red-200 text-[13px] font-semibold hover:bg-red-100 transition-colors"
-                                        >
-                                            Reject
-                                        </button>
-
-                                        <button
-                                            onClick={() =>
-                                                setProofs((prev) =>
-                                                    prev.map((p) =>
-                                                        p.id === proof.id
-                                                            ? {
-                                                                  ...p,
-                                                                  status: "Approved",
-                                                              }
-                                                            : p
-                                                    )
-                                                )
-                                            }
-                                            className="flex-1 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-semibold transition-colors"
-                                        >
-                                            Approve
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Unpaid */}
-                {activeTab === "unpaid" && (
-                    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100 bg-amber-50/60">
-                            <p className="text-[13px] font-semibold text-amber-800">
-                                Pending Payment Registrants
-                            </p>
-
-                            <p className="text-[12px] text-amber-700 mt-1">
-                                These users still require payment confirmation.
-                            </p>
-                        </div>
-
-                        <div className="divide-y divide-gray-50">
-                            {MOCK_REGISTRANTS.filter(
-                                (r) => r.payment_status === "Pending"
-                            ).map((r) => (
-                                <div
-                                    key={r.id}
-                                    className="px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Avatar name={r.full_name} />
-
-                                        <div>
-                                            <p className="text-[13px] font-medium text-gray-900">
-                                                {r.full_name}
-                                            </p>
-
-                                            <p className="text-[11px] text-gray-400 font-mono">
-                                                {r.school_id}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <MethodBadge
-                                            method={r.payment_selection}
-                                        />
-
-                                        <PaymentBadge
-                                            status={r.payment_status}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </div>
                 )}
             </main>
         </div>
     );
+
 }

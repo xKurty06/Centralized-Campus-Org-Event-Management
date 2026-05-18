@@ -703,16 +703,20 @@ export default function EntrancePanelPage() {
         <div className="mx-auto max-w-[1280px] px-6 py-8 lg:px-10">
 
           {/* ── Page Header ── */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-8">
-            <Link
-              href="/manage/dashboard"
-              className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline flex-shrink-0 mt-0.5"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Back to Dashboard
-            </Link>
+          <div className="flex flex-col gap-4 mb-8">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <Link
+                href="/manage/dashboard"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline flex-shrink-0 px-0.5 py-1"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back to Dashboard
+              </Link>
+
+              <ConnectionBadge isOnline={isOnline} />
+            </div>
 
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-1">
@@ -734,8 +738,6 @@ export default function EntrancePanelPage() {
                 <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
               </div>
             </div>
-
-            <ConnectionBadge isOnline={isOnline} />
           </div>
 
           {/* ── Stats Row ── */}
