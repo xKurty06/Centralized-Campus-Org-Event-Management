@@ -7,8 +7,9 @@ import Link from 'next/link';
 type FormState = 'idle' | 'loading' | 'error';
 type Tab       = 'login' | 'guest';
 
-// ─── Config — change to your real domain ──────────────────────
-const ALLOWED_DOMAIN = 'school.edu.ph';
+// ─── Config ───────────────────────────────────────────────────
+// school_id format: YYYY-D-NNNNN  e.g. 2023-1-00123
+const SCHOOL_ID_REGEX = /^\d{4}-\d-\d{5}$/;
 
 // ─────────────────────────────────────────────────────────────
 // Sub-components
@@ -88,12 +89,15 @@ function InputIcon({ children }: { children: React.ReactNode }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Icon SVGs (inline, no extra dep)
+// Icon SVGs
 // ─────────────────────────────────────────────────────────────
-const MailIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-    <polyline points="22,6 12,13 2,6" />
+
+/** Campus ID card icon */
+const IdCardIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <circle cx="8" cy="12" r="2" />
+    <path d="M14 9h4M14 12h4M14 15h2" />
   </svg>
 );
 
@@ -131,34 +135,55 @@ const UserIcon = () => (
 );
 
 // ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Auto-formats a school ID as the user types.
+ * Accepts digits only and inserts dashes at positions 4 and 6.
+ * Output: YYYY-D-NNNNN
+ */
+function formatSchoolId(raw: string): string {
+  // Strip everything that isn't a digit
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 5)}-${digits.slice(5, 10)}`;
+}
+
+function validateSchoolId(val: string): string | null {
+  if (!val) return 'School ID is required.';
+  if (!SCHOOL_ID_REGEX.test(val))
+    return 'Enter a valid School ID (e.g. 2023-1-00123).';
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Login Tab
 // ─────────────────────────────────────────────────────────────
 function LoginForm() {
-  const [email, setEmail]           = useState('');
+  const [schoolId, setSchoolId]     = useState('');
   const [password, setPassword]     = useState('');
   const [showPass, setShowPass]     = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [formState, setFormState]   = useState<FormState>('idle');
   const [errorMsg, setErrorMsg]     = useState('');
 
-  function validateEmail(val: string): string | null {
-    if (!val) return 'Email is required.';
-    if (!val.includes('@')) return 'Enter a valid email address.';
-    if (val.split('@')[1] !== ALLOWED_DOMAIN)
-      return `Only @${ALLOWED_DOMAIN} accounts are allowed.`;
-    return null;
+  function handleSchoolIdChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSchoolId(formatSchoolId(e.target.value));
+    setErrorMsg('');
+    setFormState('idle');
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg('');
 
-    const emailErr = validateEmail(email);
-    if (emailErr) { setErrorMsg(emailErr); return; }
+    const idErr = validateSchoolId(schoolId);
+    if (idErr) { setErrorMsg(idErr); return; }
     if (!password) { setErrorMsg('Password is required.'); return; }
 
     setFormState('loading');
-    // TODO: replace with NextAuth signIn() / Supabase auth
     await new Promise(r => setTimeout(r, 1200));
     setFormState('error');
     setErrorMsg('Invalid credentials. Please try again.');
@@ -185,19 +210,24 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Email */}
+      {/* School ID */}
       <Field
-        id="email"
-        label="Institutional Email"
-        hint={`Must be an @${ALLOWED_DOMAIN} account`}
+        id="school-id"
+        label="School ID"
+        hint="Format: YYYYNNNNN (e.g. 202405123)"
       >
         <div className="input-icon-wrapper">
-          <InputIcon><MailIcon /></InputIcon>
+          <InputIcon><IdCardIcon /></InputIcon>
           <input
-            id="email" type="email" value={email}
-            onChange={e => { setEmail(e.target.value); setErrorMsg(''); setFormState('idle'); }}
-            placeholder={`yourname@${ALLOWED_DOMAIN}`}
-            autoComplete="email" disabled={isLoading}
+            id="school-id"
+            type="text"
+            inputMode="numeric"
+            value={schoolId}
+            onChange={handleSchoolIdChange}
+            placeholder="202405123"
+            autoComplete="username"
+            disabled={isLoading}
+            maxLength={9} /* YYYY-D-NNNNN = 9 chars */
             className="input-has-left-icon"
           />
         </div>
@@ -223,7 +253,8 @@ function LoginForm() {
             value={password}
             onChange={e => { setPassword(e.target.value); setErrorMsg(''); setFormState('idle'); }}
             placeholder="Enter your password"
-            autoComplete="current-password" disabled={isLoading}
+            autoComplete="current-password"
+            disabled={isLoading}
             className="input-has-left-icon input-has-right-icon"
           />
           <button
@@ -288,8 +319,8 @@ function GuestAccess() {
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg>
         <p className="text-sm leading-snug" style={{ color: 'var(--color-primary)' }}>
-          Guest access lets you browse and join <strong>open-to-public</strong> events only.
-          Sign in with an institutional account for full access.
+          Guest access lets you <strong>browse events only</strong>.
+          Sign in with your School ID for full access.
         </p>
       </div>
 
@@ -298,7 +329,7 @@ function GuestAccess() {
         {[
           { can: true,  text: 'Browse all public events' },
           { can: true,  text: 'View event details and schedules' },
-          { can: true,  text: 'Register for open-to-public events' },
+          { can: false,  text: 'Register for events' },
           { can: false, text: 'Access student-only or org-exclusive events' },
           { can: false, text: 'View your registration history' },
           { can: false, text: 'Access officer or admin features' },
@@ -344,7 +375,7 @@ function GuestAccess() {
 // Page Root
 // ─────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const [tab, setTab]       = useState<Tab>('login');
+  const [tab, setTab]         = useState<Tab>('login');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -382,7 +413,7 @@ export default function LoginPage() {
           </h1>
           <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             {tab === 'login'
-              ? 'Sign in with your institutional email to continue'
+              ? 'Sign in with your CvSU School ID to continue'
               : 'Browse open events without an account'}
           </p>
 
@@ -395,7 +426,7 @@ export default function LoginPage() {
               className="text-[11px] font-semibold"
               style={{ color: 'var(--color-primary-light)' }}
             >
-              Classroom Management
+              Dalisay
             </span>
           </div>
         </div>
@@ -432,14 +463,24 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* ── Sign-up nudge (only on login tab) ── */}
+        {tab === 'login' && (
+          <p className="text-center mt-5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            Don&apos;t have an account?{' '}
+            <Link href="/signup" className="font-semibold" style={{ color: 'var(--color-primary-light)' }}>
+              Create one
+            </Link>
+          </p>
+        )}
+
         {/* ── Footer ── */}
-        <p className="text-center mt-5 text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-center mt-3 text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           {tab === 'login'
-            ? <>Access is restricted to enrolled students and staff.<br />Contact your administrator for account issues.</>
+            ? <>Access is restricted to enrolled CvSU students and staff.<br />Contact your administrator for account issues.</>
             : <>Guest registrations require a valid contact email.<br />You may be asked to show ID at the event entrance.</>
           }
         </p>
-        <p className="text-center mt-2.5 text-[11px] tracking-wide" style={{ color: 'var(--color-border)' }}>
+        <p className="text-center mt-2.5 text-[11px] tracking-wide" style={{ color: 'gray' }}>
           Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
         </p>
       </div>
