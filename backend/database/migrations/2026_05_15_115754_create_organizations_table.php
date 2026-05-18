@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * AI Agent Context:
- * - PURPOSE: Profile data registry for verified, campus-accredited organizations.
- * - BUSINESS LOGIC RULE: `accreditation_status` acts as a feature gate. If set to 'Suspended', the organization cannot publish events.
- * - AUDIT TRAIL: `accredited_by` maps to the Overseer who executed the latest certification state shift.
+ * - PURPOSE: Stores the full profile of every accredited campus organization.
+ * - BUSINESS LOGIC: Only organizations with 'Active' status are permitted to publish events.
+ * - AUDIT TRAIL: 'accredited_by' records the Overseer who last updated the status.
  */
 return new class extends Migration
 {
@@ -16,21 +16,38 @@ return new class extends Migration
     {
         Schema::create('organizations', function (Blueprint $table) {
             $table->engine = 'InnoDB';
-            $table->char('id', 36)->primary();
-            $table->string('name', 200);
+
+            // Primary Key: UUID
+            $table->uuid('id')->primary();
+
+            // Profile Information
+            $table->string('name', 200)->unique();
             $table->text('description')->nullable();
             $table->text('logo_url')->nullable();
             $table->string('adviser', 150)->nullable();
 
-            $table->unsignedInteger('category_id');
-            $table->foreign('category_id')->references('id')->on('org_categories')->onDelete('restrict');
+            // Added: The date the organization was officially established
+            $table->date('founded_date')->nullable();
 
-            $table->char('accredited_by', 36)->nullable();
+            // Foreign Key: Org Category (Academic, Non-Academic, Religious)
+            $table->unsignedInteger('category_id');
+            $table->foreign('category_id')
+                ->references('id')
+                ->on('org_categories')
+                ->onDelete('restrict');
+
+            // Accreditation & Governance
             $table->enum('accreditation_status', ['Active', 'Suspended'])->default('Active');
+
+            // Foreign Key: UUID of the Overseer (User)
+            $table->uuid('accredited_by')->nullable();
+            $table->foreign('accredited_by')
+                ->references('id')
+                ->on('users')
+                ->onDelete('set null');
+
             $table->timestamp('accredited_at')->nullable();
             $table->timestamps();
-
-            $table->foreign('accredited_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 

@@ -17,7 +17,7 @@ return new class extends Migration
             // UNSIGNED INT AUTO_INCREMENT PRIMARY KEY
             $table->increments('id');
 
-            $table->string('name', 150);
+            $table->string('name', 150)->unique();
             $table->string('code', 20)->unique();
 
             $table->timestamps();
