@@ -308,7 +308,7 @@ export default function AdminShell({
                         : 'var(--sidebar-width)',
                 }}
             >
-                <div className="p-6 max-w-[1100px] mx-auto">
+                <div className="p-6 max-w-[1500px] mx-auto">
                     {children}
                 </div>
             </main>
