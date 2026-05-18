@@ -1,134 +1,141 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 import AdminShell from '@/components/AdminShell';
 
 /* ----------------------------------------------------------------
-   Types
+   Types — mirrors Users table exactly
    ---------------------------------------------------------------- */
 type GlobalRole = 'User' | 'Overseer';
-type AccountStatus = 'Active' | 'Deactivated';
 
 interface User {
     id: string;
-    name: string;
-    schoolId: string;
+    schoolId: string;         // school_id
     email: string;
-    department: string;
-    yearLevel: number;
-    globalRole: GlobalRole;
-    isActive: boolean;
-    orgRole?: string; // e.g. "Officer @ CSS"
+    firstName: string;        // first_name
+    lastName: string;         // last_name
+    dept: string;             // dept_id → dept code
+    course: string;           // course_id → course_code
+    yearLevel: number;        // year_level (0 = staff/admin, no year)
+    section: number;          // section (0 = N/A)
+    globalRole: GlobalRole;   // global_role
+    isActive: boolean;        // is_active
+    orgRoles?: string[];      // derived from Org_Officers (display only)
 }
 
 /* ----------------------------------------------------------------
    Placeholder Data
    ---------------------------------------------------------------- */
-const PLACEHOLDER_USERS: User[] = [
-    { id: 'u-1', name: 'Juan Dela Cruz', schoolId: '2022-1-00045', email: 'j.delacruz@cvsu.edu.ph', department: 'CEIT', yearLevel: 3, globalRole: 'User', isActive: true, orgRole: 'President @ CSS' },
-    { id: 'u-2', name: 'Maria Reyes', schoolId: '2022-1-00078', email: 'm.reyes@cvsu.edu.ph', department: 'CEIT', yearLevel: 3, globalRole: 'User', isActive: true, orgRole: 'VP @ CSS' },
-    { id: 'u-3', name: 'Carlo Mendoza', schoolId: '2023-1-00112', email: 'c.mendoza@cvsu.edu.ph', department: 'CEIT', yearLevel: 2, globalRole: 'User', isActive: true, orgRole: 'Secretary @ CSS' },
-    { id: 'u-4', name: 'Ana Villanueva', schoolId: '2023-1-00134', email: 'a.villanueva@cvsu.edu.ph', department: 'CEIT', yearLevel: 2, globalRole: 'User', isActive: true },
-    { id: 'u-5', name: 'Paolo Santos', schoolId: '2021-1-00023', email: 'p.santos@cvsu.edu.ph', department: 'CEIT', yearLevel: 4, globalRole: 'User', isActive: false },
-    { id: 'u-6', name: 'Lara Castro', schoolId: '2024-1-00067', email: 'l.castro@cvsu.edu.ph', department: 'CAS', yearLevel: 1, globalRole: 'User', isActive: true },
-    { id: 'u-7', name: 'Miguel Torres', schoolId: '2022-2-00089', email: 'm.torres@cvsu.edu.ph', department: 'CAS', yearLevel: 3, globalRole: 'User', isActive: true, orgRole: 'President @ SPECS' },
-    { id: 'u-8', name: 'Sofia Navarro', schoolId: '2023-2-00045', email: 's.navarro@cvsu.edu.ph', department: 'CON', yearLevel: 2, globalRole: 'User', isActive: true },
-    { id: 'u-9', name: 'Admin John Doe', schoolId: '0000-0-00001', email: 'j.doe@cvsu.edu.ph', department: 'OSA', yearLevel: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-10', name: 'Admin Jane Smith', schoolId: '0000-0-00002', email: 'j.smith@cvsu.edu.ph', department: 'OSA', yearLevel: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-11', name: 'Rico Pangilinan', schoolId: '2021-1-00099', email: 'r.pangilinan@cvsu.edu.ph', department: 'COE', yearLevel: 4, globalRole: 'User', isActive: false },
-    { id: 'u-12', name: 'Tricia Ocampo', schoolId: '2024-2-00033', email: 't.ocampo@cvsu.edu.ph', department: 'CBA', yearLevel: 1, globalRole: 'User', isActive: true },
+const USERS: User[] = [
+    { id: 'u-1',  schoolId: '2022-1-00045', email: 'j.delacruz@cvsu.edu.ph',  firstName: 'Juan',    lastName: 'Dela Cruz',  dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 2, globalRole: 'User',     isActive: true,  orgRoles: ['President @ CSS'] },
+    { id: 'u-2',  schoolId: '2022-1-00078', email: 'm.reyes@cvsu.edu.ph',      firstName: 'Maria',   lastName: 'Reyes',      dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 1, globalRole: 'User',     isActive: true,  orgRoles: ['VP @ CSS'] },
+    { id: 'u-3',  schoolId: '2023-1-00112', email: 'c.mendoza@cvsu.edu.ph',    firstName: 'Carlo',   lastName: 'Mendoza',    dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 3, globalRole: 'User',     isActive: true,  orgRoles: ['Secretary @ CSS'] },
+    { id: 'u-4',  schoolId: '2023-1-00134', email: 'a.villanueva@cvsu.edu.ph', firstName: 'Ana',     lastName: 'Villanueva', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 1, globalRole: 'User',     isActive: true },
+    { id: 'u-5',  schoolId: '2021-1-00023', email: 'p.santos@cvsu.edu.ph',     firstName: 'Paolo',   lastName: 'Santos',     dept: 'CEIT', course: 'BSCpE',yearLevel: 4, section: 2, globalRole: 'User',     isActive: false },
+    { id: 'u-6',  schoolId: '2024-1-00067', email: 'l.castro@cvsu.edu.ph',     firstName: 'Lara',    lastName: 'Castro',     dept: 'CAS',  course: 'BSBA', yearLevel: 1, section: 1, globalRole: 'User',     isActive: true },
+    { id: 'u-7',  schoolId: '2022-2-00089', email: 'm.torres@cvsu.edu.ph',     firstName: 'Miguel',  lastName: 'Torres',     dept: 'CAS',  course: 'BSBA', yearLevel: 3, section: 2, globalRole: 'User',     isActive: true,  orgRoles: ['President @ SPECS'] },
+    { id: 'u-8',  schoolId: '2023-2-00045', email: 's.navarro@cvsu.edu.ph',    firstName: 'Sofia',   lastName: 'Navarro',    dept: 'CON',  course: 'BSN',  yearLevel: 2, section: 1, globalRole: 'User',     isActive: true },
+    { id: 'u-9',  schoolId: '0000-0-00001', email: 'j.doe@cvsu.edu.ph',        firstName: 'John',    lastName: 'Doe',        dept: 'OSA',  course: '—',    yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
+    { id: 'u-10', schoolId: '0000-0-00002', email: 'j.smith@cvsu.edu.ph',      firstName: 'Jane',    lastName: 'Smith',      dept: 'OSA',  course: '—',    yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
+    { id: 'u-11', schoolId: '2021-1-00099', email: 'r.pangilinan@cvsu.edu.ph', firstName: 'Rico',    lastName: 'Pangilinan', dept: 'COE',  course: 'BSCE', yearLevel: 4, section: 3, globalRole: 'User',     isActive: false },
+    { id: 'u-12', schoolId: '2024-2-00033', email: 't.ocampo@cvsu.edu.ph',     firstName: 'Tricia',  lastName: 'Ocampo',     dept: 'CBA',  course: 'BSAc', yearLevel: 1, section: 2, globalRole: 'User',     isActive: true },
 ];
 
 /* ----------------------------------------------------------------
    Page
    ---------------------------------------------------------------- */
 export default function AdminUsersPage() {
+    const [users, setUsers] = useState<User[]>(USERS);
     const [search, setSearch] = useState('');
     const [filterRole, setFilterRole] = useState<'All' | GlobalRole>('All');
-    const [filterStatus, setFilterStatus] = useState<'All' | AccountStatus>('All');
+    const [filterStatus, setFilterStatus] = useState<'All' | 'Active' | 'Deactivated'>('All');
     const [filterDept, setFilterDept] = useState('All');
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    // ── Deactivate / Reactivate confirm
+    const [confirmToggle, setConfirmToggle] = useState<User | null>(null);
+
+    // ── Role change: dangerous confirm modal
+    const [roleChangePending, setRoleChangePending] = useState<{ user: User; newRole: GlobalRole } | null>(null);
 
     const departments = useMemo(() => {
-        const depts = [...new Set(PLACEHOLDER_USERS.map((u) => u.department))].sort();
+        const depts = [...new Set(USERS.map((u) => u.dept))].sort();
         return ['All', ...depts];
     }, []);
 
     const filtered = useMemo(() => {
-        return PLACEHOLDER_USERS.filter((u) => {
+        return users.filter((u) => {
             const q = search.toLowerCase();
-            const matchSearch =
-                u.name.toLowerCase().includes(q) ||
-                u.schoolId.includes(q) ||
-                u.email.toLowerCase().includes(q);
+            const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+            const matchSearch = fullName.includes(q) || u.schoolId.includes(q) || u.email.toLowerCase().includes(q);
             const matchRole = filterRole === 'All' || u.globalRole === filterRole;
             const matchStatus = filterStatus === 'All' || (filterStatus === 'Active' ? u.isActive : !u.isActive);
-            const matchDept = filterDept === 'All' || u.department === filterDept;
+            const matchDept = filterDept === 'All' || u.dept === filterDept;
             return matchSearch && matchRole && matchStatus && matchDept;
         });
-    }, [search, filterRole, filterStatus, filterDept]);
+    }, [users, search, filterRole, filterStatus, filterDept]);
 
     const stats = useMemo(() => ({
-        total: PLACEHOLDER_USERS.length,
-        active: PLACEHOLDER_USERS.filter((u) => u.isActive).length,
-        deactivated: PLACEHOLDER_USERS.filter((u) => !u.isActive).length,
-        overseers: PLACEHOLDER_USERS.filter((u) => u.globalRole === 'Overseer').length,
-    }), []);
+        total: users.length,
+        active: users.filter((u) => u.isActive).length,
+        deactivated: users.filter((u) => !u.isActive).length,
+        overseers: users.filter((u) => u.globalRole === 'Overseer').length,
+    }), [users]);
 
-    function handleToggleActive(user: User) {
-        // Placeholder: wire to PATCH /api/admin/users/:id
-        setSelectedUser(null);
-        alert(`[Placeholder] ${user.isActive ? 'Deactivated' : 'Activated'}: ${user.name}`);
+    /* ── Handlers ── */
+    function handleToggleActive() {
+        if (!confirmToggle) return;
+        setUsers((prev) => prev.map((u) => u.id === confirmToggle.id ? { ...u, isActive: !u.isActive } : u));
+        setConfirmToggle(null);
+        // API: PATCH /api/admin/users/:id { is_active }
     }
 
-    function handleRoleChange(user: User, newRole: GlobalRole) {
-        // Placeholder: wire to PATCH /api/admin/users/:id
-        alert(`[Placeholder] Role changed to ${newRole} for ${user.name}`);
+    function handleRoleChange() {
+        if (!roleChangePending) return;
+        setUsers((prev) => prev.map((u) => u.id === roleChangePending.user.id ? { ...u, globalRole: roleChangePending.newRole } : u));
+        setRoleChangePending(null);
+        // API: PATCH /api/admin/users/:id { global_role }
     }
 
     return (
         <AdminShell>
             <main className="flex flex-col gap-6 animate-fade-in">
 
-                {/* Page header */}
+                {/* ── Page Header ── */}
                 <div>
-                    <p
-                        className="text-xs font-semibold uppercase tracking-widest mb-1"
-                        style={{ color: "var(--color-text-muted)" }}
-                    >
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--color-text-muted)' }}>
                         Admin
                     </p>
-                    <h1
-                        className="text-[22px] font-bold tracking-tight"
-                        style={{ color: "var(--color-text)" }}
-                    >
-                        Users
-                    </h1>
-                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                        Manage user accounts and their permissions.
+                    <h1 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>Users</h1>
+                    <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                        Manage all registered accounts — roles, status, and identity data.
                     </p>
                 </div>
 
                 {/* ── Stat Cards ── */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard label="Total Users" value={stats.total} color="blue" />
-                    <StatCard label="Active" value={stats.active} color="green" />
-                    <StatCard label="Deactivated" value={stats.deactivated} color="red" />
-                    <StatCard label="Overseers" value={stats.overseers} color="yellow" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard label="Total Users"  value={stats.total}       color="blue"   />
+                    <StatCard label="Active"        value={stats.active}      color="green"  />
+                    <StatCard label="Deactivated"   value={stats.deactivated} color="red"    />
+                    <StatCard label="Overseers"     value={stats.overseers}   color="yellow" />
+                </div>
+
+                {/* ── Overseer Warning Banner ── */}
+                <div
+                    className="rounded-lg px-4 py-3 flex items-start gap-3 text-sm"
+                    style={{ background: '#fffbeb', border: '1px solid #f0a500', color: '#92610a' }}
+                >
+                    <span className="text-base mt-0.5">⚠</span>
+                    <div>
+                        <strong>Global Role changes are permanent and powerful.</strong> Granting Overseer access gives full administrative control over all organizations, events, and user accounts on the platform. A confirmation prompt will appear before any role change is applied.
+                    </div>
                 </div>
 
                 {/* ── Filters ── */}
-                <div className="card mb-6">
+                <div className="card">
                     <div className="card-body py-4">
                         <div className="flex flex-col sm:flex-row gap-3">
-
-                            {/* Search */}
                             <div className="input-icon-wrapper flex-1">
-                                <span className="input-icon-left">
-                                    <IconSearch />
-                                </span>
+                                <span className="input-icon-left"><IconSearch /></span>
                                 <input
                                     type="text"
                                     className="input-has-left-icon"
@@ -137,37 +144,19 @@ export default function AdminUsersPage() {
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
                             </div>
-
-                            {/* Role filter */}
-                            <select
-                                value={filterRole}
-                                onChange={(e) => setFilterRole(e.target.value as typeof filterRole)}
-                                className="sm:w-36"
-                            >
+                            <select value={filterRole} onChange={(e) => setFilterRole(e.target.value as typeof filterRole)} className="sm:w-36">
                                 <option value="All">All Roles</option>
                                 <option value="User">User</option>
                                 <option value="Overseer">Overseer</option>
                             </select>
-
-                            {/* Status filter */}
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                                className="sm:w-40"
-                            >
+                            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)} className="sm:w-40">
                                 <option value="All">All Status</option>
                                 <option value="Active">Active</option>
                                 <option value="Deactivated">Deactivated</option>
                             </select>
-
-                            {/* Dept filter */}
-                            <select
-                                value={filterDept}
-                                onChange={(e) => setFilterDept(e.target.value)}
-                                className="sm:w-40"
-                            >
+                            <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="sm:w-40">
                                 {departments.map((d) => (
-                                    <option key={d} value={d}>{d === 'All' ? 'All Departments' : d}</option>
+                                    <option key={d} value={d}>{d === 'All' ? 'All Depts' : d}</option>
                                 ))}
                             </select>
                         </div>
@@ -179,11 +168,12 @@ export default function AdminUsersPage() {
                     <table className="table-base">
                         <thead>
                             <tr>
-                                <th>User</th>
+                                <th>Name</th>
                                 <th>School ID</th>
-                                <th>Department</th>
-                                <th>Year</th>
-                                <th>Org Role</th>
+                                <th>Dept</th>
+                                <th>Course</th>
+                                <th>Yr / Sec</th>
+                                <th>Org Roles</th>
                                 <th>Global Role</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -192,7 +182,7 @@ export default function AdminUsersPage() {
                         <tbody>
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="text-center py-10 text-sm text-[var(--color-text-muted)]">
+                                    <td colSpan={9} className="text-center py-12 text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                         No users match your filters.
                                     </td>
                                 </tr>
@@ -202,35 +192,78 @@ export default function AdminUsersPage() {
                                         {/* Name + email */}
                                         <td>
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-full bg-[var(--color-primary-muted)] flex items-center justify-center flex-shrink-0">
-                                                    <span className="text-[10px] font-bold text-[var(--color-primary)]">
-                                                        {user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
-                                                    </span>
+                                                <div
+                                                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+                                                    style={{ background: user.globalRole === 'Overseer' ? '#fef3c7' : 'var(--color-primary-muted)', color: user.globalRole === 'Overseer' ? '#92610a' : 'var(--color-primary)' }}
+                                                >
+                                                    {(user.firstName[0] + user.lastName[0]).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium text-[var(--color-text)]">{user.name}</p>
-                                                    <p className="text-xs text-[var(--color-text-muted)]">{user.email}</p>
+                                                    <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                                                        {user.firstName} {user.lastName}
+                                                    </p>
+                                                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{user.email}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="text-sm font-mono text-[var(--color-text-secondary)]">{user.schoolId}</td>
-                                        <td className="text-sm text-[var(--color-text-secondary)]">{user.department}</td>
-                                        <td className="text-sm text-[var(--color-text-secondary)]">
-                                            {user.yearLevel > 0 ? `Year ${user.yearLevel}` : '—'}
-                                        </td>
-                                        <td className="text-sm text-[var(--color-text-secondary)]">{user.orgRole ?? '—'}</td>
 
-                                        {/* Role dropdown */}
+                                        {/* School ID */}
+                                        <td className="text-sm font-mono" style={{ color: 'var(--color-text-secondary)' }}>
+                                            {user.schoolId}
+                                        </td>
+
+                                        {/* Dept */}
+                                        <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{user.dept}</td>
+
+                                        {/* Course */}
+                                        <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{user.course}</td>
+
+                                        {/* Year / Section */}
+                                        <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                                            {user.yearLevel > 0 ? `Y${user.yearLevel} / S${user.section}` : '—'}
+                                        </td>
+
+                                        {/* Org Roles */}
                                         <td>
-                                            <select
-                                                value={user.globalRole}
-                                                onChange={(e) => handleRoleChange(user, e.target.value as GlobalRole)}
-                                                className="text-xs px-2 py-1 rounded-md border border-[var(--color-border)] bg-white w-auto"
-                                                style={{ width: 'auto', padding: '4px 8px' }}
-                                            >
-                                                <option value="User">User</option>
-                                                <option value="Overseer">Overseer</option>
-                                            </select>
+                                            {user.orgRoles && user.orgRoles.length > 0 ? (
+                                                <div className="flex flex-col gap-0.5">
+                                                    {user.orgRoles.map((r) => (
+                                                        <span key={r} className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r}</span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Global Role — select triggers confirm modal */}
+                                        <td>
+                                            <div className="flex items-center gap-1.5">
+                                                {user.globalRole === 'Overseer' && (
+                                                    <span className="text-amber-500 text-xs" title="Overseer">⚑</span>
+                                                )}
+                                                <select
+                                                    value={user.globalRole}
+                                                    onChange={(e) => {
+                                                        const newRole = e.target.value as GlobalRole;
+                                                        if (newRole !== user.globalRole) {
+                                                            setRoleChangePending({ user, newRole });
+                                                        }
+                                                    }}
+                                                    className="text-xs rounded-md"
+                                                    style={{
+                                                        width: 'auto',
+                                                        padding: '4px 8px',
+                                                        border: user.globalRole === 'Overseer' ? '1.5px solid #f0a500' : '1.5px solid var(--color-border)',
+                                                        background: user.globalRole === 'Overseer' ? '#fffbeb' : 'white',
+                                                        color: user.globalRole === 'Overseer' ? '#92610a' : 'var(--color-text)',
+                                                        fontWeight: user.globalRole === 'Overseer' ? '600' : '400',
+                                                    }}
+                                                >
+                                                    <option value="User">User</option>
+                                                    <option value="Overseer">Overseer</option>
+                                                </select>
+                                            </div>
                                         </td>
 
                                         {/* Status */}
@@ -243,8 +276,8 @@ export default function AdminUsersPage() {
                                         {/* Actions */}
                                         <td>
                                             <button
-                                                onClick={() => setSelectedUser(user)}
                                                 className={`btn btn-sm ${user.isActive ? 'btn-danger' : 'btn-outline'}`}
+                                                onClick={() => setConfirmToggle(user)}
                                             >
                                                 {user.isActive ? 'Deactivate' : 'Reactivate'}
                                             </button>
@@ -255,51 +288,99 @@ export default function AdminUsersPage() {
                         </tbody>
                     </table>
 
-                    {/* Footer */}
-                    <div className="px-4 py-3 border-t border-[var(--color-border)] flex items-center justify-between">
-                        <p className="text-xs text-[var(--color-text-muted)]">
-                            Showing {filtered.length} of {PLACEHOLDER_USERS.length} users
+                    {/* Table footer */}
+                    <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--color-border)' }}>
+                        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                            Showing {filtered.length} of {users.length} users
                         </p>
-                        {/* Pagination placeholder */}
                         <div className="flex items-center gap-1">
                             <button className="btn btn-ghost btn-sm" disabled>← Prev</button>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-semibold">1</span>
+                            <span
+                                className="text-xs px-3 py-1.5 rounded-md font-semibold"
+                                style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
+                            >
+                                1
+                            </span>
                             <button className="btn btn-ghost btn-sm" disabled>Next →</button>
                         </div>
                     </div>
                 </div>
             </main>
 
-            {/* ── Confirm Modal ── */}
-            {selectedUser && (
-                <>
-                    <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setSelectedUser(null)} />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in">
-                            <h3 className="text-base font-semibold text-[var(--color-text)] mb-2">
-                                {selectedUser.isActive ? 'Deactivate Account?' : 'Reactivate Account?'}
-                            </h3>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-1">
-                                User: <span className="font-semibold">{selectedUser.name}</span>
-                            </p>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
-                                {selectedUser.isActive
-                                    ? 'Deactivating this account will block the user from logging in. All their records and registrations are preserved.'
-                                    : 'Reactivating this account will restore the user\'s access to the platform.'
-                                }
-                            </p>
-                            <div className="flex gap-3 justify-end">
-                                <button className="btn btn-ghost" onClick={() => setSelectedUser(null)}>Cancel</button>
-                                <button
-                                    className={`btn ${selectedUser.isActive ? 'btn-danger' : 'btn-primary'}`}
-                                    onClick={() => handleToggleActive(selectedUser)}
-                                >
-                                    {selectedUser.isActive ? 'Yes, Deactivate' : 'Yes, Reactivate'}
-                                </button>
-                            </div>
+            {/* ================================================================
+                MODAL: Deactivate / Reactivate Confirm
+            ================================================================ */}
+            {confirmToggle && (
+                <Modal
+                    title={confirmToggle.isActive ? 'Deactivate Account?' : 'Reactivate Account?'}
+                    onClose={() => setConfirmToggle(null)}
+                    danger={confirmToggle.isActive}
+                >
+                    <div className="flex flex-col gap-4">
+                        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                            User: <strong>{confirmToggle.firstName} {confirmToggle.lastName}</strong> ({confirmToggle.schoolId})
+                        </p>
+                        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                            {confirmToggle.isActive
+                                ? 'This will block the user from logging in. All records, registrations, and officer assignments are preserved and never deleted.'
+                                : "This will restore the user's access to the platform."
+                            }
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button className="btn btn-ghost" onClick={() => setConfirmToggle(null)}>Cancel</button>
+                            <button
+                                className={`btn ${confirmToggle.isActive ? 'btn-danger' : 'btn-primary'}`}
+                                onClick={handleToggleActive}
+                            >
+                                {confirmToggle.isActive ? 'Yes, Deactivate' : 'Yes, Reactivate'}
+                            </button>
                         </div>
                     </div>
-                </>
+                </Modal>
+            )}
+
+            {/* ================================================================
+                MODAL: Global Role Change — DANGEROUS confirm
+            ================================================================ */}
+            {roleChangePending && (
+                <Modal
+                    title={roleChangePending.newRole === 'Overseer' ? '⚠ Grant Overseer Access?' : 'Revoke Overseer Access?'}
+                    onClose={() => setRoleChangePending(null)}
+                    danger
+                >
+                    <div className="flex flex-col gap-4">
+                        {roleChangePending.newRole === 'Overseer' ? (
+                            <>
+                                <div
+                                    className="rounded-lg p-4 text-sm"
+                                    style={{ background: 'var(--color-error-light)', color: 'var(--color-error)' }}
+                                >
+                                    <strong>This is a high-privilege action.</strong> Overseer access grants full administrative control: managing all organizations, toggling accreditation, deactivating any user account, and moderating all events across the platform.
+                                </div>
+                                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                                    You are granting Overseer access to{' '}
+                                    <strong>{roleChangePending.user.firstName} {roleChangePending.user.lastName}</strong>{' '}
+                                    ({roleChangePending.user.schoolId}). This change will be logged in the audit trail.
+                                </p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--color-error)' }}>
+                                    Are you absolutely sure?
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                                You are revoking Overseer access from{' '}
+                                <strong>{roleChangePending.user.firstName} {roleChangePending.user.lastName}</strong>{' '}
+                                ({roleChangePending.user.schoolId}). They will be demoted to a regular User. This change will be logged.
+                            </p>
+                        )}
+                        <div className="flex gap-3 justify-end">
+                            <button className="btn btn-ghost" onClick={() => setRoleChangePending(null)}>Cancel</button>
+                            <button className="btn btn-danger" onClick={handleRoleChange}>
+                                {roleChangePending.newRole === 'Overseer' ? 'Yes, Grant Overseer' : 'Yes, Revoke Access'}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </AdminShell>
     );
@@ -309,10 +390,10 @@ export default function AdminUsersPage() {
    Sub-components
    ---------------------------------------------------------------- */
 const STAT_COLORS = {
-    blue: { bg: 'bg-blue-50', text: 'text-blue-700', num: 'text-blue-700' },
-    green: { bg: 'bg-[var(--color-primary-muted)]', text: 'text-[var(--color-primary)]', num: 'text-[var(--color-primary)]' },
-    red: { bg: 'bg-[var(--color-error-light)]', text: 'text-[var(--color-error)]', num: 'text-[var(--color-error)]' },
-    yellow: { bg: 'bg-amber-50', text: 'text-amber-700', num: 'text-amber-700' },
+    blue:   { bg: 'bg-blue-50',                          text: 'text-blue-700',               num: 'text-blue-700' },
+    green:  { bg: 'bg-[var(--color-primary-muted)]',     text: 'text-[var(--color-primary)]', num: 'text-[var(--color-primary)]' },
+    red:    { bg: 'bg-[var(--color-error-light)]',       text: 'text-[var(--color-error)]',   num: 'text-[var(--color-error)]' },
+    yellow: { bg: 'bg-amber-50',                         text: 'text-amber-700',              num: 'text-amber-700' },
 };
 
 function StatCard({ label, value, color }: { label: string; value: number; color: keyof typeof STAT_COLORS }) {
@@ -324,6 +405,36 @@ function StatCard({ label, value, color }: { label: string; value: number; color
                 <p className={`text-xs font-medium mt-0.5 ${c.text}`}>{label}</p>
             </div>
         </div>
+    );
+}
+
+function Modal({
+    title, children, onClose, danger = false,
+}: {
+    title: string; children: React.ReactNode; onClose: () => void; danger?: boolean;
+}) {
+    return (
+        <>
+            <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-md pointer-events-auto animate-fade-in">
+                    <div
+                        className="flex items-center justify-between px-6 py-4 border-b"
+                        style={{ borderColor: danger ? 'var(--color-error)' : 'var(--color-border)' }}
+                    >
+                        <h3 className="text-base font-semibold" style={{ color: danger ? 'var(--color-error)' : 'var(--color-text)' }}>
+                            {title}
+                        </h3>
+                        <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '4px' }}>
+                            <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4">
+                                <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div className="px-6 py-5">{children}</div>
+                </div>
+            </div>
+        </>
     );
 }
 

@@ -281,7 +281,7 @@ function Sidebar({
                             href={item.href}
                             title={collapsed ? item.label : undefined}
                             className={[
-                                'flex items-center rounded-lg mb-0.5 w-full',
+                                'flex items-center rounded-lg mb-0.5 w-full hover:bg-black/5',
                                 isMounted ? 'transition-all duration-150' : '',
                                 collapsed
                                     ? 'px-0 py-2.5 justify-center'
@@ -358,7 +358,7 @@ function Sidebar({
                                 : 'opacity-100 ml-3'
                         }`}
                     >
-                        Back to Site
+                        Back to Events
                     </span>
                 </Link>
 

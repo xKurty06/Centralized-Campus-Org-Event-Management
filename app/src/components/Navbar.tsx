@@ -160,8 +160,9 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
 
                     {/* Menu items */}
                     <div className="py-1">
-                      <DropdownLink href="/my-events" onClick={() => setProfileOpen(false)} icon={<IconCalendar />}>My Events</DropdownLink>
-                      <DropdownLink href="/profile"   onClick={() => setProfileOpen(false)} icon={<IconProfile />}>View Profile</DropdownLink>
+                      <DropdownLink href="/my-events"        onClick={() => setProfileOpen(false)} icon={<IconCalendar />}>My Events</DropdownLink>
+                      <DropdownLink href="/profile"          onClick={() => setProfileOpen(false)} icon={<IconProfile />}>View Profile</DropdownLink>
+                      <DropdownLink href="/change-password"  onClick={() => setProfileOpen(false)} icon={<IconKey />}>Change Password</DropdownLink>
                       {role === 'officer' && (
                         <DropdownLink href="/manage/dashboard" onClick={() => setProfileOpen(false)} icon={<IconManage />}>Manage Org</DropdownLink>
                       )}
@@ -276,6 +277,15 @@ function IconProfile() {
   return (
     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
       <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconKey() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+      <circle cx="8" cy="10" r="4" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M11.5 10H18M16 8v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }

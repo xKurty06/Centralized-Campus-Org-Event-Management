@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import AdminShell from "@/components/AdminShell";
+import Link from "next/dist/client/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -423,12 +424,13 @@ export default function AdminOrganizationsPage() {
                                                 <div className="flex items-center gap-3">
                                                     <OrgAvatar org={org} />
                                                     <div>
-                                                        <p
-                                                            className="text-sm font-semibold"
+                                                        <Link
+                                                            href={`/admin/organizations/${org.id}`}
+                                                            className="text-sm font-semibold hover:text-[var(--color-primary)] decoration-1 underline-offset-2 transition-all"
                                                             style={{ color: "var(--color-text)" }}
                                                         >
                                                             {org.name}
-                                                        </p>
+                                                        </Link>
                                                         <p
                                                             className="text-xs mt-0.5 max-w-[200px] truncate"
                                                             style={{ color: "var(--color-text-muted)" }}
@@ -482,8 +484,8 @@ export default function AdminOrganizationsPage() {
                                                     <button
                                                         onClick={() => handleToggle(org)}
                                                         className={`btn btn-sm ${org.accreditation_status === "Active"
-                                                                ? "btn-danger"
-                                                                : "btn-outline"
+                                                            ? "btn-danger"
+                                                            : "btn-outline"
                                                             }`}
                                                     >
                                                         {org.accreditation_status === "Active" ? "Suspend" : "Restore"}
