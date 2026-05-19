@@ -25,8 +25,8 @@ import ManageShell from '@/components/ManageShell';
    Types
    ---------------------------------------------------------------- */
 type MembershipStatus = 'Pending' | 'Active' | 'Inactive';
-type StatusFilter     = 'All' | MembershipStatus;
-type FeeFilter        = 'All' | 'Paid' | 'Unpaid';
+type StatusFilter = 'All' | MembershipStatus;
+type FeeFilter = 'All' | 'Paid' | 'Unpaid';
 
 interface Member {
     // Org_Members columns
@@ -60,7 +60,7 @@ const SEED: Member[] = [
         id: 'm-1', userId: 'u-1', orgId: 'org-1',
         membershipStatus: 'Active', paidMembershipFee: true,
         joinedAt: '2025-06-01T08:00:00', updatedAt: '2025-06-02T10:14:00',
-        schoolId: '2022-1-00045', firstName: 'Juan',    lastName: 'Dela Cruz',
+        schoolId: '2022100045', firstName: 'Juan', lastName: 'Dela Cruz',
         email: 'j.delacruz@cvsu.edu.ph', course: 'BSCS', dept: 'CEIT',
         yearLevel: 3, section: 2, isOfficer: true,
     },
@@ -68,7 +68,7 @@ const SEED: Member[] = [
         id: 'm-2', userId: 'u-2', orgId: 'org-1',
         membershipStatus: 'Active', paidMembershipFee: true,
         joinedAt: '2025-06-01T08:00:00', updatedAt: '2025-06-02T10:30:00',
-        schoolId: '2022-1-00078', firstName: 'Maria',   lastName: 'Reyes',
+        schoolId: '2022100078', firstName: 'Maria', lastName: 'Reyes',
         email: 'm.reyes@cvsu.edu.ph', course: 'BSCS', dept: 'CEIT',
         yearLevel: 3, section: 1, isOfficer: true,
     },
@@ -76,7 +76,7 @@ const SEED: Member[] = [
         id: 'm-3', userId: 'u-3', orgId: 'org-1',
         membershipStatus: 'Active', paidMembershipFee: true,
         joinedAt: '2025-06-01T08:00:00', updatedAt: '2025-06-03T09:00:00',
-        schoolId: '2023-1-00112', firstName: 'Carlo',   lastName: 'Mendoza',
+        schoolId: '2023100112', firstName: 'Carlo', lastName: 'Mendoza',
         email: 'c.mendoza@cvsu.edu.ph', course: 'BSIT', dept: 'CEIT',
         yearLevel: 2, section: 3, isOfficer: true,
     },
@@ -84,7 +84,7 @@ const SEED: Member[] = [
         id: 'm-4', userId: 'u-4', orgId: 'org-1',
         membershipStatus: 'Active', paidMembershipFee: false,
         joinedAt: '2025-06-05T11:00:00', updatedAt: '2025-06-05T11:00:00',
-        schoolId: '2023-1-00134', firstName: 'Ana',     lastName: 'Villanueva',
+        schoolId: '2023100134', firstName: 'Ana', lastName: 'Villanueva',
         email: 'a.villanueva@cvsu.edu.ph', course: 'BSIT', dept: 'CEIT',
         yearLevel: 2, section: 1, isOfficer: false,
     },
@@ -92,7 +92,7 @@ const SEED: Member[] = [
         id: 'm-5', userId: 'u-5', orgId: 'org-1',
         membershipStatus: 'Pending', paidMembershipFee: false,
         joinedAt: '2025-06-10T14:00:00', updatedAt: '2025-06-10T14:00:00',
-        schoolId: '2024-1-00067', firstName: 'Lara',    lastName: 'Castro',
+        schoolId: '2024100067', firstName: 'Lara', lastName: 'Castro',
         email: 'l.castro@cvsu.edu.ph', course: 'BSBA', dept: 'CAS',
         yearLevel: 1, section: 1, isOfficer: false,
     },
@@ -100,7 +100,7 @@ const SEED: Member[] = [
         id: 'm-6', userId: 'u-6', orgId: 'org-1',
         membershipStatus: 'Pending', paidMembershipFee: false,
         joinedAt: '2025-06-11T09:30:00', updatedAt: '2025-06-11T09:30:00',
-        schoolId: '2024-1-00089', firstName: 'Nico',    lastName: 'Bautista',
+        schoolId: '2024100089', firstName: 'Nico', lastName: 'Bautista',
         email: 'n.bautista@cvsu.edu.ph', course: 'BSCS', dept: 'CEIT',
         yearLevel: 1, section: 2, isOfficer: false,
     },
@@ -108,7 +108,7 @@ const SEED: Member[] = [
         id: 'm-7', userId: 'u-7', orgId: 'org-1',
         membershipStatus: 'Inactive', paidMembershipFee: true,
         joinedAt: '2024-06-01T08:00:00', updatedAt: '2025-01-15T12:00:00',
-        schoolId: '2021-1-00099', firstName: 'Rico',    lastName: 'Pangilinan',
+        schoolId: '2021100099', firstName: 'Rico', lastName: 'Pangilinan',
         email: 'r.pangilinan@cvsu.edu.ph', course: 'BSCE', dept: 'COE',
         yearLevel: 4, section: 3, isOfficer: false,
     },
@@ -116,7 +116,7 @@ const SEED: Member[] = [
         id: 'm-8', userId: 'u-8', orgId: 'org-1',
         membershipStatus: 'Active', paidMembershipFee: false,
         joinedAt: '2025-06-06T10:00:00', updatedAt: '2025-06-06T10:00:00',
-        schoolId: '2023-2-00045', firstName: 'Sofia',   lastName: 'Navarro',
+        schoolId: '2023200045', firstName: 'Sofia', lastName: 'Navarro',
         email: 's.navarro@cvsu.edu.ph', course: 'BSN', dept: 'CON',
         yearLevel: 2, section: 1, isOfficer: false,
     },
@@ -124,7 +124,7 @@ const SEED: Member[] = [
         id: 'm-9', userId: 'u-9', orgId: 'org-1',
         membershipStatus: 'Active', paidMembershipFee: true,
         joinedAt: '2025-06-04T13:00:00', updatedAt: '2025-06-07T16:00:00',
-        schoolId: '2022-2-00033', firstName: 'Tricia',  lastName: 'Ocampo',
+        schoolId: '2022200033', firstName: 'Tricia', lastName: 'Ocampo',
         email: 't.ocampo@cvsu.edu.ph', course: 'BSAc', dept: 'CBA',
         yearLevel: 3, section: 2, isOfficer: false,
     },
@@ -134,7 +134,7 @@ const SEED: Member[] = [
    Helpers
    ---------------------------------------------------------------- */
 const initials = (f: string, l: string) => (f[0] + l[0]).toUpperCase();
-const fullName  = (m: Pick<Member, 'firstName' | 'lastName'>) => `${m.firstName} ${m.lastName}`;
+const fullName = (m: Pick<Member, 'firstName' | 'lastName'>) => `${m.firstName} ${m.lastName}`;
 
 function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString('en-PH', {
@@ -149,15 +149,15 @@ function fmtDatetime(iso: string) {
 }
 
 const STATUS_BADGE: Record<MembershipStatus, string> = {
-    Active:   'badge-green',
-    Pending:  'badge-yellow',
+    Active: 'badge-green',
+    Pending: 'badge-yellow',
     Inactive: 'badge-gray',
 };
 
 const STATUS_SELECT_STYLE: Record<MembershipStatus, React.CSSProperties> = {
-    Active:   { background: 'var(--color-primary-muted)', color: 'var(--color-primary)',       border: '1.5px solid var(--color-primary-light)' },
-    Pending:  { background: '#fffbeb',                    color: '#92610a',                    border: '1.5px solid #f0a500' },
-    Inactive: { background: 'var(--color-surface-2)',     color: 'var(--color-text-secondary)', border: '1.5px solid var(--color-border)' },
+    Active: { background: 'var(--color-primary-muted)', color: 'var(--color-primary)', border: '1.5px solid var(--color-primary-light)' },
+    Pending: { background: '#fffbeb', color: '#92610a', border: '1.5px solid #f0a500' },
+    Inactive: { background: 'var(--color-surface-2)', color: 'var(--color-text-secondary)', border: '1.5px solid var(--color-border)' },
 };
 
 /* ----------------------------------------------------------------
@@ -167,17 +167,17 @@ export default function ManageMembersPage() {
     const [members, setMembers] = useState<Member[]>(SEED);
 
     // ── Filters
-    const [search,       setSearch]       = useState('');
+    const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState<StatusFilter>('All');
-    const [filterFee,    setFilterFee]    = useState<FeeFilter>('All');
-    const [filterDept,   setFilterDept]   = useState('All');
+    const [filterFee, setFilterFee] = useState<FeeFilter>('All');
+    const [filterDept, setFilterDept] = useState('All');
 
     // ── Add member modal
-    const [showAddModal,  setShowAddModal]  = useState(false);
-    const [addSchoolId,   setAddSchoolId]   = useState('');
-    const [addLoading,    setAddLoading]    = useState(false);
-    const [addError,      setAddError]      = useState('');
-    const [lookupResult,  setLookupResult]  = useState<{
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [addSchoolId, setAddSchoolId] = useState('');
+    const [addLoading, setAddLoading] = useState(false);
+    const [addError, setAddError] = useState('');
+    const [lookupResult, setLookupResult] = useState<{
         firstName: string; lastName: string;
         course: string; dept: string;
         yearLevel: number; section: number;
@@ -187,7 +187,7 @@ export default function ManageMembersPage() {
     const [feeTarget, setFeeTarget] = useState<Member | null>(null);
 
     // ── Status change confirm modal
-    const [statusTarget,  setStatusTarget]  = useState<Member | null>(null);
+    const [statusTarget, setStatusTarget] = useState<Member | null>(null);
     const [pendingStatus, setPendingStatus] = useState<MembershipStatus | null>(null);
 
     // ── Detail drawer
@@ -208,18 +208,18 @@ export default function ManageMembersPage() {
                 m.email.toLowerCase().includes(q) ||
                 m.course.toLowerCase().includes(q);
             const matchStatus = filterStatus === 'All' || m.membershipStatus === filterStatus;
-            const matchFee    = filterFee    === 'All' || (filterFee === 'Paid' ? m.paidMembershipFee : !m.paidMembershipFee);
-            const matchDept   = filterDept   === 'All' || m.dept === filterDept;
+            const matchFee = filterFee === 'All' || (filterFee === 'Paid' ? m.paidMembershipFee : !m.paidMembershipFee);
+            const matchDept = filterDept === 'All' || m.dept === filterDept;
             return matchSearch && matchStatus && matchFee && matchDept;
         });
     }, [members, search, filterStatus, filterFee, filterDept]);
 
     const stats = useMemo(() => ({
-        total:    members.length,
-        active:   members.filter((m) => m.membershipStatus === 'Active').length,
-        pending:  members.filter((m) => m.membershipStatus === 'Pending').length,
+        total: members.length,
+        active: members.filter((m) => m.membershipStatus === 'Active').length,
+        pending: members.filter((m) => m.membershipStatus === 'Pending').length,
         inactive: members.filter((m) => m.membershipStatus === 'Inactive').length,
-        feePaid:  members.filter((m) => m.paidMembershipFee).length,
+        feePaid: members.filter((m) => m.paidMembershipFee).length,
     }), [members]);
 
     /* ── Handlers ── */
@@ -253,22 +253,22 @@ export default function ManageMembersPage() {
         if (!lookupResult) return;
         const now = new Date().toISOString();
         const next: Member = {
-            id:                 `m-${Date.now()}`,
-            userId:             `u-new-${Date.now()}`,
-            orgId:              'org-1',
-            membershipStatus:   'Active',
-            paidMembershipFee:  false,
-            joinedAt:           now,
-            updatedAt:          now,
-            schoolId:           addSchoolId.trim(),
-            firstName:          lookupResult.firstName,
-            lastName:           lookupResult.lastName,
-            email:              `${addSchoolId.replace(/-/g, '.')}@cvsu.edu.ph`,
-            course:             lookupResult.course,
-            dept:               lookupResult.dept,
-            yearLevel:          lookupResult.yearLevel,
-            section:            lookupResult.section,
-            isOfficer:          false,
+            id: `m-${Date.now()}`,
+            userId: `u-new-${Date.now()}`,
+            orgId: 'org-1',
+            membershipStatus: 'Active',
+            paidMembershipFee: false,
+            joinedAt: now,
+            updatedAt: now,
+            schoolId: addSchoolId.trim(),
+            firstName: lookupResult.firstName,
+            lastName: lookupResult.lastName,
+            email: `${addSchoolId.replace(/-/g, '.')}@cvsu.edu.ph`,
+            course: lookupResult.course,
+            dept: lookupResult.dept,
+            yearLevel: lookupResult.yearLevel,
+            section: lookupResult.section,
+            isOfficer: false,
         };
         setMembers((prev) => [next, ...prev]);
         closeAddModal();
@@ -277,7 +277,7 @@ export default function ManageMembersPage() {
 
     function handleFeeToggle() {
         if (!feeTarget) return;
-        const now  = new Date().toISOString();
+        const now = new Date().toISOString();
         const next = !feeTarget.paidMembershipFee;
         setMembers((prev) =>
             prev.map((m) =>
@@ -323,40 +323,54 @@ export default function ManageMembersPage() {
        RENDER
     ================================================================ */
     return (
-        <ManageShell pageTitle="Members">
+        <ManageShell pageTitle="Salikop">
             <main className="flex flex-col gap-6 animate-fade-in">
 
                 {/* ── Page Header ── */}
-                <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex flex-col w-full">
                     <div>
+                        {/* Removed mb-1 and added leading-none to pull the title closer */}
                         <p
-                            className="text-xs font-semibold uppercase tracking-widest mb-1"
+                            className="text-xs font-semibold uppercase tracking-widest leading-none"
                             style={{ color: 'var(--color-text-muted)' }}
                         >
-                            {ORG_NAME}
+                            Manage
                         </p>
-                        <h1
-                            className="text-[22px] font-bold tracking-tight"
-                            style={{ color: 'var(--color-text)' }}
-                        >
-                            Member Roster
-                        </h1>
-                        <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+
+                        {/* New container wrapping the title and button to align them perfectly left and right */}
+                        <div className="flex flex-row items-center justify-between gap-4 w-full mt-0.2">
+                            <div>
+                                <h1
+                                    className="text-[22px] font-bold tracking-tight leading-none"
+                                    style={{ color: 'var(--color-text)' }}
+                                >
+                                    Member Roster
+                                </h1>
+                            </div>
+
+                            <button
+                                className="flex items-center gap-2 text-[13px] font-semibold bg-green-700 hover:bg-green-800 text-white px-3 py-2 rounded-lg transition-colors no-underline flex-shrink-0"
+                                onClick={() => setShowAddModal(true)}
+                            >
+                                <IconPlus /> Add Member
+                            </button>
+                        </div>
+
+                        {/* Description paragraph sits cleanly below the title-button row */}
+                        <p className="text-sm mt-2" style={{ color: 'var(--color-text-secondary)' }}>
                             Manage membership status and fee payments for your organization.
                         </p>
                     </div>
-                    <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-                        <IconPlus /> Add Member
-                    </button>
                 </div>
+
 
                 {/* ── Stat Cards ── */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    <StatCard label="Total"    value={stats.total}                         color="blue"   />
-                    <StatCard label="Active"   value={stats.active}                        color="green"  />
-                    <StatCard label="Pending"  value={stats.pending}                       color="yellow" />
-                    <StatCard label="Inactive" value={stats.inactive}                      color="gray"   />
-                    <StatCard label="Fee Paid" value={`${stats.feePaid} / ${stats.total}`} color="teal"   />
+                    <StatCard label="Total" value={stats.total} color="blue" />
+                    <StatCard label="Active" value={stats.active} color="green" />
+                    <StatCard label="Pending" value={stats.pending} color="yellow" />
+                    <StatCard label="Inactive" value={stats.inactive} color="gray" />
+                    <StatCard label="Fee Paid" value={`${stats.feePaid} / ${stats.total}`} color="teal" />
                 </div>
 
                 {/* ── Filters ── */}
@@ -488,7 +502,7 @@ export default function ManageMembersPage() {
                             <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    placeholder="e.g. 2023-1-00123"
+                                    placeholder="e.g. 202405123"
                                     value={addSchoolId}
                                     onChange={(e) => {
                                         setAddSchoolId(e.target.value);
@@ -702,9 +716,9 @@ export default function ManageMembersPage() {
                                 <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
                                     Student Info
                                 </p>
-                                <DrawerField label="School ID"      value={detailMember.schoolId}                                      mono />
-                                <DrawerField label="Course"         value={detailMember.course} />
-                                <DrawerField label="Department"     value={detailMember.dept} />
+                                <DrawerField label="School ID" value={detailMember.schoolId} mono />
+                                <DrawerField label="Course" value={detailMember.course} />
+                                <DrawerField label="Department" value={detailMember.dept} />
                                 <DrawerField label="Year / Section" value={`Year ${detailMember.yearLevel} · Section ${detailMember.section}`} />
                             </section>
 
@@ -765,7 +779,7 @@ export default function ManageMembersPage() {
                                     </div>
                                 </div>
 
-                                <DrawerField label="Joined At"    value={fmtDatetime(detailMember.joinedAt)} />
+                                <DrawerField label="Joined At" value={fmtDatetime(detailMember.joinedAt)} />
                                 <DrawerField label="Last Updated" value={fmtDatetime(detailMember.updatedAt)} />
                             </section>
                         </div>
@@ -890,11 +904,11 @@ function MemberRow({
    Shared small components
 ================================================================ */
 const STAT_COLORS = {
-    blue:   { bg: 'bg-blue-50',                      text: 'text-blue-700',                        num: 'text-blue-700' },
-    green:  { bg: 'bg-[var(--color-primary-muted)]', text: 'text-[var(--color-primary)]',           num: 'text-[var(--color-primary)]' },
-    yellow: { bg: 'bg-amber-50',                     text: 'text-amber-700',                       num: 'text-amber-700' },
-    gray:   { bg: 'bg-[var(--color-surface-2)]',     text: 'text-[var(--color-text-secondary)]',   num: 'text-[var(--color-text-secondary)]' },
-    teal:   { bg: 'bg-teal-50',                      text: 'text-teal-700',                        num: 'text-teal-700' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', num: 'text-blue-700' },
+    green: { bg: 'bg-[var(--color-primary-muted)]', text: 'text-[var(--color-primary)]', num: 'text-[var(--color-primary)]' },
+    yellow: { bg: 'bg-amber-50', text: 'text-amber-700', num: 'text-amber-700' },
+    gray: { bg: 'bg-[var(--color-surface-2)]', text: 'text-[var(--color-text-secondary)]', num: 'text-[var(--color-text-secondary)]' },
+    teal: { bg: 'bg-teal-50', text: 'text-teal-700', num: 'text-teal-700' },
 };
 
 function StatCard({ label, value, color }: {
@@ -937,8 +951,8 @@ function MemberSummary({ member }: { member: Member }) {
 
 function StatusExplainer({ current, next }: { current: MembershipStatus; next: MembershipStatus }) {
     const copy: Record<MembershipStatus, string> = {
-        Active:   'The student will become a full, active member with access to member-only events.',
-        Pending:  'The student will be marked as pending clearance. They will not have access to member-only events until activated.',
+        Active: 'The student will become a full, active member with access to member-only events.',
+        Pending: 'The student will be marked as pending clearance. They will not have access to member-only events until activated.',
         Inactive: 'The student will lose their member standing. Access to member-only events will be revoked immediately.',
     };
     return (

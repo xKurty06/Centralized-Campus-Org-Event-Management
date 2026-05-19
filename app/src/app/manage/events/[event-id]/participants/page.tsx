@@ -254,8 +254,8 @@ export default function ParticipantsPage() {
     ];
 
     return (
-        <ManageShell pageTitle={MOCK_EVENT.title}>
-            <div className="flex flex-col gap-6">
+        <ManageShell pageTitle="Salikop">
+            <div className="flex flex-col gap-6 animate-fade-in">
 
                 {/* Header */}
                 <div className="flex flex-col gap-4">

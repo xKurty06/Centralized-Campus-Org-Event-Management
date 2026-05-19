@@ -451,9 +451,9 @@ export default function EditEventPage() {
     }
 
     return (
-        <ManageShell pageTitle="Edit Event">
+        <ManageShell pageTitle="Salikop">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5 animate-fade-in">
                 <div className="flex items-center gap-3">
                     <div>
                         <div>

@@ -7,13 +7,13 @@ import Navbar from '@/components/Navbar';
 /* ----------------------------------------------------------------
    Types
    ---------------------------------------------------------------- */
-type OrgCategory = 'Academic' | 'Non-Academic' | 'Religious';
+type OrgCategory = 'All' | 'Academic' | 'Non-Academic' | 'Religious';
 
 interface Organization {
   id: string;
   name: string;
   acronym: string;
-  category: OrgCategory;
+  category: Exclude<OrgCategory, 'All'>; // Ensures data maps to sub-categories
   description: string;
   adviser: string;
   members: number;
@@ -40,7 +40,7 @@ const MOCK_ORGS: Organization[] = [
   { id: 'uccp', name: 'United Campus Catholic Parish', acronym: 'UCCP', category: 'Religious', description: 'Serving the Catholic student community through mass, retreats, religious formations, and charitable activities rooted in Catholic social teaching.', adviser: 'Fr. Miguel Ramos', members: 90, eventsThisYear: 8, status: 'Suspended', color: 'bg-gray-100 text-gray-500' },
 ];
 
-const CATEGORY_TABS: { value: OrgCategory | 'All'; label: string }[] = [
+const CATEGORY_TABS: { value: OrgCategory; label: string }[] = [
   { value: 'All', label: 'All' },
   { value: 'Academic', label: 'Academic' },
   { value: 'Non-Academic', label: 'Non-Academic' },
@@ -48,6 +48,7 @@ const CATEGORY_TABS: { value: OrgCategory | 'All'; label: string }[] = [
 ];
 
 const CATEGORY_META: Record<OrgCategory, { description: string; color: string; bg: string }> = {
+  'All': { description: 'All accredited campus organizations', color: 'text-gray-700', bg: 'bg-gray-100 border-gray-300' },
   'Academic': { description: 'Department-based and discipline-specific organizations', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
   'Non-Academic': { description: 'Student government, civic, cultural, and special interest groups', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
   'Religious': { description: 'Faith-based communities and campus ministry organizations', color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
@@ -196,22 +197,23 @@ function CategoryHeader({ category }: { category: OrgCategory }) {
    ---------------------------------------------------------------- */
 export default function OrganizationsPage() {
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<OrgCategory | 'All'>('All');
+  const [activeTab, setActiveTab] = useState<OrgCategory>('All');
   const [statusFilter, setStatusFilter] = useState('');
 
-  const filtered = useMemo(() => {
+  // 1. Base filter applying ONLY search and status constraints (used to compute stable counts)
+  const baseFiltered = useMemo(() => {
     const q = search.toLowerCase();
     return MOCK_ORGS.filter((o) =>
       (!search || o.name.toLowerCase().includes(q) || o.acronym.toLowerCase().includes(q)) &&
-      (activeTab === 'All' || o.category === activeTab) &&
       (!statusFilter || o.status === statusFilter)
     );
-  }, [search, activeTab, statusFilter]);
+  }, [search, statusFilter]);
 
-  const grouped = useMemo(() => {
-    const cats: OrgCategory[] = ['Academic', 'Non-Academic', 'Religious'];
-    return cats.map((cat) => ({ category: cat, orgs: filtered.filter((o) => o.category === cat) })).filter((g) => g.orgs.length > 0);
-  }, [filtered]);
+  // 2. Final display filter that isolates by category tab selection
+  const filtered = useMemo(() => {
+    if (activeTab === 'All') return baseFiltered;
+    return baseFiltered.filter((o) => o.category === activeTab);
+  }, [baseFiltered, activeTab]);
 
   const hasFilters = !!(search || statusFilter || activeTab !== 'All');
 
@@ -221,7 +223,7 @@ export default function OrganizationsPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '2021-00142', department: 'BSCS 3A' }} />
 
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6">
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
 
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -296,17 +298,22 @@ export default function OrganizationsPage() {
         {/* ── Category tabs ── */}
         <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit">
           {CATEGORY_TABS.map((tab) => {
-            const count = tab.value === 'All' ? filtered.length : filtered.filter((o) => o.category === tab.value).length;
+            // Count calculation checks baseFiltered (ignoring the tab selection itself)
+            const count = tab.value === 'All' 
+              ? baseFiltered.length 
+              : baseFiltered.filter((o) => o.category === tab.value).length;
+              
+            const isSelected = activeTab === tab.value;
             return (
               <button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 cursor-pointer whitespace-nowrap
-                  ${activeTab === tab.value ? 'bg-green-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                  ${isSelected ? 'bg-green-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
               >
                 {tab.label}
-                <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full
-                  ${activeTab === tab.value ? 'bg-white bg-opacity-20 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full transition-colors
+                  ${isSelected ? 'bg-white text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {count}
                 </span>
               </button>
@@ -326,20 +333,9 @@ export default function OrganizationsPage() {
             <p className="text-[13px] text-gray-400 max-w-xs">Try adjusting your search or clearing the filters.</p>
             <button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:underline cursor-pointer">Clear all filters</button>
           </div>
-        ) : activeTab === 'All' ? (
-          <div className="flex flex-col gap-8">
-            {grouped.map(({ category, orgs }) => (
-              <div key={category}>
-                <CategoryHeader category={category} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {orgs.map((org) => <OrgCard key={org.id} org={org} />)}
-                </div>
-              </div>
-            ))}
-          </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <CategoryHeader category={activeTab as OrgCategory} />
+            <CategoryHeader category={activeTab} />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map((org) => <OrgCard key={org.id} org={org} />)}
             </div>

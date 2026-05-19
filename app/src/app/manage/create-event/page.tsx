@@ -195,8 +195,8 @@ export default function CreateEventPage() {
   }
 
   return (
-    <ManageShell pageTitle="Create Event">
-      <div className="flex flex-col gap-6">
+    <ManageShell pageTitle="Salikop">
+      <div className="flex flex-col gap-6 animate-fade-in">
 
         {/* ── Header ── */}
         <div>

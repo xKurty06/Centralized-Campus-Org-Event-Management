@@ -285,7 +285,7 @@ export default function EventsPage() {
         user={{ name: 'Zean Kurt Balboobs', schoolId: '20246769', department: 'BSCS 3A' }}
       />
 
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6">
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
 
         {/* ── Page header ── */}
         <div className="flex flex-col gap-1">

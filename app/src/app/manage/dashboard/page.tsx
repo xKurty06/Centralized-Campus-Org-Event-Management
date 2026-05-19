@@ -7,7 +7,7 @@ import ManageShell from '@/components/ManageShell';
 /* ----------------------------------------------------------------
    Types — aligned to DB schema
    ---------------------------------------------------------------- */
-type EventStatus   = 'Upcoming' | 'Open' | 'Full' | 'Closed' | 'Completed' | 'Cancelled';
+type EventStatus = 'Upcoming' | 'Open' | 'Full' | 'Closed' | 'Completed' | 'Cancelled';
 type EventCategory = 'Workshop' | 'Seminar' | 'Competition' | 'Activity' | 'Training' | 'Outreach' | 'Cultural' | 'Other';
 
 interface ManagedEvent {
@@ -97,12 +97,12 @@ const CATEGORY_COLORS: Record<EventCategory, string> = {
 };
 
 const STATUS_CONFIG: Record<EventStatus, { label: string; style: string }> = {
-  Upcoming:  { label: 'Upcoming',  style: 'bg-blue-50 text-blue-700 border-blue-200'    },
-  Open:      { label: 'Open',      style: 'bg-green-50 text-green-700 border-green-200'  },
-  Full:      { label: 'Full',      style: 'bg-red-50 text-red-600 border-red-200'        },
-  Closed:    { label: 'Closed',    style: 'bg-gray-100 text-gray-500 border-gray-200'    },
-  Completed: { label: 'Completed', style: 'bg-gray-100 text-gray-500 border-gray-200'    },
-  Cancelled: { label: 'Cancelled', style: 'bg-red-50 text-red-500 border-red-200'        },
+  Upcoming: { label: 'Upcoming', style: 'bg-blue-50 text-blue-700 border-blue-200' },
+  Open: { label: 'Open', style: 'bg-green-50 text-green-700 border-green-200' },
+  Full: { label: 'Full', style: 'bg-red-50 text-red-600 border-red-200' },
+  Closed: { label: 'Closed', style: 'bg-gray-100 text-gray-500 border-gray-200' },
+  Completed: { label: 'Completed', style: 'bg-gray-100 text-gray-500 border-gray-200' },
+  Cancelled: { label: 'Cancelled', style: 'bg-red-50 text-red-500 border-red-200' },
 };
 
 /* ----------------------------------------------------------------
@@ -114,9 +114,9 @@ function StatCard({ icon, value, label, sub, color = 'text-gray-900', bg = 'bg-w
 }) {
   const iconBg =
     bg.includes('green') ? 'bg-green-100 text-green-700' :
-    bg.includes('amber') ? 'bg-amber-100 text-amber-700' :
-    bg.includes('blue')  ? 'bg-blue-100 text-blue-700'   :
-    bg.includes('red')   ? 'bg-red-100 text-red-600'     : 'bg-gray-100 text-gray-500';
+      bg.includes('amber') ? 'bg-amber-100 text-amber-700' :
+        bg.includes('blue') ? 'bg-blue-100 text-blue-700' :
+          bg.includes('red') ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500';
 
   return (
     <div className={`rounded-xl border ${bg} p-4 flex flex-col gap-3`}>
@@ -136,9 +136,9 @@ function StatCard({ icon, value, label, sub, color = 'text-gray-900', bg = 'bg-w
    Event card
    ---------------------------------------------------------------- */
 function EventCard({ event }: { event: ManagedEvent }) {
-  const fill   = Math.min(Math.round((event.total_registered / event.capacity) * 100), 100);
+  const fill = Math.min(Math.round((event.total_registered / event.capacity) * 100), 100);
   const isFull = fill >= 100;
-  const days   = daysUntil(event.start_date);
+  const days = daysUntil(event.start_date);
   const status = STATUS_CONFIG[event.status];
 
   return (
@@ -242,33 +242,31 @@ function EventCard({ event }: { event: ManagedEvent }) {
 export default function ManageDashboardPage() {
   const [tab, setTab] = useState<'active' | 'all'>('active');
 
-  const org            = MOCK_ORG;
-  const totalRegistered    = MOCK_EVENTS.reduce((s, e) => s + e.total_registered, 0);
-  const totalPending       = MOCK_EVENTS.reduce((s, e) => s + e.total_pending, 0);
-  const totalProofsReview  = MOCK_EVENTS.reduce((s, e) => s + e.proofs_pending_review, 0);
-  const activeEvents       = MOCK_EVENTS.filter((e) => e.status === 'Open' || e.status === 'Upcoming');
-  const displayed          = tab === 'active' ? activeEvents : MOCK_EVENTS;
+  const org = MOCK_ORG;
+  const totalRegistered = MOCK_EVENTS.reduce((s, e) => s + e.total_registered, 0);
+  const totalPending = MOCK_EVENTS.reduce((s, e) => s + e.total_pending, 0);
+  const totalProofsReview = MOCK_EVENTS.reduce((s, e) => s + e.proofs_pending_review, 0);
+  const activeEvents = MOCK_EVENTS.filter((e) => e.status === 'Open' || e.status === 'Upcoming');
+  const displayed = tab === 'active' ? activeEvents : MOCK_EVENTS;
 
   return (
-    <ManageShell pageTitle="Dashboard">
-      <div className="flex flex-col gap-6">
+    <ManageShell pageTitle="Salikop">
+      <div className="flex flex-col gap-6 animate-fade-in">
 
         {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 w-full">
           <div>
             <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wide">Manage</p>
-            <h1 className="text-[26px] font-bold text-gray-900 tracking-tight mt-0.5">Dashboard</h1>
+
+            {/* New container wrapping the title and button to align them left and right */}
+            <div className="flex flex-row justify-between items-center w-full mt-0.5">
+              <div>
+                <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Dashboard</h1>
+              </div>
+            </div>
           </div>
-          <Link
-            href="/manage/create-event"
-            className="flex items-center gap-2 text-[13px] font-semibold bg-green-700 hover:bg-green-800 text-white px-4 py-2.5 rounded-lg transition-colors no-underline self-start flex-shrink-0"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-              <path d="M10 5v10M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Create event
-          </Link>
         </div>
+
 
         {/* ── Org identity strip ── */}
         <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -306,7 +304,7 @@ export default function ManageDashboardPage() {
         {org.accreditation_status === 'Suspended' && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3.5">
             <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none">
-              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <div>
               <p className="text-[13px] font-semibold text-red-700">Organization is suspended</p>
@@ -319,7 +317,7 @@ export default function ManageDashboardPage() {
         {totalProofsReview > 0 && (
           <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3.5">
             <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none">
-              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <p className="text-[13px] font-semibold text-blue-800">
               {totalProofsReview} payment proof{totalProofsReview > 1 ? 's' : ''} awaiting your review —{' '}
@@ -330,10 +328,10 @@ export default function ManageDashboardPage() {
 
         {/* ── Stat cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon={<IconCalendar />} value={activeEvents.length}  label="Active events"      sub="Open + Upcoming"         color="text-green-700" bg="bg-green-50 border-green-200"  />
-          <StatCard icon={<IconUsers />}    value={totalRegistered}       label="Total registrations" sub="Across all events"        />
-          <StatCard icon={<IconClock />}    value={totalPending}          label="Pending payments"   sub="Awaiting confirmation"    color="text-amber-700" bg="bg-amber-50 border-amber-200"  />
-          <StatCard icon={<IconProof />}    value={totalProofsReview}     label="Proofs to review"   sub="Online payment uploads"   color="text-blue-700"  bg="bg-blue-50 border-blue-200"    />
+          <StatCard icon={<IconCalendar />} value={activeEvents.length} label="Active events" sub="Open + Upcoming" color="text-green-700" bg="bg-green-50 border-green-200" />
+          <StatCard icon={<IconUsers />} value={totalRegistered} label="Total registrations" sub="Across all events" />
+          <StatCard icon={<IconClock />} value={totalPending} label="Pending payments" sub="Awaiting confirmation" color="text-amber-700" bg="bg-amber-50 border-amber-200" />
+          <StatCard icon={<IconProof />} value={totalProofsReview} label="Proofs to review" sub="Online payment uploads" color="text-blue-700" bg="bg-blue-50 border-blue-200" />
         </div>
 
         {/* ── Events section ── */}
@@ -343,7 +341,7 @@ export default function ManageDashboardPage() {
             <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
               {([
                 { key: 'active', label: 'Active', count: activeEvents.length },
-                { key: 'all',    label: 'All',    count: MOCK_EVENTS.length  },
+                { key: 'all', label: 'All', count: MOCK_EVENTS.length },
               ] as const).map((t) => (
                 <button
                   key={t.key}
@@ -364,7 +362,7 @@ export default function ManageDashboardPage() {
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center bg-white rounded-xl border border-gray-200">
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
                 <svg className="w-7 h-7 text-gray-300" viewBox="0 0 24 24" fill="none">
-                  <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
               <p className="text-[14px] font-semibold text-gray-600">No events yet</p>
@@ -382,9 +380,9 @@ export default function ManageDashboardPage() {
         {/* ── Quick nav ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { href: '/manage/create-event', icon: <IconAdd />,    label: 'Create event',     desc: 'Publish a new campus event'          },
-            { href: '/manage/org-profile',  icon: <IconOrgEdit />,label: 'Edit org profile',  desc: 'Update name, logo, and description' },
-            { href: '/events',              icon: <IconEye />,    label: 'View public page',  desc: "See your org's events as students"   },
+            { href: '/manage/create-event', icon: <IconAdd />, label: 'Create event', desc: 'Publish a new campus event' },
+            { href: '/manage/org-profile', icon: <IconOrgEdit />, label: 'Edit org profile', desc: 'Update name, logo, and description' },
+            { href: '/events', icon: <IconEye />, label: 'View public page', desc: "See your org's events as students" },
           ].map((item) => (
             <Link
               key={item.href}
@@ -399,7 +397,7 @@ export default function ManageDashboardPage() {
                 <p className="text-[11px] text-gray-400">{item.desc}</p>
               </div>
               <svg className="w-4 h-4 text-gray-300 group-hover:text-green-500 transition-colors ml-auto flex-shrink-0" viewBox="0 0 20 20" fill="none">
-                <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
           ))}
@@ -412,13 +410,13 @@ export default function ManageDashboardPage() {
 /* ----------------------------------------------------------------
    Icons
    ---------------------------------------------------------------- */
-function IconCalendar() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M6 2v2M14 2v2M3 8h14M5 4h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function IconUsers()    { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function IconClock()    { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M10 6v4.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function IconProof()    { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M8 11h4M8 14h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function IconPin()      { return <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>; }
-function IconScan()     { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M2 7V4a2 2 0 012-2h3M13 2h3a2 2 0 012 2v3M18 13v3a2 2 0 01-2 2h-3M7 18H4a2 2 0 01-2-2v-3M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function IconEdit()     { return <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-9.9 9.9-3.414.586.586-3.414 9.9-9.9z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
-function IconAdd()      { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M10 5v10M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
-function IconOrgEdit()  { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 4h8l4 4v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function IconEye()      { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M2 10c1.73-2.49 4.58-5 8-5s6.27 2.51 8 5c-1.73 2.49-4.58 5-8 5s-6.27-2.51-8-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/></svg>; }
+function IconCalendar() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M6 2v2M14 2v2M3 8h14M5 4h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
+function IconUsers() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
+function IconClock() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" /><path d="M10 6v4.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
+function IconProof() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><path d="M8 11h4M8 14h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
+function IconPin() { return <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>; }
+function IconScan() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M2 7V4a2 2 0 012-2h3M13 2h3a2 2 0 012 2v3M18 13v3a2 2 0 01-2 2h-3M7 18H4a2 2 0 01-2-2v-3M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
+function IconEdit() { return <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-9.9 9.9-3.414.586.586-3.414 9.9-9.9z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function IconAdd() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M10 5v10M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function IconOrgEdit() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 4h8l4 4v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
+function IconEye() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M2 10c1.73-2.49 4.58-5 8-5s6.27 2.51 8 5c-1.73 2.49-4.58 5-8 5s-6.27-2.51-8-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" /></svg>; }

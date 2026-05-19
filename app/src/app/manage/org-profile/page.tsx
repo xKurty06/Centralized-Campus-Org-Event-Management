@@ -143,46 +143,51 @@ export default function ManageOrgProfilePage() {
   const catMeta = CATEGORY_META[org.category];
 
   return (
-    <ManageShell pageTitle="Org Profile">
-      <div className="flex flex-col gap-6">
+    <ManageShell pageTitle="Salikop">
+      <div className="flex flex-col gap-6 animate-fade-in">
 
         {/* ── Header ── */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 
           {/* LEFT */}
-          <div className="flex flex-col gap-3">
-            <Link
-              href="/manage/dashboard"
-              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M15 19l-7-7 7-7"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              Back to Dashboard
-            </Link>
-
-            <h1 className="text-[22px] font-bold text-[var(--color-text)] tracking-tight">
-              Edit Org Profile
-            </h1>
+          <div className="w-full min-w-full">
+            <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wide">Manage</p>
+            <div className="flex flex-row justify-between items-center w-full">
+              <div>
+                <h1 className="text-[22px] font-bold text-[var(--color-text)] tracking-tight">
+                  Edit Org Profile
+                </h1>
+              </div>
+              <div>
+                <ConnectionBadge isOnline={isOnline} />
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT */}
-          {/* RIGHT */}
-          <div className="flex flex-col items-start lg:items-end gap-2 self-start lg:self-auto">
 
-            <ConnectionBadge isOnline={isOnline} />
 
+        </div>
+
+
+        {/* ── Accreditation read-only strip ── */}
+        <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {org.accreditation_status === 'Active' ? (
+              <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Active · Accredited
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />Suspended
+              </span>
+            )}
+            <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full border ${catMeta.bg} ${catMeta.color}`}>
+              {org.category}
+            </span>
             <Link
               href={`/organizations/${org.id}`}
               target="_blank"
-              className="flex items-center gap-2 text-[13px] font-semibold text-text-secondary border border-border hover:bg-surface-2 hover:text-text px-4 py-2 rounded-lg transition-all no-underline"
+              className="flex items-center gap-1.5 text-[12px] font-semibold text-text-secondary border border-border hover:bg-surface-2 hover:text-text px-3 py-1.5 rounded-full transition-all no-underline"
             >
               <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
                 <path
@@ -204,25 +209,6 @@ export default function ManageOrgProfilePage() {
             </Link>
           </div>
 
-        </div>
-
-
-        {/* ── Accreditation read-only strip ── */}
-        <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            {org.accreditation_status === 'Active' ? (
-              <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Active · Accredited
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />Suspended
-              </span>
-            )}
-            <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full border ${catMeta.bg} ${catMeta.color}`}>
-              {org.category}
-            </span>
-          </div>
           <div className="text-right">
             <p className="text-[12px] text-gray-500">Last updated: <span className="font-medium text-gray-700">{formatDate(org.accredited_at)}</span></p>
             <p className="text-[11px] text-gray-400 mt-0.5">Accreditation is managed by OSA</p>

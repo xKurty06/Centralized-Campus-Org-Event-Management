@@ -331,7 +331,7 @@ function GreenCard({
           )}
         </div>
       </div>
-    </ManageShell>
+    </div>
   );
 }
 
@@ -690,55 +690,55 @@ export default function EntrancePanelPage() {
   /* ── Render ── */
   return (
     <>
-      <Navbar
-        role="officer"
-        user={{
-          name:       'Officer Name',
-          schoolId:   '2021-1-00001',
-          department: 'Student Organization',
-        }}
-      />
-
-      <div className="page-shell">
-        <div className="mx-auto max-w-[1280px] px-6 py-8 lg:px-10">
+      <ManageShell>
+        <div className="flex flex-col gap-6 animate-fade-in">
 
           {/* ── Page Header ── */}
-          <div className="flex flex-col gap-4 mb-8">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <Link
-                href="/manage/dashboard"
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline flex-shrink-0 px-0.5 py-1"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Back to Dashboard
-              </Link>
+<div className="flex flex-col gap-4 mb-8">
+  <div className="flex items-center justify-between gap-3 flex-wrap">
+    <Link
+      href="/manage/dashboard"
+      className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline flex-shrink-0 px-0.5 py-1"
+    >
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Back to Dashboard
+    </Link>
+  </div>
 
-              <ConnectionBadge isOnline={isOnline} />
-            </div>
+  <div className="flex-1">
+    {/* Combined title and ConnectionBadge row */}
+    <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
+      {/* Group title and entrance badge on the left */}
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
+        <span className="badge badge-green">Entrance Panel</span>
+      </div>
+      
+      {/* Aligned ConnectionBadge on the right */}
+      <div className="flex-shrink-0">
+        <ConnectionBadge isOnline={isOnline} />
+      </div>
+    </div>
 
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-1">
-                <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
-                <span className="badge badge-green">Entrance Panel</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-text-muted)]">
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5"/>
-                  </svg>
-                  {event.venue}
-                </span>
-                <span>·</span>
-                <span>{formatDate(event.startDate)}</span>
-                <span>·</span>
-                {/* Live clock */}
-                <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
-              </div>
-            </div>
-          </div>
+    <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-text-muted)]">
+      <span className="flex items-center gap-1">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+          <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+        {event.venue}
+      </span>
+      <span>·</span>
+      <span>{formatDate(event.startDate)}</span>
+      <span>·</span>
+      {/* Live clock */}
+      <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
+    </div>
+  </div>
+</div>
+
 
           {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
@@ -877,7 +877,7 @@ export default function EntrancePanelPage() {
             </div>
           </div>
         </div>
-      </div>
+      </ManageShell>
 
       {/* ── Toast ── */}
       {toast && (
