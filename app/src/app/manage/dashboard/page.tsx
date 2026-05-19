@@ -33,6 +33,10 @@ interface OrgSummary {
   adviser: string;
 }
 
+interface DashboardStats {
+  activeMembers: number; // Org_Members rows where membership_status = 'Active'
+}
+
 /* ----------------------------------------------------------------
    Mock data — replace with GET /api/manage/dashboard
    ---------------------------------------------------------------- */
@@ -42,6 +46,11 @@ const MOCK_ORG: OrgSummary = {
   acronym: 'CSSO',
   accreditation_status: 'Active',
   adviser: 'Prof. Maria Santos',
+};
+
+// TODO: merge into GET /api/manage/dashboard/stats response shape
+const MOCK_STATS: DashboardStats = {
+  activeMembers: 38,
 };
 
 const ALL_EVENTS: ManagedEvent[] = [
@@ -122,7 +131,8 @@ function StatCard({ icon, value, label, sub, color = 'text-gray-900', bg = 'bg-w
     bg.includes('green') ? 'bg-green-100 text-green-700' :
       bg.includes('amber') ? 'bg-amber-100 text-amber-700' :
         bg.includes('blue') ? 'bg-blue-100 text-blue-700' :
-          bg.includes('red') ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500';
+          bg.includes('violet') ? 'bg-violet-100 text-violet-700' :
+            bg.includes('red') ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500';
 
   return (
     <div className={`rounded-xl border ${bg} p-4 flex flex-col gap-3`}>
@@ -256,6 +266,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
    ---------------------------------------------------------------- */
 export default function ManageDashboardPage() {
   const org = MOCK_ORG;
+  const { activeMembers } = MOCK_STATS;
 
   // Dashboard metrics across all events
   const totalRegistered = ALL_EVENTS.reduce((s, e) => s + e.total_registered, 0);
@@ -334,11 +345,12 @@ export default function ManageDashboardPage() {
         )}
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatCard icon={<IconCalendar />} value={activeEvents.length} label="Active events" sub="Open + Upcoming" color="text-green-700" bg="bg-green-50 border-green-200" />
           <StatCard icon={<IconUsers />} value={totalRegistered} label="Total registrations" sub="Across all events" />
           <StatCard icon={<IconClock />} value={totalPending} label="Pending payments" sub="Awaiting confirmation" color="text-amber-700" bg="bg-amber-50 border-amber-200" />
           <StatCard icon={<IconProof />} value={totalProofsReview} label="Proofs to review" sub="Online payment uploads" color="text-blue-700" bg="bg-blue-50 border-blue-200" />
+          <StatCard icon={<IconMember />} value={activeMembers} label="Active members" sub="Paid & cleared roster" color="text-violet-700" bg="bg-violet-50 border-violet-200" />
         </div>
 
         {/* ── Recent active events ── */}
@@ -404,9 +416,10 @@ export default function ManageDashboardPage() {
         </div>
 
         {/* ── Quick nav ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           {[
             { href: '/manage/create-event', icon: <IconAdd />, label: 'Create event', desc: 'Publish a new campus event' },
+            { href: '/manage/members', icon: <IconMember />, label: 'Members', desc: 'Manage roster and membership dues' },
             { href: '/manage/org-profile', icon: <IconOrgEdit />, label: 'Edit org profile', desc: 'Update name, logo, and description' },
             { href: '/events', icon: <IconEye />, label: 'View public page', desc: "See your org's events as students" },
           ].map(item => (
@@ -437,6 +450,7 @@ export default function ManageDashboardPage() {
 /* ----------------------------------------------------------------
    Icons
    ---------------------------------------------------------------- */
+function IconMember() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M9 10a4 4 0 100-8 4 4 0 000 8zM2 18a7 7 0 0114 0H2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><path d="M14 8l1.5 1.5L18 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function IconCalendar() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M6 2v2M14 2v2M3 8h14M5 4h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
 function IconUsers() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
 function IconClock() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" /><path d="M10 6v4.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }

@@ -86,7 +86,83 @@ const NAV: NavItem[] = [
             </svg>
         ),
     },
+    {
+        href: '/admin/audit',
+        label: 'Audit Logs',
+        icon: (
+            <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M12 7v5l4 2" />
+            </svg>
+        ),
+    }
 ];
+function IconDashboard() {
+    return (
+        NAV[0].icon
+    );
+}
+function IconOrg() {
+    return (
+        NAV[1].icon
+    );
+}
+function IconUsers() {
+    return (
+        NAV[2].icon
+    );
+}
+function IconEvents() {
+    return (
+        NAV[3].icon
+    );
+}
+function IconAudit() {
+    return (
+        NAV[4].icon
+    );
+}
+function IconSettings() {
+    return (
+        NAV[5].icon
+    );
+}
+const NAV_ITEMS = {
+    dashboard: { href: '/admin/dashboard', label: 'Dashboard', icon: <IconDashboard /> },
+    organizations: { href: '/admin/organizations', label: 'Organizations', icon: <IconOrg /> },
+    users: { href: '/admin/users', label: 'Users', icon: <IconUsers /> },
+    events: { href: '/admin/events', label: 'Events', icon: <IconEvents /> },
+    audit: { href: '/admin/audit', label: 'Audit Logs', icon: <IconAudit /> },
+    settings: { href: '/admin/settings', label: 'Settings', icon: <IconSettings /> },
+};
+
+const NAV_GROUPS = [
+    {
+        title: 'Management',
+        items: [
+            NAV_ITEMS.dashboard,
+            NAV_ITEMS.organizations,
+            NAV_ITEMS.events,
+        ]
+    },
+    {
+        title: 'Security & Audit',
+        items: [
+            NAV_ITEMS.users,
+            NAV_ITEMS.audit,
+        ]
+    }
+];
+
 
 // ─── Sidebar ────────────────────────────────────────────────
 
@@ -262,63 +338,44 @@ function Sidebar({
                 className="flex-1 overflow-y-auto py-3 px-2"
                 style={{ scrollbarWidth: 'none' }}
             >
-                {!collapsed && (
-                    <p
-                        className="px-3 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-widest"
-                        style={{ color: 'var(--color-text-muted)' }}
-                    >
-                        Management
-                    </p>
-                )}
 
-                {NAV.map((item) => {
-                    const active = isActive(item.href, item.end);
+                {NAV_GROUPS.map((group) => (
+                    <div key={group.title} className="mt-4 first:mt-0">
+                        {/* Category Header */}
+                        {!collapsed && (
+                            <p className="px-3 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-widest"
+                        style={{ color: 'var(--color-text-muted)' }}>
+                                {group.title}
+                            </p>
+                        )}
 
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            title={collapsed ? item.label : undefined}
-                            className={[
-                                'flex items-center rounded-lg mb-0.5 w-full hover:bg-black/5',
-                                isMounted ? 'transition-all duration-150' : '',
-                                collapsed
-                                    ? 'px-0 py-2.5 justify-center'
-                                    : 'px-3 py-2.5',
-                            ].join(' ')}
-                            style={
-                                active
-                                    ? {
-                                        background: 'var(--color-primary-muted)',
-                                        color: 'var(--color-primary)',
-                                    }
-                                    : {
-                                        color: 'var(--color-text-secondary)',
-                                    }
-                            }
-                        >
-                            <span className="shrink-0 flex items-center justify-center">
-                                {item.icon}
-                            </span>
+                        {/* Group Items */}
+                        {group.items.map((item) => {
+                            const active = isActive(item.href);
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    title={collapsed ? item.label : undefined}
+                                    className={`flex items-center rounded-lg mb-0.5 w-full hover:bg-black/5 transition-all duration-150 ${collapsed ? 'px-0 py-2.5 justify-center' : 'px-3 py-2.5'
+                                        }`}
+                                    style={active ? { background: 'var(--color-primary-muted)', color: 'var(--color-primary)' } : { color: 'var(--color-text-secondary)' }}
+                                >
+                                    <span className="shrink-0 flex items-center justify-center">{item.icon}</span>
 
-                            <span
-                                className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
-                                        ? 'w-0 max-w-0 opacity-0 ml-0'
-                                        : 'flex-1 opacity-100 ml-3'
-                                    }`}
-                            >
-                                {item.label}
-                            </span>
+                                    <span className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed ? 'w-0 max-w-0 opacity-0 ml-0' : 'flex-1 opacity-100 ml-3'
+                                        }`}>
+                                        {item.label}
+                                    </span>
 
-                            {!collapsed && active && (
-                                <span
-                                    className="w-1.5 h-1.5 rounded-full shrink-0 ml-2"
-                                    style={{ background: 'var(--color-primary)' }}
-                                />
-                            )}
-                        </Link>
-                    );
-                })}
+                                    {!collapsed && active && (
+                                        <span className="w-1.5 h-1.5 rounded-full shrink-0 ml-2 bg-[var(--color-primary)]" />
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                ))}
             </nav>
 
             {/* Footer */}
@@ -351,8 +408,8 @@ function Sidebar({
 
                     <span
                         className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
-                                ? 'w-0 max-w-0 opacity-0 ml-0'
-                                : 'opacity-100 ml-3'
+                            ? 'w-0 max-w-0 opacity-0 ml-0'
+                            : 'opacity-100 ml-3'
                             }`}
                     >
                         Back to Events
@@ -379,8 +436,8 @@ function Sidebar({
 
                     <div
                         className={`overflow-hidden transition-all duration-200 ${collapsed
-                                ? 'w-0 max-w-0 opacity-0 ml-0'
-                                : 'flex-1 opacity-100 ml-3'
+                            ? 'w-0 max-w-0 opacity-0 ml-0'
+                            : 'flex-1 opacity-100 ml-3'
                             }`}
                     >
                         <p

@@ -26,6 +26,7 @@ interface Registrant {
     payment_status: PaymentStatus;
     attendance_status: AttendanceStatus;
     check_in_at: string | null;
+    is_member: boolean;
 }
 
 interface PaymentProof {
@@ -51,16 +52,15 @@ const INITIAL_EVENT = {
 };
 
 const INITIAL_REGISTRANTS: Registrant[] = [
-    { id: "r1", user_id: "u1", full_name: "Maria Santos", school_id: "2023-1-00123", department: "CCS", year_level: 2, reg_date: "2025-07-01T10:23:00", payment_selection: "Online", payment_status: "Paid", attendance_status: "Checked_In", check_in_at: "2025-08-15T09:04:00" },
-    { id: "r2", user_id: "u2", full_name: "Juan dela Cruz", school_id: "2022-1-00456", department: "CAS", year_level: 3, reg_date: "2025-07-02T14:10:00", payment_selection: "Online", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null },
-    { id: "r3", user_id: "u3", full_name: "Ana Reyes", school_id: "2024-1-00789", department: "CBA", year_level: 1, reg_date: "2025-07-03T09:55:00", payment_selection: "On-site", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null },
-    { id: "r4", user_id: "u4", full_name: "Carlos Mendoza", school_id: "2021-1-00321", department: "CCS", year_level: 4, reg_date: "2025-07-03T16:40:00", payment_selection: "Online", payment_status: "Paid", attendance_status: "Not_Arrived", check_in_at: null },
-    { id: "r5", user_id: "u5", full_name: "Sofia Villanueva", school_id: "2023-1-00654", department: "COE", year_level: 2, reg_date: "2025-07-04T11:20:00", payment_selection: "N/A", payment_status: "Paid", attendance_status: "Checked_In", check_in_at: "2025-08-15T09:11:00" },
-    { id: "r6", user_id: "u6", full_name: "Miguel Torres", school_id: "2022-1-00987", department: "CAS", year_level: 3, reg_date: "2025-07-05T08:30:00", payment_selection: "Online", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null },
-    { id: "r7", user_id: "u7", full_name: "Isabella Cruz", school_id: "2024-1-00111", department: "CCS", year_level: 1, reg_date: "2025-07-06T13:15:00", payment_selection: "On-site", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null },
-    { id: "r8", user_id: "u8", full_name: "Rafael Garcia", school_id: "2021-1-00222", department: "COE", year_level: 4, reg_date: "2025-07-07T10:00:00", payment_selection: "Online", payment_status: "Paid", attendance_status: "Checked_In", check_in_at: "2025-08-15T09:22:00" },
-    { id: "r9", user_id: "u9", full_name: "Gabrielle Lim", school_id: "2023-1-00333", department: "CBA", year_level: 2, reg_date: "2025-07-08T15:45:00", payment_selection: "N/A", payment_status: "Paid", attendance_status: "Not_Arrived", check_in_at: null },
-    { id: "r10", user_id: "u10", full_name: "Daniel Aquino", school_id: "2022-1-00444", department: "CAS", year_level: 3, reg_date: "2025-07-09T09:10:00", payment_selection: "Online", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null },
+    { id: "r1", user_id: "u1", full_name: "Maria Santos", school_id: "2023-1-00123", department: "CCS", year_level: 2, reg_date: "2025-07-01T10:23:00", payment_selection: "Online", payment_status: "Paid", attendance_status: "Checked_In", check_in_at: "2025-08-15T09:04:00", is_member: true },
+    { id: "r2", user_id: "u2", full_name: "Juan dela Cruz", school_id: "2022-1-00456", department: "CAS", year_level: 3, reg_date: "2025-07-02T14:10:00", payment_selection: "Online", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null, is_member: false },
+    { id: "r3", user_id: "u3", full_name: "Ana Reyes", school_id: "2024-1-00789", department: "CBA", year_level: 1, reg_date: "2025-07-03T09:55:00", payment_selection: "On-site", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null, is_member: false },
+    { id: "r4", user_id: "u4", full_name: "Carlos Mendoza", school_id: "2021-1-00321", department: "CCS", year_level: 4, reg_date: "2025-07-03T16:40:00", payment_selection: "Online", payment_status: "Paid", attendance_status: "Not_Arrived", check_in_at: null, is_member: false },
+    { id: "r5", user_id: "u5", full_name: "Sofia Velasco", school_id: "2023-1-00234", department: "COE", year_level: 2, reg_date: "2025-07-04T11:20:00", payment_selection: "N/A", payment_status: "Paid", attendance_status: "Checked_In", check_in_at: "2025-08-15T09:10:00", is_member: true },
+    { id: "r7", user_id: "u7", full_name: "Isabella Cruz", school_id: "2024-1-00111", department: "CCS", year_level: 1, reg_date: "2025-07-06T13:15:00", payment_selection: "On-site", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null, is_member: false },
+    { id: "r8", user_id: "u8", full_name: "Rafael Garcia", school_id: "2021-1-00222", department: "COE", year_level: 4, reg_date: "2025-07-07T10:00:00", payment_selection: "Online", payment_status: "Paid", attendance_status: "Checked_In", check_in_at: "2025-08-15T09:22:00", is_member: false },
+    { id: "r9", user_id: "u9", full_name: "Gabrielle Lim", school_id: "2023-1-00333", department: "CBA", year_level: 2, reg_date: "2025-07-08T15:45:00", payment_selection: "N/A", payment_status: "Paid", attendance_status: "Not_Arrived", check_in_at: null, is_member: false },
+    { id: "r10", user_id: "u10", full_name: "Daniel Aquino", school_id: "2022-1-00444", department: "CAS", year_level: 3, reg_date: "2025-07-09T09:10:00", payment_selection: "Online", payment_status: "Pending", attendance_status: "Not_Arrived", check_in_at: null, is_member: true },
 ];
 
 const INITIAL_PROOFS: PaymentProof[] = [
@@ -329,7 +329,7 @@ export default function ParticipantsPage() {
                                         ? "bg-[var(--color-primary)] text-white"
                                         : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)]"
                                         }`}
-                                    >
+                                >
                                     {tab.label}
                                     {tab.count !== undefined && (
                                         <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === tab.key
@@ -367,40 +367,105 @@ export default function ParticipantsPage() {
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
-                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-6 py-3">Student</th>
-                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden md:table-cell">Department</th>
-                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden lg:table-cell">Registered</th>
-                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">Method</th>
-                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">Payment</th>
-                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden lg:table-cell">Attendance</th>
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-6 py-3">
+                                            Student
+                                        </th>
+
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">
+                                            Member
+                                        </th>
+
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                                            Department
+                                        </th>
+
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                                            Registered
+                                        </th>
+
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">
+                                            Method
+                                        </th>
+
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3">
+                                            Payment
+                                        </th>
+
+                                        <th className="text-left text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                                            Attendance
+                                        </th>
                                     </tr>
                                 </thead>
+
                                 <tbody className="divide-y divide-[var(--color-border)]">
                                     {filteredRegistrants.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="text-center py-8 text-[13px] text-gray-400">No matching registrants found.</td>
+                                            <td
+                                                colSpan={7}
+                                                className="text-center py-8 text-[13px] text-gray-400"
+                                            >
+                                                No matching registrants found.
+                                            </td>
                                         </tr>
                                     ) : (
                                         filteredRegistrants.map((r) => (
-                                            <tr key={r.id} className="hover:bg-[var(--color-surface-2)] transition-colors">
+                                            <tr
+                                                key={r.id}
+                                                className="hover:bg-[var(--color-surface-2)] transition-colors"
+                                            >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <Avatar name={r.full_name} />
+
                                                         <div>
-                                                            <p className="text-[13px] font-medium text-[var(--color-text)]">{r.full_name}</p>
-                                                            <p className="text-[11px] text-[var(--color-text-muted)] font-mono">{r.school_id}</p>
+                                                            <p className="text-[13px] font-medium text-[var(--color-text)]">
+                                                                {r.full_name}
+                                                            </p>
+
+                                                            <p className="text-[11px] text-[var(--color-text-muted)] font-mono">
+                                                                {r.school_id}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </td>
+
+                                                <td className="px-4 py-4">
+                                                    {r.is_member ? (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                            Member
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                                            Non-Member
+                                                        </span>
+                                                    )}
+                                                </td>
+
                                                 <td className="px-4 py-4 hidden md:table-cell">
-                                                    <span className="text-[12px] text-[var(--color-text-secondary)]">{r.department} · Year {r.year_level}</span>
+                                                    <span className="text-[12px] text-[var(--color-text-secondary)]">
+                                                        {r.department} · Year {r.year_level}
+                                                    </span>
                                                 </td>
+
                                                 <td className="px-4 py-4 hidden lg:table-cell">
-                                                    <span className="text-[12px] text-[var(--color-text-secondary)]">{fmt(r.reg_date)}</span>
+                                                    <span className="text-[12px] text-[var(--color-text-secondary)]">
+                                                        {fmt(r.reg_date)}
+                                                    </span>
                                                 </td>
-                                                <td className="px-4 py-4"><MethodBadge method={r.payment_selection} /></td>
-                                                <td className="px-4 py-4"><PaymentBadge status={r.payment_status} /></td>
-                                                <td className="px-4 py-4 hidden lg:table-cell"><AttendanceBadge status={r.attendance_status} /></td>
+
+                                                <td className="px-4 py-4">
+                                                    <MethodBadge method={r.payment_selection} />
+                                                </td>
+
+                                                <td className="px-4 py-4">
+                                                    <PaymentBadge status={r.payment_status} />
+                                                </td>
+
+                                                <td className="px-4 py-4 hidden lg:table-cell">
+                                                    <AttendanceBadge status={r.attendance_status} />
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -444,13 +509,13 @@ export default function ParticipantsPage() {
                                             <span>{fmtTime(p.uploaded_at)}</span>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2 mt-1">
-                                            <button 
+                                            <button
                                                 onClick={() => handleVerifyProof(p.id, p.reg_id, false)}
                                                 className="h-8 rounded-lg border border-rose-200 bg-rose-50/50 text-[12px] font-medium text-rose-700 hover:bg-rose-50 transition-colors"
                                             >
                                                 Reject
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => handleVerifyProof(p.id, p.reg_id, true)}
                                                 className="h-8 rounded-lg bg-emerald-600 text-white text-[12px] font-medium hover:bg-emerald-700 transition-colors"
                                             >
@@ -497,7 +562,7 @@ export default function ParticipantsPage() {
                                                 <td className="px-4 py-4"><MethodBadge method={r.payment_selection} /></td>
                                                 <td className="px-4 py-4"><PaymentBadge status={r.payment_status} /></td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleMarkAsPaid(r.id)}
                                                         className="h-8 px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-[12px] font-semibold text-emerald-700 hover:bg-emerald-100/70 transition-colors"
                                                     >

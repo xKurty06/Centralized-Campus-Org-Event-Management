@@ -88,7 +88,59 @@ const NAV: NavItem[] = [
         ),
     },
 ];
-
+function IconDashboard() {
+    return (
+        NAV[0].icon
+    );
+}
+function IconBuilding() {
+    return (
+        NAV[1].icon
+    );
+}
+function IconCalendar() {
+    return (
+        NAV[2].icon
+    );
+}
+function IconUsers() {
+    return (
+        NAV[3].icon
+    );
+}
+function IconPlus() {
+    return (
+        <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+    );
+}
+const MANAGE_NAV = [
+    {
+        title: 'Overview',
+        items: [
+            { href: '/manage/dashboard', label: 'Dashboard', icon: <IconDashboard /> },
+            { href: '/manage/org-profile', label: 'Org Profile', icon: <IconBuilding /> },
+        ]
+    },
+    {
+        title: 'Operations',
+        items: [
+            { href: '/manage/events', label: 'Events', icon: <IconCalendar /> },
+            { href: '/manage/members', label: 'Members', icon: <IconUsers /> },
+            { href: '/manage/create-event', label: 'Create Event', icon: <IconPlus /> },
+        ]
+    }
+];
 // ─── Sidebar ────────────────────────────────────────────────
 
 function Sidebar({
@@ -229,63 +281,44 @@ function Sidebar({
                 className="flex-1 overflow-y-auto py-3 px-2"
                 style={{ scrollbarWidth: 'none' }}
             >
-                {!collapsed && (
-                    <p
-                        className="px-3 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-widest"
-                        style={{ color: 'var(--color-text-muted)' }}
-                    >
-                        Management
-                    </p>
-                )}
 
-                {NAV.map((item) => {
-                    const active = isActive(item.href, item.end);
-
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            title={collapsed ? item.label : undefined}
-                            className={[
-                                'flex items-center rounded-lg mb-0.5 w-full hover:bg-black/5',
-                                isMounted ? 'transition-all duration-150' : '',
-                                collapsed
-                                    ? 'px-0 py-2.5 justify-center'
-                                    : 'px-3 py-2.5',
-                            ].join(' ')}
-                            style={
-                                active
-                                    ? {
-                                        background: 'var(--color-primary-muted)',
-                                        color: 'var(--color-primary)',
-                                    }
-                                    : {
-                                        color: 'var(--color-text-secondary)',
-                                    }
-                            }
-                        >
-                            <span className="shrink-0 flex items-center justify-center">
-                                {item.icon}
-                            </span>
-
-                            <span
-                                className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
-                                        ? 'w-0 max-w-0 opacity-0 ml-0'
-                                        : 'flex-1 opacity-100 ml-3'
-                                    }`}
-                            >
-                                {item.label}
-                            </span>
-
-                            {!collapsed && active && (
-                                <span
-                                    className="w-1.5 h-1.5 rounded-full shrink-0 ml-2"
-                                    style={{ background: 'var(--color-primary)' }}
-                                />
+                <div className="flex flex-col gap-6">
+                    {MANAGE_NAV.map((group) => (
+                        <div key={group.title}>
+                            {/* Section Header */}
+                            {!collapsed && (
+                                <p className="px-3 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-widest"
+                                    style={{ color: 'var(--color-text-muted)' }}>
+                                    {group.title}
+                                </p>
                             )}
-                        </Link>
-                    );
-                })}
+
+                            {/* Render Links */}
+                            {group.items.map((item) => {
+                                const active = isActive(item.href);
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`flex items-center rounded-lg px-3 py-2.5 transition-all ${active
+                                            ? 'bg-[var(--color-primary-muted)] text-[var(--color-primary)]'
+                                            : 'text-[var(--color-text-secondary)] hover:bg-black/5'
+                                            }`}
+                                    >
+                                        <span className="shrink-0">{item.icon}</span>
+                                        {!collapsed && (
+                                            <span className="ml-3 font-medium text-[13px]">{item.label}</span>
+                                        )}
+                                        {/* Active Indicator */}
+                                        {!collapsed && active && (
+                                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
             </nav>
 
             {/* ── Footer ── */}
@@ -318,8 +351,8 @@ function Sidebar({
 
                     <span
                         className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
-                                ? 'w-0 max-w-0 opacity-0 ml-0'
-                                : 'opacity-100 ml-3'
+                            ? 'w-0 max-w-0 opacity-0 ml-0'
+                            : 'opacity-100 ml-3'
                             }`}
                     >
                         Back to Site
@@ -347,8 +380,8 @@ function Sidebar({
 
                     <div
                         className={`overflow-hidden transition-all duration-200 ${collapsed
-                                ? 'w-0 max-w-0 opacity-0 ml-0'
-                                : 'flex-1 opacity-100 ml-3'
+                            ? 'w-0 max-w-0 opacity-0 ml-0'
+                            : 'flex-1 opacity-100 ml-3'
                             }`}
                     >
                         <p

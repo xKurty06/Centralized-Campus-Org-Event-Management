@@ -20,6 +20,7 @@ interface Student {
   department: string;
   yearLevel: number;
   avatarUrl?: string;
+  is_member: boolean;
 }
 
 interface Registration {
@@ -77,15 +78,16 @@ const PLACEHOLDER_EVENT: EventInfo = {
 };
 
 const PLACEHOLDER_RESULTS: Record<string, Registration> = {
-  '2023-1-00123': {
+  '202405123': {
     id: 'reg-001',
     student: {
       id: 'usr-001',
-      schoolId: '2023-1-00123',
+      schoolId: '202405123',
       firstName: 'Maria',
       lastName: 'Santos',
       department: 'College of Engineering and Technology',
       yearLevel: 3,
+      is_member: true,
     },
     paymentStatus: 'Paid',
     paymentSelection: 'Online',
@@ -93,15 +95,16 @@ const PLACEHOLDER_RESULTS: Record<string, Registration> = {
     checkInAt: null,
     regDate: '2025-07-01T10:23:00',
   },
-  '2022-2-00456': {
+  '20220200456': {
     id: 'reg-002',
     student: {
       id: 'usr-002',
-      schoolId: '2022-2-00456',
+      schoolId: '20220200456',
       firstName: 'Juan',
       lastName: 'Dela Cruz',
       department: 'College of Arts and Sciences',
       yearLevel: 4,
+      is_member: false,
     },
     paymentStatus: 'Pending',
     paymentSelection: 'On-site',
@@ -109,15 +112,16 @@ const PLACEHOLDER_RESULTS: Record<string, Registration> = {
     checkInAt: null,
     regDate: '2025-07-02T14:05:00',
   },
-  '2024-1-00789': {
+  '20240100789': {
     id: 'reg-003',
     student: {
       id: 'usr-003',
-      schoolId: '2024-1-00789',
+      schoolId: '20240100789',
       firstName: 'Ana',
       lastName: 'Reyes',
       department: 'College of Business and Accountancy',
       yearLevel: 2,
+      is_member: true,
     },
     paymentStatus: 'Paid',
     paymentSelection: 'On-site',
@@ -267,16 +271,32 @@ function GreenCard({
       {/* Body */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-4">
-          {/* Avatar */}
           <div className="w-14 h-14 rounded-full bg-green-200 border-2 border-green-300 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-green-700">{getInitials(student.firstName, student.lastName)}</span>
+            <span className="text-lg font-bold text-green-700">
+              {getInitials(student.firstName, student.lastName)}
+            </span>
           </div>
-          {/* Info */}
+
           <div className="flex-1 min-w-0">
             <p className="text-[18px] font-bold text-gray-900 leading-tight">
               {student.firstName} {student.lastName}
             </p>
-            <p className="text-[13px] text-gray-500 mt-0.5">
+
+            <div className="mt-1">
+              {student.is_member ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Member
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                  Non-Member
+                </span>
+              )}
+            </div>
+
+            <p className="text-[13px] text-gray-500 mt-1">
               <span className="font-mono font-semibold text-gray-700">{student.schoolId}</span>
               {' · '}Year {student.yearLevel}
             </p>
@@ -365,16 +385,32 @@ function RedCard({
       {/* Body */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-4">
-          {/* Avatar */}
           <div className="w-14 h-14 rounded-full bg-red-200 border-2 border-red-300 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-red-700">{getInitials(student.firstName, student.lastName)}</span>
+            <span className="text-lg font-bold text-red-700">
+              {getInitials(student.firstName, student.lastName)}
+            </span>
           </div>
-          {/* Info */}
+
           <div className="flex-1 min-w-0">
             <p className="text-[18px] font-bold text-gray-900 leading-tight">
               {student.firstName} {student.lastName}
             </p>
-            <p className="text-[13px] text-gray-500 mt-0.5">
+
+            <div className="mt-1">
+              {student.is_member ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Member
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                  Non-Member
+                </span>
+              )}
+            </div>
+
+            <p className="text-[13px] text-gray-500 mt-1">
               <span className="font-mono font-semibold text-gray-700">{student.schoolId}</span>
               {' · '}Year {student.yearLevel}
             </p>

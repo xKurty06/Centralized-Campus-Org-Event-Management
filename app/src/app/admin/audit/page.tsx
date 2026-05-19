@@ -1,0 +1,430 @@
+'use client';
+
+import { useState, useMemo, Fragment } from 'react';
+import AdminShell from '@/components/AdminShell';
+
+/* ----------------------------------------------------------------
+   Types
+   ---------------------------------------------------------------- */
+type ActionCategory =
+    | 'Accreditation'
+    | 'User'
+    | 'Event'
+    | 'Membership'
+    | 'Officer'
+    | 'Payment';
+
+interface AuditEntry {
+    id: string;
+    timestamp: string;                // ISO string
+    actor_name: string;               // Overseer / Officer who performed the action
+    actor_school_id: string;
+    actor_role: 'Overseer' | 'Officer';
+    category: ActionCategory;
+    action: string;                   // Human-readable action label
+    target_label: string;             // What was affected (org name, user name, etc.)
+    target_id: string;                // UUID of the affected record
+    meta?: string;                    // Optional extra detail (e.g. "from Active → Suspended")
+}
+
+/* ----------------------------------------------------------------
+   Placeholder Data
+   (TODO: replace with GET /api/admin/audit?page=N&category=X&actor=Y)
+   ---------------------------------------------------------------- */
+const PLACEHOLDER_AUDIT: AuditEntry[] = [
+    {
+        id: 'a-01', timestamp: '2025-05-20T09:14:22Z',
+        actor_name: 'Admin Rivera', actor_school_id: '2020-1-00001', actor_role: 'Overseer',
+        category: 'Accreditation', action: 'Suspended Organization',
+        target_label: 'Debate Society', target_id: 'org-debsoc',
+        meta: 'Active → Suspended',
+    },
+    {
+        id: 'a-02', timestamp: '2025-05-20T08:55:10Z',
+        actor_name: 'Admin Rivera', actor_school_id: '2020-1-00001', actor_role: 'Overseer',
+        category: 'User', action: 'Deactivated Account',
+        target_label: 'Carlo Bautista (2022-1-00198)', target_id: 'usr-carlo',
+        meta: 'Reason: Duplicate account',
+    },
+    {
+        id: 'a-03', timestamp: '2025-05-19T16:02:48Z',
+        actor_name: 'Juan Dela Cruz', actor_school_id: '2022-1-00045', actor_role: 'Officer',
+        category: 'Membership', action: 'Marked Membership Fee Paid',
+        target_label: 'Ana Villanueva — CSS', target_id: 'mbr-ana',
+        meta: 'paid_membership_fee: false → true',
+    },
+    {
+        id: 'a-04', timestamp: '2025-05-19T14:30:00Z',
+        actor_name: 'Maria Reyes', actor_school_id: '2022-1-00078', actor_role: 'Officer',
+        category: 'Membership', action: 'Set Membership Status',
+        target_label: 'Paolo Lim — CSS', target_id: 'mbr-paolo',
+        meta: 'Pending → Active',
+    },
+    {
+        id: 'a-05', timestamp: '2025-05-19T11:18:33Z',
+        actor_name: 'Admin Santos', actor_school_id: '2019-1-00002', actor_role: 'Overseer',
+        category: 'Accreditation', action: 'Restored Accreditation',
+        target_label: 'Computer Students Society', target_id: 'org-css',
+        meta: 'Suspended → Active',
+    },
+    {
+        id: 'a-06', timestamp: '2025-05-18T15:45:09Z',
+        actor_name: 'Admin Rivera', actor_school_id: '2020-1-00001', actor_role: 'Overseer',
+        category: 'Event', action: 'Removed Event',
+        target_label: 'Tech Summit 2025 (AITS)', target_id: 'evt-techsummit',
+        meta: 'Reason: Policy violation',
+    },
+    {
+        id: 'a-07', timestamp: '2025-05-18T10:00:01Z',
+        actor_name: 'Carlo Mendoza', actor_school_id: '2023-1-00112', actor_role: 'Officer',
+        category: 'Officer', action: 'Officer Access Revoked',
+        target_label: 'Paolo Santos — CSS', target_id: 'off-paolosantos',
+        meta: 'is_active: true → false',
+    },
+    {
+        id: 'a-08', timestamp: '2025-05-17T09:22:14Z',
+        actor_name: 'Admin Santos', actor_school_id: '2019-1-00002', actor_role: 'Overseer',
+        category: 'User', action: 'Assigned Global Role',
+        target_label: 'Lena Cruz (2024-1-00321)', target_id: 'usr-lena',
+        meta: 'global_role: User → Overseer',
+    },
+    {
+        id: 'a-09', timestamp: '2025-05-16T14:11:55Z',
+        actor_name: 'Juan Dela Cruz', actor_school_id: '2022-1-00045', actor_role: 'Officer',
+        category: 'Membership', action: 'Added Member to Roster',
+        target_label: 'Rosa Tan — CSS', target_id: 'mbr-rosatan',
+    },
+    {
+        id: 'a-10', timestamp: '2025-05-15T08:05:37Z',
+        actor_name: 'Admin Rivera', actor_school_id: '2020-1-00001', actor_role: 'Overseer',
+        category: 'Accreditation', action: 'Suspended Organization',
+        target_label: 'Religious Guild Alpha', target_id: 'org-rga',
+        meta: 'Active → Suspended',
+    },
+    {
+        id: 'a-11', timestamp: '2025-05-14T16:44:20Z',
+        actor_name: 'Maria Reyes', actor_school_id: '2022-1-00078', actor_role: 'Officer',
+        category: 'Payment', action: 'Confirmed Cash Payment',
+        target_label: 'Luis Garcia — WebDev Bootcamp', target_id: 'reg-luisgarcia',
+        meta: 'payment_status: Pending → Paid (On-site)',
+    },
+    {
+        id: 'a-12', timestamp: '2025-05-13T13:30:00Z',
+        actor_name: 'Admin Santos', actor_school_id: '2019-1-00002', actor_role: 'Overseer',
+        category: 'Event', action: 'Flagged Event',
+        target_label: 'Org Idol Night (Debate Society)', target_id: 'evt-idolnight',
+        meta: 'Status flag: Under Review',
+    },
+];
+
+const CATEGORIES: ActionCategory[] = ['Accreditation', 'User', 'Event', 'Membership', 'Officer', 'Payment'];
+
+const CATEGORY_BADGE: Record<ActionCategory, string> = {
+    Accreditation: 'badge-blue',
+    User: 'badge-yellow',
+    Event: 'badge-gray',
+    Membership: 'badge-green',
+    Officer: 'badge-blue',
+    Payment: 'badge-green',
+};
+
+const CATEGORY_DOT: Record<ActionCategory, string> = {
+    Accreditation: 'var(--color-info)',
+    User: 'var(--color-warning)',
+    Event: 'var(--color-text-muted)',
+    Membership: 'var(--color-success)',
+    Officer: 'var(--color-info)',
+    Payment: 'var(--color-success)',
+};
+
+function fmtDate(iso: string) {
+    return new Date(iso).toLocaleString('en-PH', {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+}
+
+/* ----------------------------------------------------------------
+   Page
+   ---------------------------------------------------------------- */
+export default function AdminAuditPage() {
+    const [search, setSearch] = useState('');
+    const [categoryFilter, setCat] = useState<ActionCategory | 'All'>('All');
+    const [roleFilter, setRoleFilter] = useState<'All' | 'Overseer' | 'Officer'>('All');
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
+    const filtered = useMemo(() => {
+        return PLACEHOLDER_AUDIT.filter((e) => {
+            const q = search.toLowerCase();
+            const matchSearch =
+                !q ||
+                e.action.toLowerCase().includes(q) ||
+                e.actor_name.toLowerCase().includes(q) ||
+                e.target_label.toLowerCase().includes(q) ||
+                e.actor_school_id.includes(q);
+            const matchCat = categoryFilter === 'All' || e.category === categoryFilter;
+            const matchRole = roleFilter === 'All' || e.actor_role === roleFilter;
+            return matchSearch && matchCat && matchRole;
+        });
+    }, [search, categoryFilter, roleFilter]);
+
+    return (
+        <AdminShell>
+            <main className="flex flex-col gap-6 animate-fade-in">
+
+                {/* ── Page Header ── */}
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+    {/* Title Section */}
+    <div className="flex-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1">
+            Admin
+        </p>
+
+        {/* This wrapper now ensures both Title and Button are vertically centered */}
+        <div className="flex items-center justify-between gap-4">
+            <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">
+                Audit Log
+            </h1>
+            
+            <button 
+                className="btn btn-outline btn-sm whitespace-nowrap" 
+                disabled 
+                title="TODO: POST /api/admin/audit/export"
+            >
+                <IconDownload />
+                Export CSV
+            </button>
+        </div>
+
+        <p className="text-[14px] text-[var(--color-text-muted)] mt-1">
+            Read-only record of all administrative interventions and state changes across the platform.
+        </p>
+    </div>
+</div>
+
+                {/* ── Summary Stat Chips ── */}
+                <div className="flex gap-3 flex-wrap">
+                    {[
+                        { label: 'Total Entries', value: PLACEHOLDER_AUDIT.length, color: 'var(--color-text)' },
+                        { label: 'Today', value: PLACEHOLDER_AUDIT.filter(e => e.timestamp.startsWith('2025-05-20')).length, color: 'var(--color-primary-light)' },
+                        { label: 'Overseer Actions', value: PLACEHOLDER_AUDIT.filter(e => e.actor_role === 'Overseer').length, color: 'var(--color-info)' },
+                        { label: 'Officer Actions', value: PLACEHOLDER_AUDIT.filter(e => e.actor_role === 'Officer').length, color: 'var(--color-warning)' },
+                    ].map(s => (
+                        <div key={s.label} className="card flex items-center gap-3 px-4 py-3" style={{ boxShadow: 'none' }}>
+                            <span className="text-xl font-bold" style={{ color: s.color }}>{s.value}</span>
+                            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{s.label}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* ── Filters ── */}
+                <div className="card" style={{ boxShadow: 'none' }}>
+                    <div className="card-body flex flex-wrap gap-3 items-end">
+                        {/* Search */}
+                        <div className="form-group flex-1 min-w-48" style={{ marginBottom: 0 }}>
+                            <label className="form-label text-xs">Search</label>
+                            <div className="input-icon-wrapper">
+                                <span className="input-icon-left"><IconSearch /></span>
+                                <input
+                                    type="text"
+                                    placeholder="Action, actor, or target…"
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="input-has-left-icon"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Category filter */}
+                        <div className="form-group" style={{ marginBottom: 0, minWidth: '160px' }}>
+                            <label className="form-label text-xs">Category</label>
+                            <select value={categoryFilter} onChange={e => setCat(e.target.value as ActionCategory | 'All')}>
+                                <option value="All">All Categories</option>
+                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+
+                        {/* Role filter */}
+                        <div className="form-group" style={{ marginBottom: 0, minWidth: '140px' }}>
+                            <label className="form-label text-xs">Actor Role</label>
+                            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}>
+                                <option value="All">All Roles</option>
+                                <option value="Overseer">Overseer</option>
+                                <option value="Officer">Officer</option>
+                            </select>
+                        </div>
+
+                        {/* Clear */}
+                        {(search || categoryFilter !== 'All' || roleFilter !== 'All') && (
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => { setSearch(''); setCat('All'); setRoleFilter('All'); }}
+                            >
+                                Clear filters
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* ── Result count ── */}
+                <p className="text-xs" style={{ color: 'var(--color-text-muted)', marginTop: '-8px' }}>
+                    Showing <strong>{filtered.length}</strong> of <strong>{PLACEHOLDER_AUDIT.length}</strong> entries
+                </p>
+
+                {/* ── Log Table ── */}
+                {/* ── Log Table ── */}
+                <div className="card overflow-x-auto">
+                    {filtered.length === 0 ? (
+                        <div className="py-16 text-center">
+                            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                                No audit entries match your filters.
+                            </p>
+                        </div>
+                    ) : (
+                        /* CRITICAL: The table wrapper must exist */
+                        <table className="table-base w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-[var(--color-border)]">
+                                    <th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider" style={{ width: '180px' }}>Timestamp</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Actor</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Category</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Action</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Target</th>
+                                    <th className="py-3 px-4" style={{ width: '44px' }}></th>
+                                </tr>
+                            </thead>
+
+                            <tbody className="divide-y divide-[var(--color-border)]">
+                                {filtered.map((entry) => (
+                                    <Fragment key={entry.id}>
+                                        <tr
+                                            className="hover:bg-[var(--color-surface-2)] transition-colors"
+                                            style={{ cursor: entry.meta ? 'pointer' : 'default' }}
+                                            onClick={() => entry.meta && setExpandedId(expandedId === entry.id ? null : entry.id)}
+                                        >
+                                            {/* Timestamp */}
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div
+                                                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                        style={{ background: CATEGORY_DOT[entry.category] }}
+                                                    />
+                                                    <span className="text-xs font-mono" style={{ color: 'var(--color-text-secondary)' }}>
+                                                        {fmtDate(entry.timestamp)}
+                                                    </span>
+                                                </div>
+                                            </td>
+
+                                            {/* Actor */}
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div
+                                                        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+                                                        style={{
+                                                            background: entry.actor_role === 'Overseer' ? 'rgba(26,115,232,.1)' : 'var(--color-primary-muted)',
+                                                            color: entry.actor_role === 'Overseer' ? 'var(--color-info)' : 'var(--color-primary)'
+                                                        }}
+                                                    >
+                                                        {entry.actor_name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>{entry.actor_name}</p>
+                                                        <p className="text-[10px] font-mono" style={{ color: 'var(--color-text-muted)' }}>{entry.actor_school_id}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            {/* Category */}
+                                            <td className="py-3 px-4">
+                                                <span className={`badge ${CATEGORY_BADGE[entry.category]}`}>
+                                                    {entry.category}
+                                                </span>
+                                            </td>
+
+                                            {/* Action */}
+                                            <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                                                {entry.action}
+                                            </td>
+
+                                            {/* Target */}
+                                            <td className="py-3 px-4 text-xs" style={{ color: 'var(--color-text-secondary)', maxWidth: '200px' }}>
+                                                <span className="truncate block">{entry.target_label}</span>
+                                                <span className="font-mono text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                                                    {entry.target_id}
+                                                </span>
+                                            </td>
+
+                                            {/* Expand toggle */}
+                                            <td className="py-3 px-4 text-right">
+                                                {entry.meta && (
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        style={{ padding: '4px', color: 'var(--color-text-muted)' }}
+                                                        aria-label="Expand details"
+                                                    >
+                                                        <svg
+                                                            viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5"
+                                                            style={{ transform: expandedId === entry.id ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease' }}
+                                                        >
+                                                            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+
+                                        {/* Expanded Content Conditional Row */}
+                                        {expandedId === entry.id && entry.meta && (
+                                            <tr style={{ background: 'var(--color-surface-2)' }}>
+                                                <td colSpan={6} style={{ padding: '12px 20px', borderTop: '1px dashed var(--color-border)' }}>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Detail:</span>
+                                                        <code className="text-xs px-2 py-1 rounded font-mono break-all" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
+                                                            {entry.meta}
+                                                        </code>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* ── Pagination placeholder ── */}
+                <div className="flex items-center justify-between">
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        Page 1 of 1 {/* TODO: dynamic pagination via ?page=N */}
+                    </p>
+                    <div className="flex gap-2">
+                        <button className="btn btn-ghost btn-sm" disabled>← Previous</button>
+                        <button className="btn btn-ghost btn-sm" disabled>Next →</button>
+                    </div>
+                </div>
+
+            </main>
+        </AdminShell>
+    );
+}
+
+/* ----------------------------------------------------------------
+   Icons
+   ---------------------------------------------------------------- */
+function IconSearch() {
+    return (
+        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+            <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.75" />
+            <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+function IconDownload() {
+    return (
+        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3v10M6 9l4 4 4-4M4 16h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
