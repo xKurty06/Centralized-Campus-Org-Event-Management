@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
  * - PURPOSE: Stores the full profile of every accredited campus organization.
  * - BUSINESS LOGIC: Only organizations with 'Active' status are permitted to publish events.
  * - AUDIT TRAIL: 'accredited_by' records the Overseer who last updated the status.
+ * - IDENTIFIERS: 'code_name' stores the unique official acronym for compact UI elements and routing.
  */
 return new class extends Migration
 {
@@ -22,6 +23,7 @@ return new class extends Migration
 
             // Profile Information
             $table->string('name', 200)->unique();
+            $table->string('code_name', 50)->unique(); // Added: Shorthand acronym/code name (e.g., "ACTS", "CSG")
             $table->text('description')->nullable();
             $table->text('logo_url')->nullable();
             $table->string('adviser', 150)->nullable();
