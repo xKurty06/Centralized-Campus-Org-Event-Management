@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
+import ManageShell from '@/components/ManageShell';
 
 /* ----------------------------------------------------------------
    Types — aligned to DB schema
@@ -250,10 +250,8 @@ export default function ManageDashboardPage() {
   const displayed          = tab === 'active' ? activeEvents : MOCK_EVENTS;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="officer" user={{ name: 'Maria Clara Santos', schoolId: '2021-00101', department: 'BSCS 4A' }} />
-
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6">
+    <ManageShell pageTitle="Dashboard">
+      <div className="flex flex-col gap-6">
 
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -406,19 +404,8 @@ export default function ManageDashboardPage() {
             </Link>
           ))}
         </div>
-      </main>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </ManageShell>
   );
 }
 

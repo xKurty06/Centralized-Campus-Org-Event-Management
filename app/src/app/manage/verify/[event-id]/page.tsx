@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
+import ManageShell from '@/components/ManageShell';
 
 /* ────────────────────────────────────────────────────────────────
    TYPES
@@ -331,7 +331,7 @@ function GreenCard({
           )}
         </div>
       </div>
-    </div>
+    </ManageShell>
   );
 }
 

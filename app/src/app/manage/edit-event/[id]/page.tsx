@@ -3,7 +3,7 @@
 import { useState, useEffect, ReactNode } from "react";
 import React from "react";
 import { useRouter, useParams } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import ManageShell from "@/components/ManageShell";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -451,213 +451,201 @@ export default function EditEventPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f7f8fa] font-sans">
-            {/* Navbar */}
-            <Navbar
-                role="officer"
-                user={{
-                    name: "Juan Dela Cruz",
-                    schoolId: "2022-00001",
-                    department: "Computer Science Society",
-                }}
-            />
-
-            <main className="max-w-[1240px] mx-auto px-6 py-6">
-                {/* Page Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
-                    <div className="flex items-center gap-3">
+        <ManageShell pageTitle="Edit Event">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3">
+                    <div>
                         <div>
-                            <div>
-                                <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
-                                    <Link href="/manage/dashboard" className="hover:text-green-700 no-underline transition-colors">Dashboard</Link>
-                                    <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                    <span className="text-gray-600 font-medium">Edit Event</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
-                                    Edit Event
-                                </h1>
-
-                                <UnsavedBadge visible={isDirty} />
-
-                                {saved && (
-                                    <span className="text-[12px] text-emerald-600 font-medium">
-                                        Saved
-                                    </span>
-                                )}
+                            <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
+                                <Link href="/manage/dashboard" className="hover:text-green-700 no-underline transition-colors">Dashboard</Link>
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                <span className="text-gray-600 font-medium">Edit Event</span>
                             </div>
                         </div>
-                    </div>
 
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="inline-flex items-center justify-center gap-2 h-10 px-5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-[13px] font-semibold rounded-lg transition-colors"
-                    >
-                        {saving ? "Saving…" : "Save Changes"}
-                    </button>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
+                                Edit Event
+                            </h1>
+
+                            <UnsavedBadge visible={isDirty} />
+
+                            {saved && (
+                                <span className="text-[12px] text-emerald-600 font-medium">
+                                    Saved
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Content */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left */}
-                    <div className="lg:col-span-2 flex flex-col gap-6">
-                        <SectionCard
-                            title="Event Banner"
-                            subtitle="Displayed on event cards and detail page."
-                        >
-                            <BannerUpload
-                                currentUrl={form.banner_url}
-                                onChange={(url) => update("banner_url", url)}
-                            />
-                        </SectionCard>
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 h-10 px-5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-[13px] font-semibold rounded-lg transition-colors"
+                >
+                    {saving ? "Saving…" : "Save Changes"}
+                </button>
+            </div>
 
-                        <SectionCard
-                            title="Basic Information"
-                            subtitle="Core event details."
-                        >
-                            <div className="flex flex-col gap-5">
-                                <Field label="Event Title" required>
-                                    <Input
-                                        value={form.title}
-                                        onChange={(e) =>
-                                            update("title", e.target.value)
-                                        }
-                                    />
+            {/* Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                    <SectionCard
+                        title="Event Banner"
+                        subtitle="Displayed on event cards and detail page."
+                    >
+                        <BannerUpload
+                            currentUrl={form.banner_url}
+                            onChange={(url) => update("banner_url", url)}
+                        />
+                    </SectionCard>
 
-                                    {errors.title && (
-                                        <p className="text-[12px] text-red-500">
-                                            {errors.title}
-                                        </p>
-                                    )}
-                                </Field>
+                    <SectionCard
+                        title="Basic Information"
+                        subtitle="Core event details."
+                    >
+                        <div className="flex flex-col gap-5">
+                            <Field label="Event Title" required>
+                                <Input
+                                    value={form.title}
+                                    onChange={(e) =>
+                                        update("title", e.target.value)
+                                    }
+                                />
 
-                                <Field label="Description" required>
-                                    <Textarea
-                                        rows={5}
-                                        value={form.description}
-                                        onChange={(e) =>
-                                            update(
-                                                "description",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
+                                {errors.title && (
+                                    <p className="text-[12px] text-red-500">
+                                        {errors.title}
+                                    </p>
+                                )}
+                            </Field>
 
-                                    {errors.description && (
-                                        <p className="text-[12px] text-red-500">
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                </Field>
+                            <Field label="Description" required>
+                                <Textarea
+                                    rows={5}
+                                    value={form.description}
+                                    onChange={(e) =>
+                                        update(
+                                            "description",
+                                            e.target.value
+                                        )
+                                    }
+                                />
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Field label="Category">
-                                        <Select
-                                            value={form.category_id}
-                                            onChange={(e) =>
-                                                update(
-                                                    "category_id",
-                                                    Number(e.target.value)
-                                                )
-                                            }
-                                        >
-                                            {CATEGORIES.map((c) => (
-                                                <option
-                                                    key={c.id}
-                                                    value={c.id}
-                                                >
-                                                    {c.name}
-                                                </option>
-                                            ))}
-                                        </Select>
-                                    </Field>
+                                {errors.description && (
+                                    <p className="text-[12px] text-red-500">
+                                        {errors.description}
+                                    </p>
+                                )}
+                            </Field>
 
-                                    <Field label="Venue">
-                                        <Select
-                                            value={form.venue_id}
-                                            onChange={(e) =>
-                                                update(
-                                                    "venue_id",
-                                                    Number(e.target.value)
-                                                )
-                                            }
-                                        >
-                                            {VENUES.map((v) => (
-                                                <option
-                                                    key={v.id}
-                                                    value={v.id}
-                                                >
-                                                    {v.name}
-                                                </option>
-                                            ))}
-                                        </Select>
-                                    </Field>
-                                </div>
-                            </div>
-                        </SectionCard>
-                    </div>
-
-                    {/* Right */}
-                    <div className="flex flex-col gap-6">
-                        <SectionCard title="Event Status">
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[13px] text-gray-500">
-                                        Current
-                                    </span>
-
-                                    <StatusBadge status={form.status} />
-                                </div>
-
-                                <Field label="Update Status">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Category">
                                     <Select
-                                        value={form.status}
+                                        value={form.category_id}
                                         onChange={(e) =>
                                             update(
-                                                "status",
-                                                e.target
-                                                    .value as EventStatus
+                                                "category_id",
+                                                Number(e.target.value)
                                             )
                                         }
                                     >
-                                        {STATUS_OPTIONS.map((s) => (
-                                            <option key={s} value={s}>
-                                                {s}
+                                        {CATEGORIES.map((c) => (
+                                            <option
+                                                key={c.id}
+                                                value={c.id}
+                                            >
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </Field>
+
+                                <Field label="Venue">
+                                    <Select
+                                        value={form.venue_id}
+                                        onChange={(e) =>
+                                            update(
+                                                "venue_id",
+                                                Number(e.target.value)
+                                            )
+                                        }
+                                    >
+                                        {VENUES.map((v) => (
+                                            <option
+                                                key={v.id}
+                                                value={v.id}
+                                            >
+                                                {v.name}
                                             </option>
                                         ))}
                                     </Select>
                                 </Field>
                             </div>
-                        </SectionCard>
-
-                        <SectionCard
-                            title="Audience"
-                            subtitle="Who can register."
-                        >
-                            <div className="flex flex-col gap-2">
-                                {AUDIENCE_OPTIONS.map((opt) => (
-                                    <AudienceCard
-                                        key={opt.value}
-                                        option={opt}
-                                        selected={
-                                            form.audience_type === opt.value
-                                        }
-                                        onClick={() =>
-                                            update(
-                                                "audience_type",
-                                                opt.value
-                                            )
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        </SectionCard>
-                    </div>
+                        </div>
+                    </SectionCard>
                 </div>
-            </main>
-        </div>
+
+                {/* Right */}
+                <div className="flex flex-col gap-6">
+                    <SectionCard title="Event Status">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[13px] text-gray-500">
+                                    Current
+                                </span>
+
+                                <StatusBadge status={form.status} />
+                            </div>
+
+                            <Field label="Update Status">
+                                <Select
+                                    value={form.status}
+                                    onChange={(e) =>
+                                        update(
+                                            "status",
+                                            e.target
+                                                .value as EventStatus
+                                        )
+                                    }
+                                >
+                                    {STATUS_OPTIONS.map((s) => (
+                                        <option key={s} value={s}>
+                                            {s}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard
+                        title="Audience"
+                        subtitle="Who can register."
+                    >
+                        <div className="flex flex-col gap-2">
+                            {AUDIENCE_OPTIONS.map((opt) => (
+                                <AudienceCard
+                                    key={opt.value}
+                                    option={opt}
+                                    selected={
+                                        form.audience_type === opt.value
+                                    }
+                                    onClick={() =>
+                                        update(
+                                            "audience_type",
+                                            opt.value
+                                        )
+                                    }
+                                />
+                            ))}
+                        </div>
+                    </SectionCard>
+                </div>
+            </div>
+        </ManageShell>
     );
 }

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import React from "react";
-import Navbar from "@/components/Navbar";
+import ManageShell from "@/components/ManageShell";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -254,17 +254,8 @@ export default function ParticipantsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[var(--color-bg)] font-sans">
-            <Navbar
-                role="officer"
-                user={{
-                    name: "Maria Clara Santos",
-                    schoolId: "2021-00101",
-                    department: "BSCS 4A",
-                }}
-            />
-
-            <main className="max-w-[1240px] mx-auto px-6 py-8 flex flex-col gap-6">
+        <ManageShell pageTitle={MOCK_EVENT.title}>
+            <div className="flex flex-col gap-6">
 
                 {/* Header */}
                 <div className="flex flex-col gap-4">
@@ -498,9 +489,8 @@ export default function ParticipantsPage() {
                             </button>
                         </div>
                     </div>
-                )}
-            </main>
-        </div>
+                )}            </div>
+        </ManageShell>
     );
 
 }

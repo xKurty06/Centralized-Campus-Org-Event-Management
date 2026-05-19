@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
+import ManageShell from '@/components/ManageShell';
 
 /* ----------------------------------------------------------------
    Types — aligned to DB schema
@@ -14,12 +14,12 @@ import Navbar from '@/components/Navbar';
      title, banner_url, description,
      start_date, end_date (DateTime),
      capacity,
-     audience_type (Open | CvSU_Only | Org_Members_Only),
+     audience_type (CvSU_Only | Org_Members_Only),
      is_paid, payment_instructions,
      status (defaults to Upcoming on creation)
    ---------------------------------------------------------------- */
 
-type AudienceType  = 'Open' | 'CvSU_Only' | 'Org_Members_Only';
+type AudienceType  = 'CvSU_Only' | 'Org_Members_Only';
 type EventCategory = 'Workshop' | 'Seminar' | 'Competition' | 'Activity' | 'Training' | 'Outreach' | 'Cultural' | 'Other';
 type SaveState     = 'idle' | 'saving' | 'success' | 'error';
 
@@ -77,7 +77,6 @@ const EVENT_CATEGORIES: EventCategory[] = [
 ];
 
 const AUDIENCE_OPTIONS: { value: AudienceType; label: string; desc: string }[] = [
-  { value: 'Open',             label: 'Open to all',         desc: 'Anyone can register, including non-CvSU participants' },
   { value: 'CvSU_Only',        label: 'CvSU students only',  desc: 'Only @cvsu.edu.ph account holders can register' },
   { value: 'Org_Members_Only', label: 'Organization members',desc: 'Only members of your organization can register' },
 ];
@@ -95,15 +94,15 @@ const INITIAL: FormData = {
 
 function validate(form: FormData): FormErrors {
   const e: FormErrors = {};
-  if (!form.title.trim())                                               e.title       = 'Event title is required.';
-  if (!form.category)                                                   e.category    = 'Please select a category.';
-  if (!form.venue_id)                                                   e.venue_id    = 'Please select a venue.';
-  if (!form.start_date)                                                 e.start_date  = 'Start date is required.';
-  if (!form.start_time)                                                 e.start_time  = 'Start time is required.';
-  if (!form.end_date)                                                   e.end_date    = 'End date is required.';
-  if (!form.end_time)                                                   e.end_time    = 'End time is required.';
+  if (!form.title.trim())                                                                     e.title       = 'Event title is required.';
+  if (!form.category)                                                                         e.category    = 'Please select a category.';
+  if (!form.venue_id)                                                                         e.venue_id    = 'Please select a venue.';
+  if (!form.start_date)                                                                       e.start_date  = 'Start date is required.';
+  if (!form.start_time)                                                                       e.start_time  = 'Start time is required.';
+  if (!form.end_date)                                                                         e.end_date    = 'End date is required.';
+  if (!form.end_time)                                                                         e.end_time    = 'End time is required.';
   if (!form.capacity || isNaN(+form.capacity) || +form.capacity < 1)   e.capacity    = 'Enter a valid capacity (min 1).';
-  if (!form.description.trim())                                         e.description = 'Event description is required.';
+  if (!form.description.trim())                                                               e.description = 'Event description is required.';
   if (form.is_paid && !form.payment_instructions.trim())                e.payment_instructions = 'Payment instructions are required for paid events.';
   return e;
 }
@@ -196,19 +195,28 @@ export default function CreateEventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="officer" user={{ name: 'Maria Clara Santos', schoolId: '2021-00101', department: 'BSCS 4A' }} />
-
-      <main className="flex-1 w-full max-w-[1240px] mx-auto px-6 py-8 flex flex-col gap-6">
+    <ManageShell pageTitle="Create Event">
+      <div className="flex flex-col gap-6">
 
         {/* ── Header ── */}
         <div>
-          <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
-            <Link href="/manage/dashboard" className="hover:text-green-700 no-underline transition-colors">Dashboard</Link>
-            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span className="text-gray-600 font-medium">Create Event</span>
-          </div>
-          <h1 className="text-[26px] font-bold text-gray-900 tracking-tight">Create new event</h1>
+          <Link
+              href="/manage/dashboard"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M15 19l-7-7 7-7"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+
+              Back to Dashboard
+            </Link>
+          <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Create new event</h1>
           <p className="text-[14px] text-gray-500 mt-1">Fill in the details to publish an event for your organization.</p>
         </div>
 
@@ -409,8 +417,8 @@ export default function CreateEventPage() {
                 </div>
                 <div className="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: 'Title',    value: form.title        || '—' },
-                    { label: 'Category', value: form.category     || '—' },
+                    { label: 'Title',    value: form.title         || '—' },
+                    { label: 'Category', value: form.category      || '—' },
                     { label: 'Venue',    value: VENUES.find((v) => v.id === form.venue_id)?.name || '—' },
                     { label: 'Capacity', value: form.capacity ? `${form.capacity} slots` : '—' },
                     { label: 'Start',    value: form.start_date ? `${form.start_date} ${form.start_time}` : '—' },
@@ -450,18 +458,7 @@ export default function CreateEventPage() {
             </>
           )}
         </form>
-      </main>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </ManageShell>
   );
 }
