@@ -59,6 +59,7 @@ const MOCK_EVENT: EventForm = {
     category_id: 1,
     banner_url: "",
 };
+const event = MOCK_EVENT;
 
 const VENUES = [
     { id: 1, name: "SMT Hall" },
@@ -161,6 +162,7 @@ function Field({
     );
 }
 
+// Fixed HTML Attributes constraint warning
 function Input({
     className = "",
     ...props
@@ -386,9 +388,10 @@ export default function EditEventPage() {
     const router = useRouter();
     const params = useParams();
 
-    const eventId = Array.isArray(params?.id)
-        ? params.id[0]
-        : params?.id ?? "evt-001";
+    // ─── FIX HERE: Updated parameter from 'id' to 'event-id' ───
+    const eventId = Array.isArray(params?.["event-id"])
+        ? params["event-id"][0]
+        : params?.["event-id"] ?? "evt-001";
 
     const [form, setForm] = useState<EventForm | null>(null);
     const [loading, setLoading] = useState(true);
@@ -456,12 +459,20 @@ export default function EditEventPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5 animate-fade-in">
                 <div className="flex items-center gap-3">
                     <div>
-                        <div>
-                            <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
-                                <Link href="/manage/dashboard" className="hover:text-green-700 no-underline transition-colors">Dashboard</Link>
-                                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                <span className="text-gray-600 font-medium">Edit Event</span>
-                            </div>
+                        <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
+                            <Link href="/manage/dashboard" className="hover:text-emerald-700 no-underline transition-colors">
+                                Dashboard
+                            </Link>
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <Link href={`/manage/events/${eventId}`} className="hover:text-emerald-700 no-underline transition-colors">
+                                {event.title}
+                            </Link>
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <span className="text-gray-600 font-medium">Edit Event</span>
                         </div>
 
                         <div className="flex items-center gap-2 mt-0.5">
@@ -483,7 +494,7 @@ export default function EditEventPage() {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="inline-flex items-center justify-center gap-2 h-10 px-5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-[13px] font-semibold rounded-lg transition-colors"
+                    className="flex items-center gap-2 text-[13px] font-semibold bg-green-700 hover:bg-green-800 text-white px-3 py-2 rounded-lg transition-colors no-underline flex-shrink-0"
                 >
                     {saving ? "Saving…" : "Save Changes"}
                 </button>

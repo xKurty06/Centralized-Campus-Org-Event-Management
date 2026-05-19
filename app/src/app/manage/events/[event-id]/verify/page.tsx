@@ -7,10 +7,10 @@ import ManageShell from '@/components/ManageShell';
 /* ────────────────────────────────────────────────────────────────
    TYPES
 ──────────────────────────────────────────────────────────────── */
-type PaymentStatus    = 'Paid' | 'Pending';
+type PaymentStatus = 'Paid' | 'Pending';
 type AttendanceStatus = 'Not_Arrived' | 'Checked_In';
-type ActionType       = 'Verify_Payment' | 'Check_In';
-type SyncStatus       = 'Pending' | 'Synced';
+type ActionType = 'Verify_Payment' | 'Check_In';
+type SyncStatus = 'Pending' | 'Synced';
 
 interface Student {
   id: string;
@@ -65,93 +65,93 @@ interface EventInfo {
    PLACEHOLDER DATA
 ──────────────────────────────────────────────────────────────── */
 const PLACEHOLDER_EVENT: EventInfo = {
-  id:               'evt-001',
-  title:            'Leadership Summit 2025',
-  venue:            'SMT Hall',
-  startDate:        '2025-07-15T08:00:00',
-  isPaid:           true,
-  capacity:         150,
-  checkedIn:        47,
-  totalRegistered:  112,
-  confirmedPaid:    89,
+  id: 'evt-001',
+  title: 'Leadership Summit 2025',
+  venue: 'SMT Hall',
+  startDate: '2025-07-15T08:00:00',
+  isPaid: true,
+  capacity: 150,
+  checkedIn: 47,
+  totalRegistered: 112,
+  confirmedPaid: 89,
 };
 
 const PLACEHOLDER_RESULTS: Record<string, Registration> = {
   '2023-1-00123': {
-    id:               'reg-001',
+    id: 'reg-001',
     student: {
-      id:          'usr-001',
-      schoolId:    '2023-1-00123',
-      firstName:   'Maria',
-      lastName:    'Santos',
-      department:  'College of Engineering and Technology',
-      yearLevel:   3,
+      id: 'usr-001',
+      schoolId: '2023-1-00123',
+      firstName: 'Maria',
+      lastName: 'Santos',
+      department: 'College of Engineering and Technology',
+      yearLevel: 3,
     },
-    paymentStatus:    'Paid',
+    paymentStatus: 'Paid',
     paymentSelection: 'Online',
     attendanceStatus: 'Not_Arrived',
-    checkInAt:        null,
-    regDate:          '2025-07-01T10:23:00',
+    checkInAt: null,
+    regDate: '2025-07-01T10:23:00',
   },
   '2022-2-00456': {
-    id:               'reg-002',
+    id: 'reg-002',
     student: {
-      id:          'usr-002',
-      schoolId:    '2022-2-00456',
-      firstName:   'Juan',
-      lastName:    'Dela Cruz',
-      department:  'College of Arts and Sciences',
-      yearLevel:   4,
+      id: 'usr-002',
+      schoolId: '2022-2-00456',
+      firstName: 'Juan',
+      lastName: 'Dela Cruz',
+      department: 'College of Arts and Sciences',
+      yearLevel: 4,
     },
-    paymentStatus:    'Pending',
+    paymentStatus: 'Pending',
     paymentSelection: 'On-site',
     attendanceStatus: 'Not_Arrived',
-    checkInAt:        null,
-    regDate:          '2025-07-02T14:05:00',
+    checkInAt: null,
+    regDate: '2025-07-02T14:05:00',
   },
   '2024-1-00789': {
-    id:               'reg-003',
+    id: 'reg-003',
     student: {
-      id:          'usr-003',
-      schoolId:    '2024-1-00789',
-      firstName:   'Ana',
-      lastName:    'Reyes',
-      department:  'College of Business and Accountancy',
-      yearLevel:   2,
+      id: 'usr-003',
+      schoolId: '2024-1-00789',
+      firstName: 'Ana',
+      lastName: 'Reyes',
+      department: 'College of Business and Accountancy',
+      yearLevel: 2,
     },
-    paymentStatus:    'Paid',
+    paymentStatus: 'Paid',
     paymentSelection: 'On-site',
     attendanceStatus: 'Checked_In',
-    checkInAt:        '2025-07-15T08:12:44',
-    regDate:          '2025-07-03T09:00:00',
+    checkInAt: '2025-07-15T08:12:44',
+    regDate: '2025-07-03T09:00:00',
   },
 };
 
 const PLACEHOLDER_QUEUE: QueuedAction[] = [
   {
-    id:              'q-001',
-    regId:           'reg-010',
-    actionType:      'Check_In',
+    id: 'q-001',
+    regId: 'reg-010',
+    actionType: 'Check_In',
     deviceTimestamp: '2025-07-15T08:14:02',
-    syncStatus:      'Pending',
-    studentName:     'Carlo Mendoza',
+    syncStatus: 'Pending',
+    studentName: 'Carlo Mendoza',
   },
   {
-    id:              'q-002',
-    regId:           'reg-011',
-    actionType:      'Verify_Payment',
+    id: 'q-002',
+    regId: 'reg-011',
+    actionType: 'Verify_Payment',
     deviceTimestamp: '2025-07-15T08:15:30',
-    syncStatus:      'Pending',
-    studentName:     'Liza Bautista',
+    syncStatus: 'Pending',
+    studentName: 'Liza Bautista',
   },
 ];
 
 const PLACEHOLDER_RECENT: RecentActivity[] = [
-  { id: 'r-1', studentName: 'Ana Reyes',      schoolId: '2024-1-00789', action: 'Check_In',       timestamp: '08:12' },
-  { id: 'r-2', studentName: 'Pedro Villar',   schoolId: '2021-3-00301', action: 'Verify_Payment', timestamp: '08:10' },
-  { id: 'r-3', studentName: 'Grace Torres',   schoolId: '2023-2-00204', action: 'Check_In',       timestamp: '08:08' },
-  { id: 'r-4', studentName: 'Mark Ramos',     schoolId: '2022-1-00155', action: 'Check_In',       timestamp: '08:05' },
-  { id: 'r-5', studentName: 'Nina Castillo',  schoolId: '2024-2-00612', action: 'Verify_Payment', timestamp: '08:02' },
+  { id: 'r-1', studentName: 'Ana Reyes', schoolId: '2024-1-00789', action: 'Check_In', timestamp: '08:12' },
+  { id: 'r-2', studentName: 'Pedro Villar', schoolId: '2021-3-00301', action: 'Verify_Payment', timestamp: '08:10' },
+  { id: 'r-3', studentName: 'Grace Torres', schoolId: '2023-2-00204', action: 'Check_In', timestamp: '08:08' },
+  { id: 'r-4', studentName: 'Mark Ramos', schoolId: '2022-1-00155', action: 'Check_In', timestamp: '08:05' },
+  { id: 'r-5', studentName: 'Nina Castillo', schoolId: '2024-2-00612', action: 'Verify_Payment', timestamp: '08:02' },
 ];
 
 /* ────────────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ function IdleCard() {
     <div className="flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg)] min-h-[260px]">
       <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center">
         <svg className="w-8 h-8 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none">
-          <path d="M3 9h6V3H3v6zM3 21h6v-6H3v6zM15 3v6h6V3h-6zM9 9h6v6H9V9zM15 15h6v6h-6v-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M3 9h6V3H3v6zM3 21h6v-6H3v6zM15 3v6h6V3h-6zM9 9h6v6H9V9zM15 15h6v6h-6v-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div className="text-center">
@@ -221,7 +221,7 @@ function NotFoundCard({ schoolId }: { schoolId: string }) {
     <div className="flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-red-200 bg-red-50 min-h-[260px]">
       <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
         <svg className="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="none">
-          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div className="text-center">
@@ -253,7 +253,7 @@ function GreenCard({
       <div className="px-6 py-4 bg-green-600 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span className="text-white font-bold text-[15px]">Payment Confirmed</span>
         </div>
@@ -288,7 +288,7 @@ function GreenCard({
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="badge badge-green">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor" />
             </svg>
             {reg.paymentSelection === 'N/A' ? 'Free Event' : reg.paymentSelection + ' Payment'}
           </span>
@@ -300,7 +300,7 @@ function GreenCard({
           {alreadyIn ? (
             <div className="flex items-center gap-2 text-[13px] font-semibold text-green-700 bg-green-100 rounded-xl px-4 py-3">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Student has already been checked in
             </div>
@@ -314,15 +314,15 @@ function GreenCard({
               {loading ? (
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                   Checking in…
                 </span>
               ) : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Check In Student
                 </>
@@ -353,7 +353,7 @@ function RedCard({
       <div className="px-6 py-4 bg-red-600 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
-            <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span className="text-white font-bold text-[15px]">Payment Pending</span>
         </div>
@@ -386,7 +386,7 @@ function RedCard({
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="badge badge-red">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
-              <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             {reg.paymentSelection} Payment
           </span>
@@ -396,7 +396,7 @@ function RedCard({
         {/* Warning note */}
         <div className="mt-4 flex items-start gap-2 text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
           <svg className="w-4 h-4 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Collect cash payment before allowing entry. Use the button below to confirm receipt.
         </div>
@@ -412,15 +412,15 @@ function RedCard({
             {loading ? (
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
                 Confirming…
               </span>
             ) : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Confirm Cash Payment & Check In
               </>
@@ -451,7 +451,7 @@ function OfflineQueuePanel({
       <div className="flex items-center justify-between px-4 py-3 bg-amber-100 border-b border-amber-200">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4 text-amber-700" viewBox="0 0 24 24" fill="none">
-            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span className="text-[13px] font-semibold text-amber-800">
             {pendingCount} action{pendingCount > 1 ? 's' : ''} queued offline
@@ -527,16 +527,16 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
 ──────────────────────────────────────────────────────────────── */
 export default function EntrancePanelPage() {
   /* — State — */
-  const [searchInput,   setSearchInput]   = useState('');
-  const [searchQuery,   setSearchQuery]   = useState('');
-  const [registration,  setRegistration]  = useState<Registration | null | 'not_found'>(null);
-  const [isOnline,      setIsOnline]      = useState(true);
-  const [isSyncing,     setIsSyncing]     = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [registration, setRegistration] = useState<Registration | null | 'not_found'>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [toast,         setToast]         = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [queue,         setQueue]         = useState<QueuedAction[]>(PLACEHOLDER_QUEUE);
-  const [recentActivity,setRecentActivity]= useState<RecentActivity[]>(PLACEHOLDER_RECENT);
-  const [currentTime,   setCurrentTime]   = useState('');
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [queue, setQueue] = useState<QueuedAction[]>(PLACEHOLDER_QUEUE);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>(PLACEHOLDER_RECENT);
+  const [currentTime, setCurrentTime] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -550,12 +550,12 @@ export default function EntrancePanelPage() {
 
   /* — Online/Offline listener — */
   useEffect(() => {
-    const handleOnline  = () => setIsOnline(true);
+    const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online',  handleOnline);
+    window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
-      window.removeEventListener('online',  handleOnline);
+      window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
@@ -598,11 +598,11 @@ export default function EntrancePanelPage() {
     /* Placeholder: simulate API call (replace with real fetch) */
     setTimeout(() => {
       const newActivity: RecentActivity = {
-        id:          Date.now().toString(),
+        id: Date.now().toString(),
         studentName: `${registration.student.firstName} ${registration.student.lastName}`,
-        schoolId:    registration.student.schoolId,
-        action:      'Check_In',
-        timestamp:   new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+        schoolId: registration.student.schoolId,
+        action: 'Check_In',
+        timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
       };
 
       setRegistration({
@@ -618,12 +618,12 @@ export default function EntrancePanelPage() {
       if (!isOnline) {
         setQueue((prev) => [
           {
-            id:              Date.now().toString(),
-            regId:           registration.id,
-            actionType:      'Check_In',
+            id: Date.now().toString(),
+            regId: registration.id,
+            actionType: 'Check_In',
             deviceTimestamp: new Date().toISOString(),
-            syncStatus:      'Pending',
-            studentName:     `${registration.student.firstName} ${registration.student.lastName}`,
+            syncStatus: 'Pending',
+            studentName: `${registration.student.firstName} ${registration.student.lastName}`,
           },
           ...prev,
         ]);
@@ -639,18 +639,18 @@ export default function EntrancePanelPage() {
     /* Placeholder: simulate API call (replace with real fetch) */
     setTimeout(() => {
       const newActivity: RecentActivity = {
-        id:          Date.now().toString(),
+        id: Date.now().toString(),
         studentName: `${registration.student.firstName} ${registration.student.lastName}`,
-        schoolId:    registration.student.schoolId,
-        action:      'Verify_Payment',
-        timestamp:   new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+        schoolId: registration.student.schoolId,
+        action: 'Verify_Payment',
+        timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
       };
 
       setRegistration({
         ...registration,
-        paymentStatus:    'Paid',
+        paymentStatus: 'Paid',
         attendanceStatus: 'Checked_In',
-        checkInAt:        new Date().toISOString(),
+        checkInAt: new Date().toISOString(),
       });
       setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
       setToast({ msg: `Payment confirmed and ${registration.student.firstName} ${registration.student.lastName} checked in.`, type: 'success' });
@@ -659,12 +659,12 @@ export default function EntrancePanelPage() {
       if (!isOnline) {
         setQueue((prev) => [
           {
-            id:              Date.now().toString(),
-            regId:           registration.id,
-            actionType:      'Verify_Payment',
+            id: Date.now().toString(),
+            regId: registration.id,
+            actionType: 'Verify_Payment',
             deviceTimestamp: new Date().toISOString(),
-            syncStatus:      'Pending',
-            studentName:     `${registration.student.firstName} ${registration.student.lastName}`,
+            syncStatus: 'Pending',
+            studentName: `${registration.student.firstName} ${registration.student.lastName}`,
           },
           ...prev,
         ]);
@@ -694,58 +694,69 @@ export default function EntrancePanelPage() {
         <div className="flex flex-col gap-6 animate-fade-in">
 
           {/* ── Page Header ── */}
-<div className="flex flex-col gap-4 mb-8">
-  <div className="flex items-center justify-between gap-3 flex-wrap">
-    <Link
-      href="/manage/dashboard"
-      className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline flex-shrink-0 px-0.5 py-1"
-    >
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      Back to Dashboard
-    </Link>
-  </div>
+          <div className="flex flex-col gap-3 mb-8">
+            {/* Responsive Breadcrumbs Navigation Trail */}
+            <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
+              <Link
+                href="/manage/dashboard"
+                className="hover:text-[var(--color-primary)] transition-colors no-underline"
+              >
+                Dashboard
+              </Link>
+              <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <Link
+                href={`/manage/participants/${event.id}`}
+                className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
+              >
+                {event.title}
+              </Link>
+              <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="text-[var(--color-text)] font-semibold">Entrance Panel</span>
+            </nav>
 
-  <div className="flex-1">
-    {/* Combined title and ConnectionBadge row */}
-    <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
-      {/* Group title and entrance badge on the left */}
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
-        <span className="badge badge-green">Entrance Panel</span>
-      </div>
-      
-      {/* Aligned ConnectionBadge on the right */}
-      <div className="flex-shrink-0">
-        <ConnectionBadge isOnline={isOnline} />
-      </div>
-    </div>
+            <div className="flex-1 mt-2">
+              {/* Combined title and ConnectionBadge row */}
+              <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
+                {/* Group title and entrance badge on the left */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
+                  <span className="badge badge-green">Entrance Panel</span>
+                </div>
 
-    <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-text-muted)]">
-      <span className="flex items-center gap-1">
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-          <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5"/>
-        </svg>
-        {event.venue}
-      </span>
-      <span>·</span>
-      <span>{formatDate(event.startDate)}</span>
-      <span>·</span>
-      {/* Live clock */}
-      <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
-    </div>
-  </div>
-</div>
+                {/* Aligned ConnectionBadge on the right */}
+                <div className="flex-shrink-0">
+                  <ConnectionBadge isOnline={isOnline} />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-text-muted)]">
+                <span className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                  {event.venue}
+                </span>
+                <span>·</span>
+                <span>{formatDate(event.startDate)}</span>
+                <span>·</span>
+                {/* Live clock */}
+                <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
+              </div>
+            </div>
+          </div>
 
 
           {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-            <StatPill label="Checked In"   value={event.checkedIn}        color="text-green-600" />
-            <StatPill label="Registered"   value={event.totalRegistered}  color="text-[var(--color-primary)]" />
-            <StatPill label="Paid"         value={event.confirmedPaid}    color="text-blue-600" />
-            <StatPill label="Capacity"     value={event.capacity}         color="text-[var(--color-text-secondary)]" />
+            <StatPill label="Checked In" value={event.checkedIn} color="text-green-600" />
+            <StatPill label="Registered" value={event.totalRegistered} color="text-[var(--color-primary)]" />
+            <StatPill label="Paid" value={event.confirmedPaid} color="text-blue-600" />
+            <StatPill label="Capacity" value={event.capacity} color="text-[var(--color-text-secondary)]" />
           </div>
 
           {/* Progress bar */}
@@ -772,7 +783,7 @@ export default function EntrancePanelPage() {
               <div className="card card-body !p-5">
                 <label className="form-label mb-2 flex items-center gap-2">
                   <svg className="w-4 h-4 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 9h6V3H3v6zM3 21h6v-6H3v6zM15 3v6h6V3h-6zM9 9h6v6H9V9zM15 15h6v6h-6v-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 9h6V3H3v6zM3 21h6v-6H3v6zM15 3v6h6V3h-6zM9 9h6v6H9V9zM15 15h6v6h-6v-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Scan / Enter School ID
                 </label>
@@ -796,7 +807,7 @@ export default function EntrancePanelPage() {
                         aria-label="Clear"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                          <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       </button>
                     )}
@@ -806,7 +817,7 @@ export default function EntrancePanelPage() {
                     className="btn btn-primary px-6 flex-shrink-0"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     <span className="hidden sm:inline">Look Up</span>
                   </button>
@@ -820,7 +831,7 @@ export default function EntrancePanelPage() {
               {searchQuery && registration && registration !== 'not_found' && (
                 registration.paymentStatus === 'Paid'
                   ? <GreenCard reg={registration} onCheckIn={handleCheckIn} loading={actionLoading} />
-                  : <RedCard   reg={registration} onConfirmPayment={handleConfirmPayment} loading={actionLoading} />
+                  : <RedCard reg={registration} onConfirmPayment={handleConfirmPayment} loading={actionLoading} />
               )}
 
               {/* Hint after result */}
@@ -830,7 +841,7 @@ export default function EntrancePanelPage() {
                   className="btn btn-ghost btn-full text-[var(--color-text-secondary)]"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Scan next student
                 </button>
@@ -851,7 +862,7 @@ export default function EntrancePanelPage() {
                     { icon: '🟢', text: 'Green card = payment confirmed. Tap Check In.' },
                     { icon: '🔴', text: 'Red card = collect cash, then tap Confirm Payment.' },
                     { icon: '📵', text: 'Works offline. Actions sync when connection returns.' },
-                    { icon: '↩️',  text: 'Press Enter to instantly look up a School ID.' },
+                    { icon: '↩️', text: 'Press Enter to instantly look up a School ID.' },
                   ].map((tip, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
                       <span className="mt-0.5">{tip.icon}</span>
@@ -870,7 +881,7 @@ export default function EntrancePanelPage() {
                 className="flex items-center justify-center gap-2 text-[13px] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] bg-[var(--color-primary-muted)] rounded-xl px-4 py-3 transition-colors no-underline"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 View Full Masterlist
               </Link>
@@ -884,8 +895,8 @@ export default function EntrancePanelPage() {
         <div className={`toast ${toast.type === 'success' ? 'toast-success' : 'toast-error'}`}>
           <div className="flex items-center gap-2">
             {toast.type === 'success'
-              ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-              : <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+              : <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             }
             {toast.msg}
           </div>

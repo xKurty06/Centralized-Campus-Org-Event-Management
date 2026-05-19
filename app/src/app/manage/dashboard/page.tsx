@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import ManageShell from '@/components/ManageShell';
 
@@ -45,7 +44,7 @@ const MOCK_ORG: OrgSummary = {
   adviser: 'Prof. Maria Santos',
 };
 
-const MOCK_EVENTS: ManagedEvent[] = [
+const ALL_EVENTS: ManagedEvent[] = [
   {
     id: 'evt_001', title: 'Web Development Summit 2025', category: 'Workshop',
     start_date: '2025-03-12T08:00:00', end_date: '2025-03-12T17:00:00',
@@ -73,6 +72,11 @@ const MOCK_EVENTS: ManagedEvent[] = [
 ];
 
 /* ----------------------------------------------------------------
+   Dashboard shows only active (Open/Upcoming) events, capped at 4
+   ---------------------------------------------------------------- */
+const RECENT_LIMIT = 4;
+
+/* ----------------------------------------------------------------
    Helpers
    ---------------------------------------------------------------- */
 const NOW = new Date('2025-03-10T00:00:00');
@@ -80,20 +84,22 @@ const NOW = new Date('2025-03-10T00:00:00');
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 }
-
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
-
 function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - NOW.getTime()) / 86400000);
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
-  Workshop: 'bg-blue-50 text-blue-700', Seminar: 'bg-purple-50 text-purple-700',
-  Competition: 'bg-orange-50 text-orange-700', Activity: 'bg-indigo-50 text-indigo-700',
-  Training: 'bg-yellow-50 text-yellow-800', Outreach: 'bg-teal-50 text-teal-700',
-  Cultural: 'bg-pink-50 text-pink-700', Other: 'bg-gray-100 text-gray-600',
+  Workshop: 'bg-blue-50 text-blue-700',
+  Seminar: 'bg-purple-50 text-purple-700',
+  Competition: 'bg-orange-50 text-orange-700',
+  Activity: 'bg-indigo-50 text-indigo-700',
+  Training: 'bg-yellow-50 text-yellow-800',
+  Outreach: 'bg-teal-50 text-teal-700',
+  Cultural: 'bg-pink-50 text-pink-700',
+  Other: 'bg-gray-100 text-gray-600',
 };
 
 const STATUS_CONFIG: Record<EventStatus, { label: string; style: string }> = {
@@ -133,7 +139,7 @@ function StatCard({ icon, value, label, sub, color = 'text-gray-900', bg = 'bg-w
 }
 
 /* ----------------------------------------------------------------
-   Event card
+   Event card — links to /manage/events/[event-id]
    ---------------------------------------------------------------- */
 function EventCard({ event }: { event: ManagedEvent }) {
   const fill = Math.min(Math.round((event.total_registered / event.capacity) * 100), 100);
@@ -142,6 +148,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
   const status = STATUS_CONFIG[event.status];
 
   return (
+    /* Title row clicks through to event overview */
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow">
 
       {/* Badges + countdown */}
@@ -166,8 +173,13 @@ function EventCard({ event }: { event: ManagedEvent }) {
         )}
       </div>
 
-      {/* Title */}
-      <p className="text-[15px] font-bold text-gray-900 leading-snug">{event.title}</p>
+      {/* Title — links to event overview */}
+      <Link
+        href={`/manage/events/${event.id}`}
+        className="text-[15px] font-bold text-gray-900 leading-snug hover:text-green-700 transition-colors no-underline"
+      >
+        {event.title}
+      </Link>
 
       {/* Meta */}
       <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -190,11 +202,14 @@ function EventCard({ event }: { event: ManagedEvent }) {
           </span>
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${isFull ? 'bg-red-400' : 'bg-green-600'}`} style={{ width: `${fill}%` }} />
+          <div
+            className={`h-full rounded-full ${isFull ? 'bg-red-400' : 'bg-green-600'}`}
+            style={{ width: `${fill}%` }}
+          />
         </div>
       </div>
 
-      {/* Payment summary (paid events) */}
+      {/* Payment summary */}
       {event.is_paid && (
         <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-100">
           <span className="flex items-center gap-1.5 text-[12px] text-gray-600">
@@ -211,7 +226,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
         </div>
       )}
 
-      {/* Actions */}
+      {/* Actions — all pointing to /manage/events/[id] sub-routes */}
       <div className="flex flex-wrap gap-2 pt-1">
         <Link
           href={`/manage/participants/${event.id}`}
@@ -226,10 +241,10 @@ function EventCard({ event }: { event: ManagedEvent }) {
           <IconScan /> Entrance panel
         </Link>
         <Link
-          href={`/manage/edit-event/${event.id}`}
+          href={`/manage/events/${event.id}`}
           className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 border border-gray-200 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-all no-underline ml-auto"
         >
-          <IconEdit /> Edit
+          <IconChevronRight /> Overview
         </Link>
       </div>
     </div>
@@ -240,33 +255,27 @@ function EventCard({ event }: { event: ManagedEvent }) {
    Page
    ---------------------------------------------------------------- */
 export default function ManageDashboardPage() {
-  const [tab, setTab] = useState<'active' | 'all'>('active');
-
   const org = MOCK_ORG;
-  const totalRegistered = MOCK_EVENTS.reduce((s, e) => s + e.total_registered, 0);
-  const totalPending = MOCK_EVENTS.reduce((s, e) => s + e.total_pending, 0);
-  const totalProofsReview = MOCK_EVENTS.reduce((s, e) => s + e.proofs_pending_review, 0);
-  const activeEvents = MOCK_EVENTS.filter((e) => e.status === 'Open' || e.status === 'Upcoming');
-  const displayed = tab === 'active' ? activeEvents : MOCK_EVENTS;
+
+  // Dashboard metrics across all events
+  const totalRegistered = ALL_EVENTS.reduce((s, e) => s + e.total_registered, 0);
+  const totalPending = ALL_EVENTS.reduce((s, e) => s + e.total_pending, 0);
+  const totalProofsReview = ALL_EVENTS.reduce((s, e) => s + e.proofs_pending_review, 0);
+  const activeEvents = ALL_EVENTS.filter(e => e.status === 'Open' || e.status === 'Upcoming');
+
+  // Dashboard shows only recent active events, capped
+  const recentEvents = activeEvents.slice(0, RECENT_LIMIT);
+  const hasMore = ALL_EVENTS.length > RECENT_LIMIT;
 
   return (
     <ManageShell pageTitle="Salikop">
       <div className="flex flex-col gap-6 animate-fade-in">
 
         {/* ── Header ── */}
-        <div className="flex flex-col gap-4 w-full">
-          <div>
-            <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wide">Manage</p>
-
-            {/* New container wrapping the title and button to align them left and right */}
-            <div className="flex flex-row justify-between items-center w-full mt-0.5">
-              <div>
-                <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Dashboard</h1>
-              </div>
-            </div>
-          </div>
+        <div>
+          <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wide">Manage</p>
+          <h1 className="text-[22px] font-bold text-gray-900 tracking-tight mt-0.5">Dashboard</h1>
         </div>
-
 
         {/* ── Org identity strip ── */}
         <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -282,13 +291,11 @@ export default function ManageDashboardPage() {
           <div className="flex items-center gap-3 flex-wrap">
             {org.accreditation_status === 'Active' ? (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                Accredited · Active
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Accredited · Active
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                Suspended
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />Suspended
               </span>
             )}
             <Link
@@ -334,46 +341,65 @@ export default function ManageDashboardPage() {
           <StatCard icon={<IconProof />} value={totalProofsReview} label="Proofs to review" sub="Online payment uploads" color="text-blue-700" bg="bg-blue-50 border-blue-200" />
         </div>
 
-        {/* ── Events section ── */}
+        {/* ── Recent active events ── */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-[16px] font-bold text-gray-800">Your events</h2>
-            <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
-              {([
-                { key: 'active', label: 'Active', count: activeEvents.length },
-                { key: 'all', label: 'All', count: MOCK_EVENTS.length },
-              ] as const).map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-medium transition-all cursor-pointer
-                    ${tab === t.key ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
-                >
-                  {t.label}
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-white bg-opacity-20 text-gray-500' : 'bg-gray-100 text-gray-500'}`}>
-                    {t.count}
-                  </span>
-                </button>
-              ))}
+
+          {/* Section header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-[16px] font-bold text-gray-800">Active events</h2>
+              <p className="text-[12px] text-gray-400 mt-0.5">
+                {recentEvents.length === 0
+                  ? 'No active events right now'
+                  : `Showing ${recentEvents.length} of ${activeEvents.length} active event${activeEvents.length !== 1 ? 's' : ''}`}
+              </p>
             </div>
+            <Link
+              href="/manage/events"
+              className="flex items-center gap-1.5 text-[12px] font-semibold text-green-700 hover:text-green-800 hover:bg-green-50 border border-green-200 hover:border-green-300 px-3.5 py-1.5 rounded-lg transition-all no-underline"
+            >
+              View all
+              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </Link>
           </div>
 
-          {displayed.length === 0 ? (
+          {recentEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center bg-white rounded-xl border border-gray-200">
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
                 <svg className="w-7 h-7 text-gray-300" viewBox="0 0 24 24" fill="none">
                   <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
-              <p className="text-[14px] font-semibold text-gray-600">No events yet</p>
-              <Link href="/manage/create-event" className="text-[13px] font-semibold bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg transition-colors no-underline">
+              <p className="text-[14px] font-semibold text-gray-600">No active events</p>
+              <Link
+                href="/manage/create-event"
+                className="text-[13px] font-semibold bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg transition-colors no-underline"
+              >
                 Create your first event
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {displayed.map((event) => <EventCard key={event.id} event={event} />)}
-            </div>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {recentEvents.map(event => <EventCard key={event.id} event={event} />)}
+              </div>
+
+              {/* "View all" footer CTA when there are more events */}
+              {hasMore && (
+                <Link
+                  href="/manage/events"
+                  className="flex items-center justify-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-green-700 border border-gray-200 hover:border-green-300 hover:bg-green-50 py-3 rounded-xl transition-all no-underline"
+                >
+                  <IconCalendar />
+                  View all {ALL_EVENTS.length} events
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </Link>
+              )}
+            </>
           )}
         </div>
 
@@ -383,7 +409,7 @@ export default function ManageDashboardPage() {
             { href: '/manage/create-event', icon: <IconAdd />, label: 'Create event', desc: 'Publish a new campus event' },
             { href: '/manage/org-profile', icon: <IconOrgEdit />, label: 'Edit org profile', desc: 'Update name, logo, and description' },
             { href: '/events', icon: <IconEye />, label: 'View public page', desc: "See your org's events as students" },
-          ].map((item) => (
+          ].map(item => (
             <Link
               key={item.href}
               href={item.href}
@@ -402,6 +428,7 @@ export default function ManageDashboardPage() {
             </Link>
           ))}
         </div>
+
       </div>
     </ManageShell>
   );
@@ -416,7 +443,7 @@ function IconClock() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill=
 function IconProof() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><path d="M8 11h4M8 14h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
 function IconPin() { return <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>; }
 function IconScan() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M2 7V4a2 2 0 012-2h3M13 2h3a2 2 0 012 2v3M18 13v3a2 2 0 01-2 2h-3M7 18H4a2 2 0 01-2-2v-3M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
-function IconEdit() { return <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-9.9 9.9-3.414.586.586-3.414 9.9-9.9z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function IconAdd() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M10 5v10M5 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function IconOrgEdit() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 4h8l4 4v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
 function IconEye() { return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M2 10c1.73-2.49 4.58-5 8-5s6.27 2.51 8 5c-1.73 2.49-4.58 5-8 5s-6.27-2.51-8-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" /></svg>; }
+function IconChevronRight() { return <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
