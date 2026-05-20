@@ -88,7 +88,10 @@ const BANNER_COLORS: Record<string, string> = {
 /* ----------------------------------------------------------------
    Custom branded dropdown
    ---------------------------------------------------------------- */
-interface DropdownOption { value: string; label: string; }
+interface DropdownOption {
+  value: string;
+  label: string;
+}
 
 function FilterDropdown({
   icon,
@@ -96,26 +99,32 @@ function FilterDropdown({
   options,
   value,
   onChange,
+  counts,
 }: {
   icon: React.ReactNode;
   placeholder: string;
   options: DropdownOption[];
   value: string;
   onChange: (v: string) => void;
+  counts?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
   const selected = options.find((o) => o.value === value);
+  const selectedCount = value && counts ? counts[value] : undefined;
+  const isActive = !!value;
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     }
+
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
-
-  const isActive = !!value;
 
   return (
     <div ref={ref} className="relative">
@@ -128,51 +137,86 @@ function FilterDropdown({
           }`}
       >
         <span className={isActive ? 'text-white' : 'text-gray-400'}>{icon}</span>
+
         <span>{isActive ? selected?.label : placeholder}</span>
-        {isActive ? (
-          /* Clear x */
-          <span
-            onClick={(e) => { e.stopPropagation(); onChange(''); }}
-            className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-40 transition-colors"
-          >
-            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+
+        {isActive && typeof selectedCount === 'number' ? (
+          <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-semibold text-green-700 shadow-sm">
+            {selectedCount}
           </span>
         ) : (
-          <svg className={`w-3.5 h-3.5 transition-transform duration-150 ${open ? 'rotate-180' : ''} ${isActive ? 'text-white' : 'text-gray-400'}`} viewBox="0 0 20 20" fill="none">
-            <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className={`w-3.5 h-3.5 transition-transform duration-150 ${open ? 'rotate-180' : ''
+              } ${isActive ? 'text-white' : 'text-gray-400'}`}
+            viewBox="0 0 20 20"
+            fill="none"
+          >
+            <path
+              d="M5 7.5l5 5 5-5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         )}
       </button>
 
-      {/* Dropdown panel */}
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] min-w-[180px] bg-white border border-gray-200 rounded-xl shadow-lg z-30 overflow-hidden py-1">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`flex items-center justify-between w-full px-4 py-2.5 text-[13px] font-medium text-left transition-colors duration-100 cursor-pointer
-                ${opt.value === value
-                  ? 'bg-green-50 text-green-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-            >
-              {opt.label || `All ${placeholder}s`}
-              {opt.value === value && (
-                <svg className="w-3.5 h-3.5 text-green-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
-          ))}
+        <div className="absolute left-0 top-[calc(100%+6px)] min-w-[200px] bg-white border border-gray-200 rounded-xl shadow-lg z-30 overflow-hidden py-1">
+          {options.map((opt) => {
+            const count = counts?.[opt.value];
+
+            return (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`flex items-center justify-between w-full px-4 py-2.5 text-[13px] font-medium text-left transition-colors duration-100 cursor-pointer
+                  ${opt.value === value
+                    ? 'bg-green-50 text-green-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+              >
+                <span>{opt.label || `All ${placeholder}s`}</span>
+
+                <span className="flex items-center gap-2">
+                  {opt.value === value && (
+                    <svg
+                      className="w-3.5 h-3.5 text-green-600 flex-shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+
+                  {typeof count === 'number' && (
+                    <span
+                      className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold
+                        ${opt.value === value
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-500'
+                        }`}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
-
 /* ----------------------------------------------------------------
    Event Card
    ---------------------------------------------------------------- */
@@ -287,6 +331,38 @@ export default function EventsPage() {
     setTypeFilter('');
   }
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    MOCK_EVENTS.forEach((e) => {
+      counts[e.category] = (counts[e.category] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
+  const organizationCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    MOCK_EVENTS.forEach((e) => {
+      counts[e.organization] = (counts[e.organization] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
+  const venueCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    MOCK_EVENTS.forEach((e) => {
+      counts[e.venue] = (counts[e.venue] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    MOCK_EVENTS.forEach((e) => {
+      counts[e.type] = (counts[e.type] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar
@@ -343,33 +419,34 @@ export default function EventsPage() {
               placeholder="Category"
               value={category}
               onChange={setCategory}
+              counts={categoryCounts}
               options={CATEGORIES.map((c) => ({ value: c, label: c || 'All Categories' }))}
             />
 
-            {/* Organization */}
             <FilterDropdown
               icon={<svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}
               placeholder="Organization"
               value={organization}
               onChange={setOrganization}
+              counts={organizationCounts}
               options={ORGANIZATIONS.map((o) => ({ value: o, label: o || 'All Organizations' }))}
             />
 
-            {/* Venue */}
             <FilterDropdown
               icon={<svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M10 2C6.69 2 4 4.69 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.31-2.69-6-6-6zm0 8.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}
               placeholder="Venue"
               value={venue}
               onChange={setVenue}
+              counts={venueCounts}
               options={VENUES.map((v) => ({ value: v, label: v || 'All Venues' }))}
             />
 
-            {/* Type */}
             <FilterDropdown
               icon={<svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M9 5H7a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h0a2 2 0 002-2M9 5a2 2 0 012-2h0a2 2 0 012 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}
               placeholder="Type"
               value={typeFilter}
               onChange={setTypeFilter}
+              counts={typeCounts}
               options={TYPES.map((t) => ({ value: t, label: t || 'All Types' }))}
             />
 

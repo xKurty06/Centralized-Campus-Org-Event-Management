@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 
@@ -8,17 +9,18 @@ import Navbar from '@/components/Navbar';
    Types
    ---------------------------------------------------------------- */
 type OrgCategory = 'All' | 'Academic' | 'Non-Academic' | 'Religious';
+type OrgStatus = 'Active' | 'Suspended';
 
 interface Organization {
   id: string;
   name: string;
   acronym: string;
-  category: Exclude<OrgCategory, 'All'>; // Ensures data maps to sub-categories
+  category: Exclude<OrgCategory, 'All'>;
   description: string;
   adviser: string;
   members: number;
   eventsThisYear: number;
-  status: 'Active' | 'Suspended';
+  status: OrgStatus;
   color: string;
 }
 
@@ -48,27 +50,34 @@ const CATEGORY_TABS: { value: OrgCategory; label: string }[] = [
 ];
 
 const CATEGORY_META: Record<OrgCategory, { description: string; color: string; bg: string }> = {
-  'All': { description: 'All accredited campus organizations', color: 'text-gray-700', bg: 'bg-gray-100 border-gray-300' },
-  'Academic': { description: 'Department-based and discipline-specific organizations', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+  All: { description: 'All accredited campus organizations', color: 'text-gray-700', bg: 'bg-gray-100 border-gray-300' },
+  Academic: { description: 'Department-based and discipline-specific organizations', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
   'Non-Academic': { description: 'Student government, civic, cultural, and special interest groups', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-  'Religious': { description: 'Faith-based communities and campus ministry organizations', color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
+  Religious: { description: 'Faith-based communities and campus ministry organizations', color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
 };
 
 /* ----------------------------------------------------------------
    Branded dropdown (reusable)
    ---------------------------------------------------------------- */
 function FilterDropdown({
-  placeholder, options, value, onChange, icon,
+  placeholder,
+  options,
+  value,
+  onChange,
+  icon,
+  counts,
 }: {
   placeholder: string;
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  counts?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
+  const selectedCount = value && counts ? counts[value] : undefined;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -89,33 +98,58 @@ function FilterDropdown({
       >
         <span className={isActive ? 'text-white' : 'text-gray-400'}>{icon}</span>
         <span>{isActive ? selected?.label : placeholder}</span>
-        {isActive ? (
-          <span onClick={(e) => { e.stopPropagation(); onChange(''); }} className="w-4 h-4 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-40">
-            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+
+        {isActive && typeof selectedCount === 'number' ? (
+          <span className="ml-1 inline-flex items-center justify-center rounded-full bg-white bg-opacity-20 px-1.5 py-0.5 text-[11px] font-semibold text-gray-500">
+            {selectedCount}
           </span>
-        ) : (
-          <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="none">
+        ) :
+          <svg className={`w-3.5 h-3.5 transition-transform duration-150 ${open ? 'rotate-180' : ''} ${isActive ? 'text-white' : 'text-gray-400'}`} viewBox="0 0 20 20" fill="none">
             <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        )}
+        }
+
       </button>
+
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg z-30 overflow-hidden py-1">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`flex items-center justify-between w-full px-4 py-2.5 text-[13px] font-medium text-left transition-colors cursor-pointer
-                ${opt.value === value ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-            >
-              {opt.label}
-              {opt.value === value && (
-                <svg className="w-3.5 h-3.5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
-          ))}
+        <div className="absolute left-0 top-[calc(100%+6px)] min-w-[180px] bg-white border border-gray-200 rounded-xl shadow-lg z-30 overflow-hidden py-1">
+          {options.map((opt) => {
+            const count = counts?.[opt.value];
+
+            return (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`flex items-center justify-between w-full px-4 py-2.5 text-[13px] font-medium text-left transition-colors cursor-pointer
+                  ${opt.value === value ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+              >
+                <span>{opt.label}</span>
+
+                <span className="flex items-center gap-2">
+                  {opt.value === value && (
+                    <svg className="w-3.5 h-3.5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                  {typeof count === 'number' && (
+                    <span
+                      className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full
+                      ${opt.value === value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -200,32 +234,49 @@ export default function OrganizationsPage() {
   const [activeTab, setActiveTab] = useState<OrgCategory>('All');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // 1. Base filter applying ONLY search and status constraints (used to compute stable counts)
-  const baseFiltered = useMemo(() => {
-    const q = search.toLowerCase();
-    return MOCK_ORGS.filter((o) =>
-      (!search || o.name.toLowerCase().includes(q) || o.acronym.toLowerCase().includes(q)) &&
-      (!statusFilter || o.status === statusFilter)
-    );
-  }, [search, statusFilter]);
+  const searchedOrgs = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return MOCK_ORGS.filter((o) => !q || o.name.toLowerCase().includes(q) || o.acronym.toLowerCase().includes(q));
+  }, [search]);
 
-  // 2. Final display filter that isolates by category tab selection
+  const statusCounts = useMemo(() => {
+    return {
+      Active: searchedOrgs.filter((o) => o.status === 'Active').length,
+      Suspended: searchedOrgs.filter((o) => o.status === 'Suspended').length,
+    };
+  }, [searchedOrgs]);
+
+  const baseFiltered = useMemo(() => {
+    return searchedOrgs.filter((o) => !statusFilter || o.status === statusFilter);
+  }, [searchedOrgs, statusFilter]);
+
   const filtered = useMemo(() => {
     if (activeTab === 'All') return baseFiltered;
     return baseFiltered.filter((o) => o.category === activeTab);
   }, [baseFiltered, activeTab]);
 
+  const categoryCounts = useMemo(() => {
+    return {
+      All: baseFiltered.length,
+      Academic: baseFiltered.filter((o) => o.category === 'Academic').length,
+      'Non-Academic': baseFiltered.filter((o) => o.category === 'Non-Academic').length,
+      Religious: baseFiltered.filter((o) => o.category === 'Religious').length,
+    };
+  }, [baseFiltered]);
+
   const hasFilters = !!(search || statusFilter || activeTab !== 'All');
 
-  function clearAll() { setSearch(''); setActiveTab('All'); setStatusFilter(''); }
+  function clearAll() {
+    setSearch('');
+    setActiveTab('All');
+    setStatusFilter('');
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '2021-00142', department: 'BSCS 3A' }} />
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
-
-        {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-[26px] font-bold text-gray-900 tracking-tight">Student Organizations</h1>
@@ -244,7 +295,6 @@ export default function OrganizationsPage() {
           </div>
         </div>
 
-        {/* ── Search + filter bar ── */}
         <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex flex-col gap-3">
           <div className="relative">
             <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="none">
@@ -259,51 +309,73 @@ export default function OrganizationsPage() {
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
               </button>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-400 mr-1">
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                <path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
               Filters
             </div>
+
             <FilterDropdown
               placeholder="Status"
               value={statusFilter}
               onChange={setStatusFilter}
-              icon={<svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" /><path d="M10 6v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}
+              counts={{ '': searchedOrgs.length, Active: statusCounts.Active, Suspended: statusCounts.Suspended }}
+              icon={
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M10 6v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              }
               options={[
                 { value: '', label: 'All Status' },
                 { value: 'Active', label: 'Active' },
                 { value: 'Suspended', label: 'Suspended' },
               ]}
             />
+
             {hasFilters && (
               <>
                 <div className="h-5 w-px bg-gray-200 mx-1" />
-                <button onClick={clearAll} className="text-[12px] font-medium text-red-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                <button
+                  onClick={clearAll}
+                  className="text-[12px] font-medium text-red-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                   Clear
                 </button>
               </>
             )}
+
             <span className="ml-auto text-[12px] text-gray-400">
               {filtered.length} {filtered.length === 1 ? 'organization' : 'organizations'}
             </span>
           </div>
         </div>
 
-        {/* ── Category tabs ── */}
         <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit">
           {CATEGORY_TABS.map((tab) => {
-            // Count calculation checks baseFiltered (ignoring the tab selection itself)
-            const count = tab.value === 'All' 
-              ? baseFiltered.length 
-              : baseFiltered.filter((o) => o.category === tab.value).length;
-              
+            const count = categoryCounts[tab.value];
             const isSelected = activeTab === tab.value;
+
             return (
               <button
                 key={tab.value}
@@ -312,8 +384,10 @@ export default function OrganizationsPage() {
                   ${isSelected ? 'bg-green-700 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
               >
                 {tab.label}
-                <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full transition-colors
-                  ${isSelected ? 'bg-white text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                <span
+                  className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full transition-colors
+                  ${isSelected ? 'bg-white text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                >
                   {count}
                 </span>
               </button>
@@ -321,7 +395,6 @@ export default function OrganizationsPage() {
           })}
         </div>
 
-        {/* ── Content ── */}
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -331,25 +404,32 @@ export default function OrganizationsPage() {
             </div>
             <p className="text-[15px] font-semibold text-gray-700">No organizations found</p>
             <p className="text-[13px] text-gray-400 max-w-xs">Try adjusting your search or clearing the filters.</p>
-            <button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:underline cursor-pointer">Clear all filters</button>
+            <button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:underline cursor-pointer">
+              Clear all filters
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             <CategoryHeader category={activeTab} />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((org) => <OrgCard key={org.id} org={org} />)}
+              {filtered.map((org) => (
+                <OrgCard key={org.id} org={org} />
+              ))}
             </div>
           </div>
         )}
       </main>
 
-      {/* ── Footer ── */}
       <footer className="border-t border-gray-200 bg-white mt-8">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
           <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>
+            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">
+              Privacy Policy
+            </Link>
+            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">
+              Contact Support
+            </Link>
           </div>
         </div>
       </footer>
