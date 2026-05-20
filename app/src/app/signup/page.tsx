@@ -61,15 +61,15 @@ const COURSES_BY_DEPT: Record<string, { id: string; code: string; name: string }
     ],
 };
 
-const SCHOOL_ID_REGEX = /^\d{4}-\d-\d{5}$/;
+const SCHOOL_ID_REGEX = /^\d{4}-\d{2}-\d{3}$/;
 const EMAIL_DOMAIN = '@cvsu.edu.ph';
 
 // ─── Helpers ──────────────────────────────────────────────────
 function formatSchoolId(raw: string): string {
     const digits = raw.replace(/\D/g, '');
     if (digits.length <= 4) return digits;
-    if (digits.length <= 5) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    return `${digits.slice(0, 4)}-${digits.slice(4, 5)}-${digits.slice(5, 10)}`;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 9)}`;
 }
 
 function passwordStrength(pw: string): { score: number; label: string; color: string } {
@@ -155,14 +155,14 @@ function StepBar({ current }: { current: Step }) {
                             className={[
                                 'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300',
                                 current > s.n
-                                    ? 'bg-[--color-primary-light] text-white border-2 border-[--color-primary-light]'
+                                    ? 'bg-[--color-primary-light] text-[--color-text-muted] border-2 border-[--color-primary-light]'
                                     : current === s.n
-                                        ? 'bg-[--color-primary-light] text-white border-2 border-[--color-primary-light] shadow-[0_0_0_4px_rgba(34,160,80,.15)]'
+                                        ? 'bg-[--color-primary-light] text-[--color-text-muted] border-2 border-[--color-primary-light] shadow-[0_0_0_4px_rgba(34,160,80,.15)]'
                                         : 'bg-white border-2 border-[--color-border] text-[--color-text-muted]',
                             ].join(' ')}
                         >
                             {current > s.n ? (
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-light)" strokeWidth="3" strokeLinecap="round">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             ) : s.n}
