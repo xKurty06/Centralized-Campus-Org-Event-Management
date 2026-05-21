@@ -202,39 +202,51 @@ export default function AdminOrgDetailPage() {
             <main className="flex flex-col gap-6 animate-fade-in">
 
                 {/* ── Breadcrumb ── */}
-                <nav className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    <a href="/admin/organizations" style={{ color: 'var(--color-primary-light)' }}>Organizations</a>
-                    <span>/</span>
-                    <span>{org.name}</span>
-                </nav>
+                <div className="flex flex-col gap-4">
+                    <Link
+                        href="/admin/organizations"
+                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
+                    >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M15 19l-7-7 7-7"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                        Back to Organizations
+                    </Link>
 
-                {/* ── Page Header ── */}
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="w-16 h-16 rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0"
-                            style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
-                        >
-                            {org.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h1 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
-                                    {org.name}
-                                </h1>
-                                <span className={`badge ${org.accreditationStatus === 'Active' ? 'badge-green' : 'badge-red'}`}>
-                                    {org.accreditationStatus}
-                                </span>
-                                <span className="badge badge-blue">{org.category}</span>
+                    {/* ── Page Header ── */}
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-4">
+                            <div
+                                className="w-16 h-16 rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0"
+                                style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
+                            >
+                                {org.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
                             </div>
-                            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                                Adviser: {org.adviser} · Founded {new Date(org.foundedDate).getFullYear()}
-                            </p>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
+                                        {org.name}
+                                    </h1>
+                                    <span className={`badge ${org.accreditationStatus === 'Active' ? 'badge-green' : 'badge-red'}`}>
+                                        {org.accreditationStatus}
+                                    </span>
+                                    <span className="badge badge-blue">{org.category}</span>
+                                </div>
+                                <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                                    Adviser: {org.adviser} · Founded {new Date(org.foundedDate).getFullYear()}
+                                </p>
+                            </div>
                         </div>
+                        <button className="btn btn-outline btn-sm" onClick={() => { setEditDraft(org); setShowEditModal(true); }}>
+                            <IconEdit /> Edit Profile
+                        </button>
                     </div>
-                    <button className="btn btn-outline btn-sm" onClick={() => { setEditDraft(org); setShowEditModal(true); }}>
-                        <IconEdit /> Edit Profile
-                    </button>
                 </div>
 
                 {/* ── Description ── */}
@@ -748,6 +760,7 @@ export default function AdminOrgDetailPage() {
    Shared Modal Shell
    ---------------------------------------------------------------- */
 import { useEffect } from 'react';
+import Link from 'next/dist/client/link';
 
 function Modal({
     title,

@@ -734,16 +734,16 @@ export default function EntrancePanelPage() {
             {/* Responsive Breadcrumbs Navigation Trail */}
             <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
               <Link
-                href="/manage/dashboard"
+                href="/manage/events"
                 className="hover:text-[var(--color-primary)] transition-colors no-underline"
               >
-                Dashboard
+                Events
               </Link>
               <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
                 <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <Link
-                href={`/manage/participants/${event.id}`}
+                href={`/manage/events/${event.id}`}
                 className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
               >
                 {event.title}
@@ -754,7 +754,7 @@ export default function EntrancePanelPage() {
               <span className="text-[var(--color-text)] font-semibold">Entrance Panel</span>
             </nav>
 
-            <div className="flex-1 mt-2">
+            <div className="flex-1">
               {/* Combined title and ConnectionBadge row */}
               <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
                 {/* Group title and entrance badge on the left */}

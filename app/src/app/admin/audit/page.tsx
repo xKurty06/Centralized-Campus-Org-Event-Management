@@ -2,6 +2,7 @@
 
 import { useState, useMemo, Fragment } from 'react';
 import AdminShell from '@/components/AdminShell';
+import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
 /* ----------------------------------------------------------------
    Types
@@ -167,6 +168,7 @@ export default function AdminAuditPage() {
             return matchSearch && matchCat && matchRole;
         });
     }, [search, categoryFilter, roleFilter]);
+    const hasActiveFilters = !!search || categoryFilter !== 'All' || roleFilter !== 'All';
 
     return (
         <AdminShell>
@@ -174,33 +176,33 @@ export default function AdminAuditPage() {
 
                 {/* ── Page Header ── */}
                 <div className="flex items-start justify-between gap-4 flex-wrap">
-    {/* Title Section */}
-    <div className="flex-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1">
-            Admin
-        </p>
+                    {/* Title Section */}
+                    <div className="flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1">
+                            Admin
+                        </p>
 
-        {/* This wrapper now ensures both Title and Button are vertically centered */}
-        <div className="flex items-center justify-between gap-4">
-            <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">
-                Audit Log
-            </h1>
-            
-            <button 
-                className="btn btn-outline btn-sm whitespace-nowrap" 
-                disabled 
-                title="TODO: POST /api/admin/audit/export"
-            >
-                <IconDownload />
-                Export CSV
-            </button>
-        </div>
+                        {/* This wrapper now ensures both Title and Button are vertically centered */}
+                        <div className="flex items-center justify-between gap-4">
+                            <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">
+                                Audit Log
+                            </h1>
 
-        <p className="text-[14px] text-[var(--color-text-muted)] mt-1">
-            Read-only record of all administrative interventions and state changes across the platform.
-        </p>
-    </div>
-</div>
+                            <button
+                                className="btn btn-outline btn-sm whitespace-nowrap"
+                                disabled
+                                title="TODO: POST /api/admin/audit/export"
+                            >
+                                <IconDownload />
+                                Export CSV
+                            </button>
+                        </div>
+
+                        <p className="text-[14px] text-[var(--color-text-muted)] mt-1">
+                            Read-only record of all administrative interventions and state changes across the platform.
+                        </p>
+                    </div>
+                </div>
 
                 {/* ── Summary Stat Chips ── */}
                 <div className="flex gap-3 flex-wrap">
@@ -218,51 +220,89 @@ export default function AdminAuditPage() {
                 </div>
 
                 {/* ── Filters ── */}
+                {/* ── Filters ─────────────────────────────────────────────── */}
                 <div className="card" style={{ boxShadow: 'none' }}>
-                    <div className="card-body flex flex-wrap gap-3 items-end">
-                        {/* Search */}
-                        <div className="form-group flex-1 min-w-48" style={{ marginBottom: 0 }}>
-                            <label className="form-label text-xs">Search</label>
-                            <div className="input-icon-wrapper">
-                                <span className="input-icon-left"><IconSearch /></span>
-                                <input
-                                    type="text"
-                                    placeholder="Action, actor, or target…"
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    className="input-has-left-icon"
+                    <div className="card-body py-3.5">
+                        <div className="flex flex-col gap-2.5">
+
+                            {/* Controls row */}
+                            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
+
+                                {/* Search */}
+                                <div className="input-icon-wrapper flex-1 min-w-[180px]">
+                                    <span className="input-icon-left"><IconSearch /></span>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search by action, actor, or target…"
+                                        className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            aria-label="Clear search"
+                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+
+                                <FilterSelect
+                                    value={categoryFilter}
+                                    defaultValue="All"
+                                    onChange={(v) => setCat(v as ActionCategory | 'All')}
+                                    options={[
+                                        { value: 'All', label: 'All Categories' },
+                                        ...CATEGORIES.map((c) => ({ value: c, label: c })),
+                                    ]}
+                                    className="sm:w-44"
                                 />
+
+                                <FilterSelect
+                                    value={roleFilter}
+                                    defaultValue="All"
+                                    onChange={(v) => setRoleFilter(v as typeof roleFilter)}
+                                    options={[
+                                        { value: 'All', label: 'All Roles' },
+                                        { value: 'Overseer', label: 'Overseer' },
+                                        { value: 'Officer', label: 'Officer' },
+                                    ]}
+                                    className="sm:w-36"
+                                />
+
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearch(''); setCat('All'); setRoleFilter('All'); }}
+                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
+                                        style={{ color: 'var(--color-error)' }}
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
                             </div>
-                        </div>
 
-                        {/* Category filter */}
-                        <div className="form-group" style={{ marginBottom: 0, minWidth: '160px' }}>
-                            <label className="form-label text-xs">Category</label>
-                            <select value={categoryFilter} onChange={e => setCat(e.target.value as ActionCategory | 'All')}>
-                                <option value="All">All Categories</option>
-                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
+                            {/* Active filter chips */}
+                            {hasActiveFilters && (
+                                <div
+                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                >
+                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                        Filtering by:
+                                    </span>
+                                    {search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}
+                                    {categoryFilter !== 'All' && <FilterChip label={categoryFilter} onRemove={() => setCat('All')} />}
+                                    {roleFilter !== 'All' && <FilterChip label={roleFilter} onRemove={() => setRoleFilter('All')} />}
+                                </div>
+                            )}
                         </div>
-
-                        {/* Role filter */}
-                        <div className="form-group" style={{ marginBottom: 0, minWidth: '140px' }}>
-                            <label className="form-label text-xs">Actor Role</label>
-                            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}>
-                                <option value="All">All Roles</option>
-                                <option value="Overseer">Overseer</option>
-                                <option value="Officer">Officer</option>
-                            </select>
-                        </div>
-
-                        {/* Clear */}
-                        {(search || categoryFilter !== 'All' || roleFilter !== 'All') && (
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => { setSearch(''); setCat('All'); setRoleFilter('All'); }}
-                            >
-                                Clear filters
-                            </button>
-                        )}
                     </div>
                 </div>
 

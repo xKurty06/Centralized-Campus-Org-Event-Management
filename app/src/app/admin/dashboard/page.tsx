@@ -401,7 +401,7 @@ export default function AdminDashboardPage() {
         <AdminShell>
             <div className="flex flex-col gap-6 animate-fade-in">
                 {/* HEADER */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1">
                             Admin
@@ -440,7 +440,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* KPI GRID */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {kpiCards.map((card) => (
                         <KpiCard key={card.label} card={card} />
                     ))}
@@ -448,7 +448,7 @@ export default function AdminDashboardPage() {
 
                 {/* ALERT */}
                 {suspendedOrgs.length > 0 && (
-                    <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3">
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3">
                         <svg
                             className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
                             viewBox="0 0 24 24"
@@ -593,7 +593,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* ORGANIZATIONS */}
-                <div className="mt-6 card overflow-hidden">
+                <div className="card overflow-hidden">
                     <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
                         <h2 className="text-[15px] font-semibold text-[var(--color-text)]">
                             Organizations Overview

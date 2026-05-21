@@ -331,18 +331,16 @@ export default function EventDetailPage() {
     if (!paymentMethod) return;
 
     setShowPaymentModal(false);
-    setIsRegistering(true);
-    await new Promise((r) => setTimeout(r, 900));
     setIsRegistering(false);
-    setStatus('pending');
+
 
     if (paymentMethod === 'online') {
       router.push(`/events/${event.id}/payment-upload?registration=reg_mock_001`);
     } else {
-      router.push(`/events/${event.id}/registration-success`);
+      router.push(`/events/${event.id}/registration-success?method=onsite`);
     }
+    setStatus('pending');
   }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import AdminShell from '@/components/AdminShell';
+import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
 /* ----------------------------------------------------------------
    Types — mirrors Users table exactly
@@ -27,18 +28,18 @@ interface User {
    Placeholder Data
    ---------------------------------------------------------------- */
 const USERS: User[] = [
-    { id: 'u-1',  schoolId: '2022-1-00045', email: 'j.delacruz@cvsu.edu.ph',  firstName: 'Juan',    lastName: 'Dela Cruz',  dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 2, globalRole: 'User',     isActive: true,  orgRoles: ['President @ CSS'] },
-    { id: 'u-2',  schoolId: '2022-1-00078', email: 'm.reyes@cvsu.edu.ph',      firstName: 'Maria',   lastName: 'Reyes',      dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 1, globalRole: 'User',     isActive: true,  orgRoles: ['VP @ CSS'] },
-    { id: 'u-3',  schoolId: '2023-1-00112', email: 'c.mendoza@cvsu.edu.ph',    firstName: 'Carlo',   lastName: 'Mendoza',    dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 3, globalRole: 'User',     isActive: true,  orgRoles: ['Secretary @ CSS'] },
-    { id: 'u-4',  schoolId: '2023-1-00134', email: 'a.villanueva@cvsu.edu.ph', firstName: 'Ana',     lastName: 'Villanueva', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 1, globalRole: 'User',     isActive: true },
-    { id: 'u-5',  schoolId: '2021-1-00023', email: 'p.santos@cvsu.edu.ph',     firstName: 'Paolo',   lastName: 'Santos',     dept: 'CEIT', course: 'BSCpE',yearLevel: 4, section: 2, globalRole: 'User',     isActive: false },
-    { id: 'u-6',  schoolId: '2024-1-00067', email: 'l.castro@cvsu.edu.ph',     firstName: 'Lara',    lastName: 'Castro',     dept: 'CAS',  course: 'BSBA', yearLevel: 1, section: 1, globalRole: 'User',     isActive: true },
-    { id: 'u-7',  schoolId: '2022-2-00089', email: 'm.torres@cvsu.edu.ph',     firstName: 'Miguel',  lastName: 'Torres',     dept: 'CAS',  course: 'BSBA', yearLevel: 3, section: 2, globalRole: 'User',     isActive: true,  orgRoles: ['President @ SPECS'] },
-    { id: 'u-8',  schoolId: '2023-2-00045', email: 's.navarro@cvsu.edu.ph',    firstName: 'Sofia',   lastName: 'Navarro',    dept: 'CON',  course: 'BSN',  yearLevel: 2, section: 1, globalRole: 'User',     isActive: true },
-    { id: 'u-9',  schoolId: '0000-0-00001', email: 'j.doe@cvsu.edu.ph',        firstName: 'John',    lastName: 'Doe',        dept: 'OSA',  course: '—',    yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-10', schoolId: '0000-0-00002', email: 'j.smith@cvsu.edu.ph',      firstName: 'Jane',    lastName: 'Smith',      dept: 'OSA',  course: '—',    yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-11', schoolId: '2021-1-00099', email: 'r.pangilinan@cvsu.edu.ph', firstName: 'Rico',    lastName: 'Pangilinan', dept: 'COE',  course: 'BSCE', yearLevel: 4, section: 3, globalRole: 'User',     isActive: false },
-    { id: 'u-12', schoolId: '2024-2-00033', email: 't.ocampo@cvsu.edu.ph',     firstName: 'Tricia',  lastName: 'Ocampo',     dept: 'CBA',  course: 'BSAc', yearLevel: 1, section: 2, globalRole: 'User',     isActive: true },
+    { id: 'u-1', schoolId: '2022-1-00045', email: 'j.delacruz@cvsu.edu.ph', firstName: 'Juan', lastName: 'Dela Cruz', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ CSS'] },
+    { id: 'u-2', schoolId: '2022-1-00078', email: 'm.reyes@cvsu.edu.ph', firstName: 'Maria', lastName: 'Reyes', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 1, globalRole: 'User', isActive: true, orgRoles: ['VP @ CSS'] },
+    { id: 'u-3', schoolId: '2023-1-00112', email: 'c.mendoza@cvsu.edu.ph', firstName: 'Carlo', lastName: 'Mendoza', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 3, globalRole: 'User', isActive: true, orgRoles: ['Secretary @ CSS'] },
+    { id: 'u-4', schoolId: '2023-1-00134', email: 'a.villanueva@cvsu.edu.ph', firstName: 'Ana', lastName: 'Villanueva', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
+    { id: 'u-5', schoolId: '2021-1-00023', email: 'p.santos@cvsu.edu.ph', firstName: 'Paolo', lastName: 'Santos', dept: 'CEIT', course: 'BSCpE', yearLevel: 4, section: 2, globalRole: 'User', isActive: false },
+    { id: 'u-6', schoolId: '2024-1-00067', email: 'l.castro@cvsu.edu.ph', firstName: 'Lara', lastName: 'Castro', dept: 'CAS', course: 'BSBA', yearLevel: 1, section: 1, globalRole: 'User', isActive: true },
+    { id: 'u-7', schoolId: '2022-2-00089', email: 'm.torres@cvsu.edu.ph', firstName: 'Miguel', lastName: 'Torres', dept: 'CAS', course: 'BSBA', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ SPECS'] },
+    { id: 'u-8', schoolId: '2023-2-00045', email: 's.navarro@cvsu.edu.ph', firstName: 'Sofia', lastName: 'Navarro', dept: 'CON', course: 'BSN', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
+    { id: 'u-9', schoolId: '0000-0-00001', email: 'j.doe@cvsu.edu.ph', firstName: 'John', lastName: 'Doe', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
+    { id: 'u-10', schoolId: '0000-0-00002', email: 'j.smith@cvsu.edu.ph', firstName: 'Jane', lastName: 'Smith', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
+    { id: 'u-11', schoolId: '2021-1-00099', email: 'r.pangilinan@cvsu.edu.ph', firstName: 'Rico', lastName: 'Pangilinan', dept: 'COE', course: 'BSCE', yearLevel: 4, section: 3, globalRole: 'User', isActive: false },
+    { id: 'u-12', schoolId: '2024-2-00033', email: 't.ocampo@cvsu.edu.ph', firstName: 'Tricia', lastName: 'Ocampo', dept: 'CBA', course: 'BSAc', yearLevel: 1, section: 2, globalRole: 'User', isActive: true },
 ];
 
 /* ----------------------------------------------------------------
@@ -95,6 +96,7 @@ export default function AdminUsersPage() {
         setRoleChangePending(null);
         // API: PATCH /api/admin/users/:id { global_role }
     }
+    const hasActiveFilters = !!search || filterRole !== 'All' || filterStatus !== 'All' || filterDept !== 'All';
 
     return (
         <AdminShell>
@@ -113,10 +115,10 @@ export default function AdminUsersPage() {
 
                 {/* ── Stat Cards ── */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard label="Total Users"  value={stats.total}       color="blue"   />
-                    <StatCard label="Active"        value={stats.active}      color="green"  />
-                    <StatCard label="Deactivated"   value={stats.deactivated} color="red"    />
-                    <StatCard label="Overseers"     value={stats.overseers}   color="yellow" />
+                    <StatCard label="Total Users" value={stats.total} color="blue" />
+                    <StatCard label="Active" value={stats.active} color="green" />
+                    <StatCard label="Deactivated" value={stats.deactivated} color="red" />
+                    <StatCard label="Overseers" value={stats.overseers} color="yellow" />
                 </div>
 
                 {/* ── Overseer Warning Banner ── */}
@@ -131,34 +133,98 @@ export default function AdminUsersPage() {
                 </div>
 
                 {/* ── Filters ── */}
+                {/* ── Filters ─────────────────────────────────────────────── */}
                 <div className="card">
-                    <div className="card-body py-4">
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="input-icon-wrapper flex-1">
-                                <span className="input-icon-left"><IconSearch /></span>
-                                <input
-                                    type="text"
-                                    className="input-has-left-icon"
-                                    placeholder="Search by name, school ID, or email…"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                    <div className="card-body py-3.5">
+                        <div className="flex flex-col gap-2.5">
+
+                            {/* Controls row */}
+                            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
+
+                                {/* Search */}
+                                <div className="input-icon-wrapper flex-1">
+                                    <span className="input-icon-left"><IconSearch /></span>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search by name, school ID, or email…"
+                                        className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            aria-label="Clear search"
+                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+
+                                <FilterSelect
+                                    value={filterRole}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterRole(v as typeof filterRole)}
+                                    options={[
+                                        { value: 'All', label: 'All Roles' },
+                                        { value: 'User', label: 'User' },
+                                        { value: 'Overseer', label: 'Overseer' },
+                                    ]}
+                                    className="sm:w-36"
                                 />
+
+                                <FilterSelect
+                                    value={filterStatus}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterStatus(v as typeof filterStatus)}
+                                    options={[
+                                        { value: 'All', label: 'All Status' },
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Deactivated', label: 'Deactivated' },
+                                    ]}
+                                    className="sm:w-40"
+                                />
+
+                                <FilterSelect
+                                    value={filterDept}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterDept(v)}
+                                    options={departments.map((d) => ({ value: d, label: d === 'All' ? 'All Depts' : d }))}
+                                    className="sm:w-40"
+                                />
+
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearch(''); setFilterRole('All'); setFilterStatus('All'); setFilterDept('All'); }}
+                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
+                                        style={{ color: 'var(--color-error)' }}
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
                             </div>
-                            <select value={filterRole} onChange={(e) => setFilterRole(e.target.value as typeof filterRole)} className="sm:w-36">
-                                <option value="All">All Roles</option>
-                                <option value="User">User</option>
-                                <option value="Overseer">Overseer</option>
-                            </select>
-                            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)} className="sm:w-40">
-                                <option value="All">All Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Deactivated">Deactivated</option>
-                            </select>
-                            <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="sm:w-40">
-                                {departments.map((d) => (
-                                    <option key={d} value={d}>{d === 'All' ? 'All Depts' : d}</option>
-                                ))}
-                            </select>
+
+                            {/* Active filter chips */}
+                            {hasActiveFilters && (
+                                <div
+                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                >
+                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                        Filtering by:
+                                    </span>
+                                    {search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}
+                                    {filterRole !== 'All' && <FilterChip label={filterRole} onRemove={() => setFilterRole('All')} />}
+                                    {filterStatus !== 'All' && <FilterChip label={filterStatus} onRemove={() => setFilterStatus('All')} />}
+                                    {filterDept !== 'All' && <FilterChip label={filterDept} onRemove={() => setFilterDept('All')} />}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -390,10 +456,10 @@ export default function AdminUsersPage() {
    Sub-components
    ---------------------------------------------------------------- */
 const STAT_COLORS = {
-    blue:   { bg: 'bg-blue-50',                          text: 'text-blue-700',               num: 'text-blue-700' },
-    green:  { bg: 'bg-[var(--color-primary-muted)]',     text: 'text-[var(--color-primary)]', num: 'text-[var(--color-primary)]' },
-    red:    { bg: 'bg-[var(--color-error-light)]',       text: 'text-[var(--color-error)]',   num: 'text-[var(--color-error)]' },
-    yellow: { bg: 'bg-amber-50',                         text: 'text-amber-700',              num: 'text-amber-700' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', num: 'text-blue-700' },
+    green: { bg: 'bg-[var(--color-primary-muted)]', text: 'text-[var(--color-primary)]', num: 'text-[var(--color-primary)]' },
+    red: { bg: 'bg-[var(--color-error-light)]', text: 'text-[var(--color-error)]', num: 'text-[var(--color-error)]' },
+    yellow: { bg: 'bg-amber-50', text: 'text-amber-700', num: 'text-amber-700' },
 };
 
 function StatCard({ label, value, color }: { label: string; value: number; color: keyof typeof STAT_COLORS }) {

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import AdminShell from '@/components/AdminShell';
+import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
 /* ----------------------------------------------------------------
    Types
@@ -109,6 +110,7 @@ export default function AdminEventsPage() {
         );
         setConfirmFlag(null);
     }
+    const hasActiveFilters = !!search || filterStatus !== 'All' || filterCategory !== 'All' || filterOrg !== 'All' || filterFlagged;
 
     return (
         <AdminShell>
@@ -144,52 +146,119 @@ export default function AdminEventsPage() {
                 </div>
 
                 {/* ── Filters ── */}
+                {/* ── Filters ─────────────────────────────────────────────── */}
                 <div className="card mb-6">
-                    <div className="card-body py-4">
-                        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+                    <div className="card-body py-3.5">
+                        <div className="flex flex-col gap-2.5">
 
-                            {/* Search */}
-                            <div className="input-icon-wrapper flex-1 min-w-[200px]">
-                                <span className="input-icon-left"><IconSearch /></span>
-                                <input
-                                    type="text"
-                                    className="input-has-left-icon"
-                                    placeholder="Search by title, org, or venue…"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                            {/* Controls row */}
+                            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center flex-wrap">
+
+                                {/* Search */}
+                                <div className="input-icon-wrapper flex-1 min-w-[200px]">
+                                    <span className="input-icon-left"><IconSearch /></span>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search by title, org, or venue…"
+                                        className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            aria-label="Clear search"
+                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+
+                                <FilterSelect
+                                    value={filterStatus}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterStatus(v as typeof filterStatus)}
+                                    options={[
+                                        { value: 'All', label: 'All Status' },
+                                        ...(['Upcoming', 'Open', 'Full', 'Closed', 'Completed', 'Cancelled'] as EventStatus[])
+                                            .map((s) => ({ value: s, label: s })),
+                                    ]}
+                                    className="sm:w-36"
                                 />
+
+                                <FilterSelect
+                                    value={filterCategory}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterCategory(v as typeof filterCategory)}
+                                    options={[
+                                        { value: 'All', label: 'All Categories' },
+                                        ...(['Workshop', 'Seminar', 'Competition', 'Activity', 'Training', 'Outreach', 'Cultural', 'Other'] as EventCategory[])
+                                            .map((c) => ({ value: c, label: c })),
+                                    ]}
+                                    className="sm:w-40"
+                                />
+
+                                <FilterSelect
+                                    value={filterOrg}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterOrg(v)}
+                                    options={orgs.map((o) => ({ value: o, label: o === 'All' ? 'All Orgs' : o }))}
+                                    className="sm:w-36"
+                                />
+
+                                {/* Flagged toggle */}
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterFlagged((v) => !v)}
+                                    className="btn btn-sm flex items-center gap-1.5 whitespace-nowrap"
+                                    style={filterFlagged ? {
+                                        background: 'var(--color-primary-muted)',
+                                        color: 'var(--color-primary)',
+                                        border: '1px solid var(--color-primary)',
+                                        fontWeight: 600,
+                                    } : {
+                                        background: 'var(--color-surface)',
+                                        color: 'var(--color-text-secondary)',
+                                        border: '1px solid var(--color-border)',
+                                    }}
+                                >
+                                    <IconFlag />
+                                    {filterFlagged ? 'Flagged only' : 'Show flagged'}
+                                </button>
+
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearch(''); setFilterStatus('All'); setFilterCategory('All'); setFilterOrg('All'); setFilterFlagged(false); }}
+                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
+                                        style={{ color: 'var(--color-error' }}
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
                             </div>
 
-                            {/* Status */}
-                            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)} className="sm:w-36">
-                                <option value="All">All Status</option>
-                                {(['Upcoming', 'Open', 'Full', 'Closed', 'Completed', 'Cancelled'] as EventStatus[]).map((s) => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
-
-                            {/* Category */}
-                            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as typeof filterCategory)} className="sm:w-40">
-                                <option value="All">All Categories</option>
-                                {(['Workshop', 'Seminar', 'Competition', 'Activity', 'Training', 'Outreach', 'Cultural', 'Other'] as EventCategory[]).map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-
-                            {/* Org */}
-                            <select value={filterOrg} onChange={(e) => setFilterOrg(e.target.value)} className="sm:w-36">
-                                {orgs.map((o) => (
-                                    <option key={o} value={o}>{o === 'All' ? 'All Orgs' : o}</option>
-                                ))}
-                            </select>
-
-                            {/* Flagged toggle */}
-                            <button
-                                onClick={() => setFilterFlagged((v) => !v)}
-                                className={`btn btn-sm flex items-center gap-1.5 ${filterFlagged ? 'btn-primary' : 'btn-outline'}`}
-                            >
-                                <IconFlag /> {filterFlagged ? 'Showing Flagged' : 'Show Flagged'}
-                            </button>
+                            {/* Active filter chips */}
+                            {hasActiveFilters && (
+                                <div
+                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                >
+                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                        Filtering by:
+                                    </span>
+                                    {search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}
+                                    {filterStatus !== 'All' && <FilterChip label={filterStatus} onRemove={() => setFilterStatus('All')} />}
+                                    {filterCategory !== 'All' && <FilterChip label={filterCategory} onRemove={() => setFilterCategory('All')} />}
+                                    {filterOrg !== 'All' && <FilterChip label={filterOrg} onRemove={() => setFilterOrg('All')} />}
+                                    {filterFlagged && <FilterChip label="Flagged" onRemove={() => setFilterFlagged(false)} />}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

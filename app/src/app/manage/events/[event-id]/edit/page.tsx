@@ -8,7 +8,7 @@ import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type AudienceType = "Open" | "CvSU_Only" | "Org_Members_Only";
+type AudienceType = "CvSU_Only" | "Org_Members_Only";
 type EventStatus =
     | "Upcoming"
     | "Open"
@@ -60,6 +60,13 @@ const MOCK_EVENT: EventForm = {
     banner_url: "",
 };
 const event = MOCK_EVENT;
+function fmt(iso: string) {
+    return new Date(iso).toLocaleDateString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
 
 const VENUES = [
     { id: 1, name: "SMT Hall" },
@@ -82,12 +89,6 @@ const CATEGORIES = [
 ];
 
 const AUDIENCE_OPTIONS: AudienceOption[] = [
-    {
-        value: "Open",
-        label: "Open to All",
-        description: "Anyone can register, including non-CvSU students.",
-        icon: "🌐",
-    },
     {
         value: "CvSU_Only",
         label: "CvSU Students Only",
@@ -162,7 +163,6 @@ function Field({
     );
 }
 
-// Fixed HTML Attributes constraint warning
 function Input({
     className = "",
     ...props
@@ -388,7 +388,6 @@ export default function EditEventPage() {
     const router = useRouter();
     const params = useParams();
 
-    // ─── FIX HERE: Updated parameter from 'id' to 'event-id' ───
     const eventId = Array.isArray(params?.["event-id"])
         ? params["event-id"][0]
         : params?.["event-id"] ?? "evt-001";
@@ -456,29 +455,41 @@ export default function EditEventPage() {
     return (
         <ManageShell pageTitle="Salikop">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5 animate-fade-in">
-                <div className="flex items-center gap-3">
-                    <div>
-                        <div className="flex items-center gap-2 text-[12px] text-gray-400 mb-1">
-                            <Link href="/manage/dashboard" className="hover:text-emerald-700 no-underline transition-colors">
-                                Dashboard
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-5 animate-fade-in">
+                <div className="flex flex-col gap-3">
+                        <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
+                            <Link
+                                href="/manage/events"
+                                className="hover:text-[var(--color-primary)] transition-colors no-underline"
+                            >
+                                Events
                             </Link>
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-                                <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            <Link href={`/manage/events/${eventId}`} className="hover:text-emerald-700 no-underline transition-colors">
+                            <Link
+                                href={`/manage/events/${event.id}`}
+                                className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
+                            >
                                 {event.title}
                             </Link>
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-                                <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            <span className="text-gray-600 font-medium">Edit Event</span>
-                        </div>
+                            <span className="text-[var(--color-text)] font-semibold">Edit Event</span>
+                        </nav>
 
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2">
+                            <div className="flex flex-col">
                             <h1 className="text-[24px] font-bold text-gray-900 tracking-tight">
                                 Edit Event
                             </h1>
+                            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
+                                {fmt(event.start_date)} · Event ID:{" "}
+                                <span className="font-mono">{eventId}</span>
+                            </p>
+
+                            </div>
 
                             <UnsavedBadge visible={isDirty} />
 
@@ -488,7 +499,6 @@ export default function EditEventPage() {
                                 </span>
                             )}
                         </div>
-                    </div>
                 </div>
 
                 <button

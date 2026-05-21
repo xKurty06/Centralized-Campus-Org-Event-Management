@@ -239,13 +239,13 @@ function EventCard({ event }: { event: ManagedEvent }) {
       {/* Actions — all pointing to /manage/events/[id] sub-routes */}
       <div className="flex flex-wrap gap-2 pt-1">
         <Link
-          href={`/manage/participants/${event.id}`}
+          href={`/manage/events/${event.id}/participants`}
           className="flex items-center gap-1.5 text-[12px] font-semibold text-green-700 border border-green-200 hover:bg-green-50 hover:border-green-400 px-3 py-1.5 rounded-lg transition-all no-underline"
         >
           <IconUsers /> Masterlist
         </Link>
         <Link
-          href={`/manage/verify/${event.id}`}
+          href={`/manage/events/${event.id}/verify`}
           className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-green-700 hover:bg-green-800 px-3 py-1.5 rounded-lg transition-colors no-underline"
         >
           <IconScan /> Entrance panel
@@ -421,11 +421,12 @@ export default function ManageDashboardPage() {
             { href: '/manage/create-event', icon: <IconAdd />, label: 'Create event', desc: 'Publish a new campus event' },
             { href: '/manage/members', icon: <IconMember />, label: 'Members', desc: 'Manage roster and membership dues' },
             { href: '/manage/org-profile', icon: <IconOrgEdit />, label: 'Edit org profile', desc: 'Update name, logo, and description' },
-            { href: '/events', icon: <IconEye />, label: 'View public page', desc: "See your org's events as students" },
+            { href: `/organizations/${org.id}`, target: '_blank', icon: <IconEye />, label: 'View public page', desc: "See your org's events as students" },
           ].map(item => (
             <Link
               key={item.href}
               href={item.href}
+              {...(item.target ? { target: item.target } : {})}
               className="group flex items-center gap-3 bg-white border border-gray-200 hover:border-green-300 hover:bg-green-50 rounded-xl px-4 py-3.5 transition-all no-underline"
             >
               <div className="w-9 h-9 rounded-lg bg-gray-100 group-hover:bg-green-100 flex items-center justify-center flex-shrink-0 text-gray-500 group-hover:text-green-700 transition-colors">

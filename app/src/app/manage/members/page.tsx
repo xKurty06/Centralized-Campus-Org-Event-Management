@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import ManageShell from '@/components/ManageShell';
+import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
 /* ----------------------------------------------------------------
    Schema reference — Org_Members table
@@ -318,6 +319,7 @@ export default function ManageMembersPage() {
         setLookupResult(null);
         setAddLoading(false);
     }
+    const hasActiveFilters = !!search || filterStatus !== 'All' || filterFee !== 'All' || filterDept !== 'All';
 
     /* ================================================================
        RENDER
@@ -374,49 +376,110 @@ export default function ManageMembersPage() {
                 </div>
 
                 {/* ── Filters ── */}
-                <div className="card">
-                    <div className="card-body py-4">
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="input-icon-wrapper flex-1">
-                                <span className="input-icon-left"><IconSearch /></span>
-                                <input
-                                    type="text"
-                                    className="input-has-left-icon"
-                                    placeholder="Search by name, school ID, email, or course…"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                {/* ── Filters ─────────────────────────────────────────────── */}
+                <div className="card" style={{ boxShadow: 'none' }}>
+                    <div className="card-body py-3.5">
+                        <div className="flex flex-col gap-2.5">
+
+                            {/* Controls row */}
+                            <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 sm:items-center">
+
+                                {/* Search */}
+                                <div className="input-icon-wrapper flex-1 min-w-[200px]">
+                                    <span className="input-icon-left"><IconSearch /></span>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search by name, school ID, email, or course…"
+                                        className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            aria-label="Clear search"
+                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Status Filter */}
+                                <FilterSelect
+                                    value={filterStatus}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterStatus(v as StatusFilter)}
+                                    options={[
+                                        { value: 'All', label: 'All Status' },
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Pending', label: 'Pending' },
+                                        { value: 'Inactive', label: 'Inactive' },
+                                    ]}
+                                    className="sm:w-40"
                                 />
+
+                                {/* Fee Status Filter */}
+                                <FilterSelect
+                                    value={filterFee}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterFee(v as FeeFilter)}
+                                    options={[
+                                        { value: 'All', label: 'All Fee Status' },
+                                        { value: 'Paid', label: 'Fee Paid' },
+                                        { value: 'Unpaid', label: 'Fee Unpaid' },
+                                    ]}
+                                    className="sm:w-40"
+                                />
+
+                                {/* Department Filter */}
+                                <FilterSelect
+                                    value={filterDept}
+                                    defaultValue="All"
+                                    onChange={(v) => setFilterDept(v)}
+                                    options={departments.map((d) => ({
+                                        value: d,
+                                        label: d === 'All' ? 'All Depts' : d
+                                    }))}
+                                    className="sm:w-36"
+                                />
+
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearch('');
+                                            setFilterStatus('All');
+                                            setFilterFee('All');
+                                            setFilterDept('All');
+                                        }}
+                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
+                                        style={{ color: 'var(--color-error)' }}
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
                             </div>
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value as StatusFilter)}
-                                className="sm:w-40"
-                            >
-                                <option value="All">All Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                            <select
-                                value={filterFee}
-                                onChange={(e) => setFilterFee(e.target.value as FeeFilter)}
-                                className="sm:w-40"
-                            >
-                                <option value="All">All Fee Status</option>
-                                <option value="Paid">Fee Paid</option>
-                                <option value="Unpaid">Fee Unpaid</option>
-                            </select>
-                            <select
-                                value={filterDept}
-                                onChange={(e) => setFilterDept(e.target.value)}
-                                className="sm:w-36"
-                            >
-                                {departments.map((d) => (
-                                    <option key={d} value={d}>
-                                        {d === 'All' ? 'All Depts' : d}
-                                    </option>
-                                ))}
-                            </select>
+
+                            {/* Active filter chips */}
+                            {hasActiveFilters && (
+                                <div
+                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                >
+                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                        Filtering by:
+                                    </span>
+                                    {search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}
+                                    {filterStatus !== 'All' && <FilterChip label={filterStatus} onRemove={() => setFilterStatus('All')} />}
+                                    {filterFee !== 'All' && <FilterChip label={filterFee === 'Paid' ? 'Fee Paid' : 'Fee Unpaid'} onRemove={() => setFilterFee('All')} />}
+                                    {filterDept !== 'All' && <FilterChip label={filterDept} onRemove={() => setFilterDept('All')} />}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

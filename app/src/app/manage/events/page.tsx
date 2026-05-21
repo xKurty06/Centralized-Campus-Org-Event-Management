@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import ManageShell from '@/components/ManageShell';
+import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
 /* ----------------------------------------------------------------
    Types
@@ -276,6 +277,7 @@ export default function ManageEventsPage() {
     }, []);
 
     const activeStatuses = ALL_STATUSES.filter((s) => (statusCounts[s] ?? 0) > 0);
+    const hasActiveFilters = !!search || categoryFilter !== 'All';
 
     return (
         <ManageShell pageTitle="Salikop">
@@ -331,44 +333,87 @@ export default function ManageEventsPage() {
                 </div>
 
                 {/* ── Search + filters row ── */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                    {/* Search */}
-                    <div className="relative flex-1">
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" viewBox="0 0 20 20" fill="none">
-                            <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                            <path d="M13 13l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        <input
-                            type="text"
-                            placeholder="Search events..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-[13px] bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all"
-                        />
+                {/* ── Filters ─────────────────────────────────────────────── */}
+                <div className="card" style={{ boxShadow: 'none' }}>
+                    <div className="card-body py-3.5">
+                        <div className="flex flex-col gap-2.5">
+
+                            {/* Controls row */}
+                            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
+
+                                {/* Search */}
+                                <div className="input-icon-wrapper flex-1 min-w-[180px]">
+                                    <span className="input-icon-left"><IconSearch /></span>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search events…"
+                                        className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            aria-label="Clear search"
+                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Category Filter */}
+                                <FilterSelect
+                                    value={categoryFilter}
+                                    defaultValue="All"
+                                    onChange={(v) => setCategoryFilter(v as EventCategory | 'All')}
+                                    options={[
+                                        { value: 'All', label: 'All Categories' },
+                                        ...ALL_CATEGORIES.map((c) => ({ value: c, label: c })),
+                                    ]}
+                                    className="sm:w-44"
+                                />
+
+                                {/* Sort Layout */}
+                                <FilterSelect
+                                    value={sort}
+                                    defaultValue="date_desc"
+                                    onChange={(v) => setSort(v as SortKey)}
+                                    options={SORT_OPTIONS}
+                                    className="sm:w-36"
+                                />
+
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearch(''); setCategoryFilter('All'); }}
+                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
+                                        style={{ color: 'var(--color-error)' }}
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Active filter chips */}
+                            {hasActiveFilters && (
+                                <div
+                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                >
+                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                        Filtering by:
+                                    </span>
+                                    {search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}
+                                    {categoryFilter !== 'All' && <FilterChip label={categoryFilter} onRemove={() => setCategoryFilter('All')} />}
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    {/* Category filter */}
-                    <select
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value as EventCategory | 'All')}
-                        className="text-[13px] bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-green-400 cursor-pointer text-gray-600"
-                    >
-                        <option value="All">All categories</option>
-                        {ALL_CATEGORIES.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                        ))}
-                    </select>
-
-                    {/* Sort */}
-                    <select
-                        value={sort}
-                        onChange={(e) => setSort(e.target.value as SortKey)}
-                        className="text-[13px] bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-green-400 cursor-pointer text-gray-600"
-                    >
-                        {SORT_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                    </select>
                 </div>
 
                 {/* ── Results ── */}
@@ -426,6 +471,15 @@ function IconPin() {
     return (
         <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="none">
             <path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+function IconSearch() {
+    return (
+        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+            <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.75" />
+            <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
         </svg>
     );
 }

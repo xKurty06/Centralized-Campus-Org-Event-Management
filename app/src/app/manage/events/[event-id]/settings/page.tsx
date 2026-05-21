@@ -240,15 +240,29 @@ export default function EventSettingsPage() {
             <div className="flex flex-col gap-6 animate-fade-in">
 
                 {/* ── Breadcrumb + header ── */}
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-[12px] text-gray-400">
-                        <Link href="/manage/events" className="hover:text-gray-600 transition-colors no-underline">Events</Link>
-                        <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
-                        <Link href={`/manage/events/${eventId}`} className="hover:text-gray-600 transition-colors no-underline truncate max-w-[160px]">{event.title}</Link>
-                        <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
-                        <span className="text-gray-500 font-medium">Settings</span>
-                    </div>
-                    <div className="flex items-start justify-between gap-4 mt-1">
+                <div className="flex flex-col gap-3">
+                    <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
+                        <Link
+                            href="/manage/events"
+                            className="hover:text-[var(--color-primary)] transition-colors no-underline"
+                        >
+                            Events
+                        </Link>
+                        <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <Link
+                            href={`/manage/events/${event.id}`}
+                            className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
+                        >
+                            {event.title}
+                        </Link>
+                        <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-[var(--color-text)] font-semibold">Event Settings</span>
+                    </nav>
+                    <div className="flex items-start justify-between gap-4">
                         <div>
                             <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Event Settings</h1>
                             <p className="text-[13px] text-gray-400 mt-0.5">{event.title}</p>

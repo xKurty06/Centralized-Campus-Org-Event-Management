@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import AdminShell from "@/components/AdminShell";
 import Link from "next/dist/client/link";
+import { FilterSelect, FilterChip } from "@/components/ui/filter";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AccreditationStatus = "Active" | "Suspended";
 type OrgCategory = "Academic" | "Non-Academic" | "Religious";
-type SortKey = "name" | "category" | "accredited_at";
+// Added member_count to sort options
+type SortKey = "name" | "category" | "accredited_at" | "member_count";
 
 interface Organization {
     id: string;
@@ -211,6 +213,16 @@ export default function AdminOrganizationsPage() {
         next: AccreditationStatus;
     } | null>(null);
 
+    // Derived state to check if any filters are active
+    const hasActiveFilters = !!search || filterStatus !== 'all' || filterCategory !== 'all' || sortKey !== 'name';
+
+    const resetFilters = () => {
+        setSearch("");
+        setFilterStatus("all");
+        setFilterCategory("all");
+        setSortKey("name");
+    };
+
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
         return orgs
@@ -228,8 +240,8 @@ export default function AdminOrganizationsPage() {
             .sort((a, b) => {
                 if (sortKey === "name") return a.name.localeCompare(b.name);
                 if (sortKey === "category") return a.category.localeCompare(b.category);
-                if (sortKey === "accredited_at")
-                    return new Date(b.accredited_at).getTime() - new Date(a.accredited_at).getTime();
+                if (sortKey === "accredited_at") return new Date(b.accredited_at).getTime() - new Date(a.accredited_at).getTime();
+                if (sortKey === "member_count") return b.member_count - a.member_count; // Highest members first
                 return 0;
             });
     }, [orgs, search, filterStatus, filterCategory, sortKey]);
@@ -264,6 +276,14 @@ export default function AdminOrganizationsPage() {
             )
         );
         setConfirmTarget(null);
+    };
+
+    // Shared styled class for all select filters
+    const selectClasses = "px-3 py-2 text-sm rounded-lg border outline-none focus:ring-2 cursor-pointer transition-colors";
+    const selectStyles = {
+        backgroundColor: "var(--color-surface)",
+        borderColor: "var(--color-border)",
+        color: "var(--color-text)",
     };
 
     return (
@@ -325,56 +345,121 @@ export default function AdminOrganizationsPage() {
                     ))}
                 </div>
 
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="input-icon-wrapper flex-1">
-                        <span className="input-icon-left">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-                            </svg>
-                        </span>
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                            placeholder="Search by name or adviser…"
-                            className="input-has-left-icon"
-                        />
+                {/* ── Filters ─────────────────────────────────────────────── */}
+                <div className="card">
+                    <div className="card-body py-3.5">
+                        <div className="flex flex-col gap-2.5">
+
+                            {/* Controls row */}
+                            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
+
+                                {/* Search */}
+                                <div className="input-icon-wrapper flex-1">
+                                    <span className="input-icon-left">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+                                        </svg>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search by name or adviser…"
+                                        className={`input-has-left-icon w-full ${search ? 'input-has-right-icon' : ''}`}
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            aria-label="Clear search"
+                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+
+                                <FilterSelect
+                                    value={filterStatus}
+                                    defaultValue="all"
+                                    onChange={(v) => setFilterStatus(v as typeof filterStatus)}
+                                    options={[
+                                        { value: 'all', label: 'All Status' },
+                                        { value: 'Active', label: 'Active' },
+                                        { value: 'Suspended', label: 'Suspended' },
+                                    ]}
+                                    className="sm:w-40"
+                                />
+
+                                <FilterSelect
+                                    value={filterCategory}
+                                    defaultValue="all"
+                                    onChange={(v) => setFilterCategory(v as typeof filterCategory)}
+                                    options={[
+                                        { value: 'all', label: 'All Categories' },
+                                        { value: 'Academic', label: 'Academic' },
+                                        { value: 'Non-Academic', label: 'Non-Academic' },
+                                        { value: 'Religious', label: 'Religious' },
+                                    ]}
+                                    className="sm:w-44"
+                                />
+
+                                <FilterSelect
+                                    value={sortKey}
+                                    defaultValue="name"
+                                    onChange={(v) => setSortKey(v as SortKey)}
+                                    options={[
+                                        { value: 'name', label: 'Sort: Name' },
+                                        { value: 'category', label: 'Sort: Category' },
+                                        { value: 'member_count', label: 'Sort: Members ↓' },
+                                        { value: 'accredited_at', label: 'Sort: Last Updated' },
+                                    ]}
+                                    className="sm:w-48"
+                                />
+
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={resetFilters}
+                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
+                                        style={{ color: 'var(--color-error)' }}
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Active filter chips */}
+                            {hasActiveFilters && (
+                                <div
+                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                >
+                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                        Filtering by:
+                                    </span>
+                                    {search && (
+                                        <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />
+                                    )}
+                                    {filterStatus !== 'all' && (
+                                        <FilterChip label={filterStatus} onRemove={() => setFilterStatus('all')} />
+                                    )}
+                                    {filterCategory !== 'all' && (
+                                        <FilterChip label={filterCategory} onRemove={() => setFilterCategory('all')} />
+                                    )}
+                                    {sortKey !== 'name' && (
+                                        <FilterChip
+                                            label={`Sort: ${sortKey === 'member_count' ? 'Members ↓' : sortKey === 'accredited_at' ? 'Last Updated' : sortKey}`}
+                                            onRemove={() => setSortKey('name')}
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    <select
-                        value={filterStatus}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setFilterStatus(e.target.value as "all" | AccreditationStatus)
-                        }
-                    >
-                        <option value="all">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Suspended">Suspended</option>
-                    </select>
-
-                    <select
-                        value={filterCategory}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setFilterCategory(e.target.value as "all" | OrgCategory)
-                        }
-                    >
-                        <option value="all">All Categories</option>
-                        <option value="Academic">Academic</option>
-                        <option value="Non-Academic">Non-Academic</option>
-                        <option value="Religious">Religious</option>
-                    </select>
-
-                    <select
-                        value={sortKey}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setSortKey(e.target.value as SortKey)
-                        }
-                    >
-                        <option value="name">Sort: Name</option>
-                        <option value="category">Sort: Category</option>
-                        <option value="accredited_at">Sort: Last Updated</option>
-                    </select>
                 </div>
 
                 {/* Table */}
@@ -407,6 +492,11 @@ export default function AdminOrganizationsPage() {
                                                 <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                                                     No organizations match your filters.
                                                 </p>
+                                                {hasActiveFilters && (
+                                                    <button onClick={resetFilters} className="btn btn-outline btn-sm mt-2">
+                                                        Reset Filters
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -426,8 +516,7 @@ export default function AdminOrganizationsPage() {
                                                     <div>
                                                         <Link
                                                             href={`/admin/organizations/${org.id}`}
-                                                            className="text-sm font-semibold hover:text-[var(--color-primary)] decoration-1 underline-offset-2 transition-all"
-                                                            style={{ color: "var(--color-text)" }}
+                                                            className="text-sm font-semibold text-[var(--color-text)] hover:text-green-700 transition-colors"
                                                         >
                                                             {org.name}
                                                         </Link>
@@ -477,7 +566,7 @@ export default function AdminOrganizationsPage() {
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button
                                                         onClick={() => router.push(`/admin/organizations/${org.id}`)}
-                                                        className="btn btn-ghost btn-sm"
+                                                        className="btn btn-ghost btn-sm text-[var(--color-primary)] hover:text-white transition-colors border hover:border-[var(--color-primary-light)] hover:bg-[var(--color-primary-light)]"
                                                     >
                                                         View
                                                     </button>

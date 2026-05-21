@@ -268,44 +268,52 @@ export default function ParticipantsPage() {
         <ManageShell pageTitle="Salikop">
             <div className="flex flex-col gap-6 animate-fade-in">
 
-                {/* Breadcrumbs Navigation */}
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-[12px] text-gray-400">
-                        <Link href="/manage/dashboard" className="hover:text-emerald-700 no-underline transition-colors">
-                            Dashboard
-                        </Link>
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-                            <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <Link href={`/manage/events/${eventId}`} className="hover:text-emerald-700 no-underline transition-colors">
-                            {event.title}
-                        </Link>
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
-                            <path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="text-gray-600 font-medium">Masterlist</span>
-                    </div>
-                </div>
-
-                {/* Header Title Section */}
-                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mt-[-8px]">
-                    <div>
-                        <h1 className="text-[24px] font-bold text-[var(--color-text)] tracking-tight">
-                            {INITIAL_EVENT.title}
-                        </h1>
-                        <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
-                            {fmt(INITIAL_EVENT.start_date)} · Event ID:{" "}
-                            <span className="font-mono">{eventId}</span>
-                        </p>
+                <div className="flex flex-col gap-3">
+                    {/* Breadcrumbs Navigation */}
+                    <div className="flex flex-col">
+                        <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
+                            <Link
+                                href="/manage/events"
+                                className="hover:text-[var(--color-primary)] transition-colors no-underline"
+                            >
+                                Events
+                            </Link>
+                            <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <Link
+                                href={`/manage/events/${event.id}`}
+                                className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
+                            >
+                                {event.title}
+                            </Link>
+                            <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <span className="text-[var(--color-text)] font-semibold">Masterlist</span>
+                        </nav>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <button className="h-10 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[13px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] transition-colors">
-                            Export CSV
-                        </button>
-                        <button className="h-10 px-4 rounded-xl bg-[var(--color-primary)] text-white text-[13px] font-medium hover:opacity-90 transition-all">
-                            Send Announcement
-                        </button>
+                    {/* Header Title Section */}
+                    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                        <div>
+                            <h1 className="text-[24px] font-bold text-[var(--color-text)] tracking-tight">
+                                {INITIAL_EVENT.title}
+                            </h1>
+                            <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
+                                {fmt(INITIAL_EVENT.start_date)} · Event ID:{" "}
+                                <span className="font-mono">{eventId}</span>
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button className="h-10 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[13px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] transition-colors">
+                                Export CSV
+                            </button>
+                            <button className="h-10 px-4 rounded-xl bg-[var(--color-primary)] text-white text-[13px] font-medium hover:opacity-90 transition-all">
+                                Send Announcement
+                            </button>
+                        </div>
                     </div>
                 </div>
 

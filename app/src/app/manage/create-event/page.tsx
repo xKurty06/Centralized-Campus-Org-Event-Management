@@ -19,9 +19,9 @@ import ManageShell from '@/components/ManageShell';
      status (defaults to Upcoming on creation)
    ---------------------------------------------------------------- */
 
-type AudienceType  = 'CvSU_Only' | 'Org_Members_Only';
+type AudienceType = 'CvSU_Only' | 'Org_Members_Only';
 type EventCategory = 'Workshop' | 'Seminar' | 'Competition' | 'Activity' | 'Training' | 'Outreach' | 'Cultural' | 'Other';
-type SaveState     = 'idle' | 'saving' | 'success' | 'error';
+type SaveState = 'idle' | 'saving' | 'success' | 'error';
 
 interface FormData {
   title: string;
@@ -57,18 +57,18 @@ interface FormErrors {
    Seed data — replace with GET /api/venues + /api/event-categories
    ---------------------------------------------------------------- */
 const VENUES = [
-  { id: 'v1',  name: 'Main Hall'          },
-  { id: 'v2',  name: 'AVR Building A'     },
-  { id: 'v3',  name: 'AVR Building B'     },
-  { id: 'v4',  name: 'Gymnasium'          },
-  { id: 'v5',  name: 'Library AVR'        },
-  { id: 'v6',  name: 'ICT Building Lab 1' },
-  { id: 'v7',  name: 'ICT Building Lab 2' },
-  { id: 'v8',  name: 'Open Court'         },
-  { id: 'v9',  name: 'Sports Complex'     },
-  { id: 'v10', name: 'Chapel'             },
-  { id: 'v11', name: 'Clinic Area'        },
-  { id: 'v12', name: 'Off-campus'         },
+  { id: 'v1', name: 'Main Hall' },
+  { id: 'v2', name: 'AVR Building A' },
+  { id: 'v3', name: 'AVR Building B' },
+  { id: 'v4', name: 'Gymnasium' },
+  { id: 'v5', name: 'Library AVR' },
+  { id: 'v6', name: 'ICT Building Lab 1' },
+  { id: 'v7', name: 'ICT Building Lab 2' },
+  { id: 'v8', name: 'Open Court' },
+  { id: 'v9', name: 'Sports Complex' },
+  { id: 'v10', name: 'Chapel' },
+  { id: 'v11', name: 'Clinic Area' },
+  { id: 'v12', name: 'Off-campus' },
 ];
 
 const EVENT_CATEGORIES: EventCategory[] = [
@@ -77,8 +77,8 @@ const EVENT_CATEGORIES: EventCategory[] = [
 ];
 
 const AUDIENCE_OPTIONS: { value: AudienceType; label: string; desc: string }[] = [
-  { value: 'CvSU_Only',        label: 'CvSU students only',  desc: 'Only @cvsu.edu.ph account holders can register' },
-  { value: 'Org_Members_Only', label: 'Organization members',desc: 'Only members of your organization can register' },
+  { value: 'CvSU_Only', label: 'CvSU students only', desc: 'Only @cvsu.edu.ph account holders can register' },
+  { value: 'Org_Members_Only', label: 'Organization members', desc: 'Only members of your organization can register' },
 ];
 
 /* ----------------------------------------------------------------
@@ -91,23 +91,45 @@ const INITIAL: FormData = {
   description: '', is_paid: false, payment_instructions: '',
   banner_file: null, banner_preview: null,
 };
+/* ----------------------------------------------------------------
+   Helpers
+   ---------------------------------------------------------------- */
+const getTodayDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const TODAY = getTodayDate();
 
 function validate(form: FormData): FormErrors {
   const e: FormErrors = {};
-  if (!form.title.trim())                                                                     e.title       = 'Event title is required.';
-  if (!form.category)                                                                         e.category    = 'Please select a category.';
-  if (!form.venue_id)                                                                         e.venue_id    = 'Please select a venue.';
-  if (!form.start_date)                                                                       e.start_date  = 'Start date is required.';
-  if (!form.start_time)                                                                       e.start_time  = 'Start time is required.';
-  if (!form.end_date)                                                                         e.end_date    = 'End date is required.';
-  if (!form.end_time)                                                                         e.end_time    = 'End time is required.';
-  if (!form.capacity || isNaN(+form.capacity) || +form.capacity < 1)   e.capacity    = 'Enter a valid capacity (min 1).';
-  if (!form.description.trim())                                                               e.description = 'Event description is required.';
-  if (form.is_paid && !form.payment_instructions.trim())                e.payment_instructions = 'Payment instructions are required for paid events.';
+
+  // Existing checks...
+  if (!form.title.trim()) e.title = 'Event title is required.';
+  if (!form.category) e.category = 'Please select a category.';
+  if (!form.venue_id) e.venue_id = 'Please select a venue.';
+  if (!form.start_date) e.start_date = 'Start date is required.';
+
+  // NEW: Check if start date is in the past
+  else if (form.start_date < TODAY) e.start_date = 'Start date cannot be in the past.';
+
+  if (!form.start_time) e.start_time = 'Start time is required.';
+  if (!form.end_date) e.end_date = 'End date is required.';
+
+  // NEW: Check if end date is before start date
+  else if (form.start_date && form.end_date < form.start_date) e.end_date = 'End date must be after start date.';
+
+  if (!form.end_time) e.end_time = 'End time is required.';
+
+  // Rest of your existing checks...
+  if (!form.capacity || isNaN(+form.capacity) || +form.capacity < 1) e.capacity = 'Enter a valid capacity (min 1).';
+  if (!form.description.trim()) e.description = 'Event description is required.';
+  if (form.is_paid && !form.payment_instructions.trim()) e.payment_instructions = 'Payment instructions are required for paid events.';
+
   return e;
 }
 
-const STEP1_KEYS: (keyof FormErrors)[] = ['title','category','venue_id','start_date','start_time','end_date','end_time','capacity'];
+const STEP1_KEYS: (keyof FormErrors)[] = ['title', 'category', 'venue_id', 'start_date', 'start_time', 'end_date', 'end_time', 'capacity'];
 
 /* ----------------------------------------------------------------
    UI helpers
@@ -137,7 +159,7 @@ function Field({ label, required, hint, error, children }: {
       {error && (
         <p className="flex items-center gap-1 text-[12px] text-red-500">
           <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           {error}
         </p>
@@ -157,10 +179,10 @@ const ic = (err?: boolean) =>
    ---------------------------------------------------------------- */
 export default function CreateEventPage() {
   const router = useRouter();
-  const [form,      setForm]      = useState<FormData>(INITIAL);
-  const [errors,    setErrors]    = useState<FormErrors>({});
+  const [form, setForm] = useState<FormData>(INITIAL);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const [step,      setStep]      = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2>(1);
 
   function update<K extends keyof FormData>(k: K, v: FormData[K]) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -175,7 +197,7 @@ export default function CreateEventPage() {
   }
 
   function handleNext() {
-    const all   = validate(form);
+    const all = validate(form);
     const step1 = Object.fromEntries(Object.entries(all).filter(([k]) => STEP1_KEYS.includes(k as keyof FormErrors)));
     if (Object.keys(step1).length) { setErrors(step1); return; }
     setErrors({});
@@ -201,21 +223,21 @@ export default function CreateEventPage() {
         {/* ── Header ── */}
         <div>
           <Link
-              href="/manage/dashboard"
-              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M15 19l-7-7 7-7"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            href="/manage/dashboard"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M15 19l-7-7 7-7"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
 
-              Back to Dashboard
-            </Link>
+            Back to Dashboard
+          </Link>
           <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Create new event</h1>
           <p className="text-[14px] text-gray-500 mt-1">Fill in the details to publish an event for your organization.</p>
         </div>
@@ -229,7 +251,7 @@ export default function CreateEventPage() {
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-colors
                   ${step === s.n ? 'bg-green-700 text-white' : step > s.n ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
                   {step > s.n
-                    ? <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                    ? <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                     : s.n}
                 </div>
                 <span className={`text-[13px] font-medium hidden sm:block ${step === s.n ? 'text-green-700' : 'text-gray-400'}`}>{s.label}</span>
@@ -247,7 +269,7 @@ export default function CreateEventPage() {
 
                 <Field label="Event title" required error={errors.title}>
                   <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)}
-                    placeholder="e.g. Web Development Summit 2025" maxLength={120} className={ic(!!errors.title)}/>
+                    placeholder="e.g. Web Development Summit 2025" maxLength={120} className={ic(!!errors.title)} />
                   <p className="text-[11px] text-gray-400 self-end">{form.title.length}/120</p>
                 </Field>
 
@@ -268,26 +290,38 @@ export default function CreateEventPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Start date" required error={errors.start_date}>
-                    <input type="date" value={form.start_date} onChange={(e) => update('start_date', e.target.value)} className={ic(!!errors.start_date)}/>
+                    <input
+                      type="date"
+                      value={form.start_date}
+                      onChange={(e) => update('start_date', e.target.value)}
+                      min={TODAY} /* <-- ADD THIS */
+                      className={ic(!!errors.start_date)}
+                    />
                   </Field>
                   <Field label="Start time" required error={errors.start_time}>
-                    <input type="time" value={form.start_time} onChange={(e) => update('start_time', e.target.value)} className={ic(!!errors.start_time)}/>
+                    <input type="time" value={form.start_time} onChange={(e) => update('start_time', e.target.value)} className={ic(!!errors.start_time)} />
                   </Field>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="End date" required error={errors.end_date}>
-                    <input type="date" value={form.end_date} onChange={(e) => update('end_date', e.target.value)} min={form.start_date} className={ic(!!errors.end_date)}/>
+                    <input
+                      type="date"
+                      value={form.end_date}
+                      onChange={(e) => update('end_date', e.target.value)}
+                      min={form.start_date || TODAY} /* <-- UPDATE THIS: defaults to TODAY if start_date isn't picked yet */
+                      className={ic(!!errors.end_date)}
+                    />
                   </Field>
                   <Field label="End time" required error={errors.end_time}>
-                    <input type="time" value={form.end_time} onChange={(e) => update('end_time', e.target.value)} className={ic(!!errors.end_time)}/>
+                    <input type="time" value={form.end_time} onChange={(e) => update('end_time', e.target.value)} className={ic(!!errors.end_time)} />
                   </Field>
                 </div>
 
                 <Field label="Capacity" required hint="Registration closes automatically when this limit is reached." error={errors.capacity}>
                   <div className="relative">
                     <input type="number" value={form.capacity} onChange={(e) => update('capacity', e.target.value)}
-                      min={1} max={10000} placeholder="e.g. 150" className={ic(!!errors.capacity)}/>
+                      min={1} max={10000} placeholder="e.g. 150" className={ic(!!errors.capacity)} />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-gray-400 pointer-events-none">slots</span>
                   </div>
                 </Field>
@@ -299,26 +333,26 @@ export default function CreateEventPage() {
                   <label className="flex flex-col items-center justify-center gap-3 h-44 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer">
                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center">
                       <svg className="w-6 h-6 text-gray-400" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 16V8m0 0l-3 3m3-3l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        <path d="M12 16V8m0 0l-3 3m3-3l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                     </div>
                     <div className="text-center">
                       <p className="text-[14px] font-semibold text-gray-600">Click to upload banner</p>
                       <p className="text-[12px] text-gray-400 mt-0.5">Recommended: 1200×630px · 16:9</p>
                     </div>
-                    <input type="file" accept="image/*" onChange={handleBanner} className="hidden"/>
+                    <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
                   </label>
                 ) : (
                   <div className="flex flex-col gap-3">
                     <div className="relative rounded-xl overflow-hidden border border-gray-200 h-44 bg-gray-100">
-                      <img src={form.banner_preview} alt="Banner" className="w-full h-full object-cover"/>
+                      <img src={form.banner_preview} alt="Banner" className="w-full h-full object-cover" />
                       <button type="button"
                         onClick={() => { update('banner_file', null); update('banner_preview', null); }}
                         className="absolute top-2.5 right-2.5 w-7 h-7 bg-white border border-gray-200 rounded-full shadow-sm flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
                       >
                         <svg className="w-3.5 h-3.5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                       </button>
                     </div>
@@ -331,7 +365,7 @@ export default function CreateEventPage() {
                 <button type="button" onClick={handleNext}
                   className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-[14px] font-semibold px-6 py-3 rounded-xl transition-colors cursor-pointer">
                   Continue
-                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
               </div>
             </>
@@ -346,7 +380,7 @@ export default function CreateEventPage() {
                   <textarea value={form.description} onChange={(e) => update('description', e.target.value)}
                     rows={7} maxLength={3000}
                     placeholder="Tell students what this event is about, what to expect, what to bring..."
-                    className={`${ic(!!errors.description)} resize-none leading-relaxed`}/>
+                    className={`${ic(!!errors.description)} resize-none leading-relaxed`} />
                   <p className="text-[11px] text-gray-400 self-end">{form.description.length}/3000</p>
                 </Field>
               </SectionCard>
@@ -362,7 +396,7 @@ export default function CreateEventPage() {
                           ${active ? 'border-green-600 bg-green-50' : 'border-gray-200 bg-white hover:border-green-300 hover:bg-gray-50'}`}>
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${active ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-400'}`}>
                           <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM3 17a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                           </svg>
                         </div>
                         <div className="flex-1">
@@ -370,7 +404,7 @@ export default function CreateEventPage() {
                           <p className="text-[12px] text-gray-500 mt-0.5">{opt.desc}</p>
                         </div>
                         <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex-shrink-0 flex items-center justify-center transition-all ${active ? 'border-green-600 bg-green-600' : 'border-gray-300'}`}>
-                          {active && <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>}
+                          {active && <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                         </div>
                       </button>
                     );
@@ -392,7 +426,7 @@ export default function CreateEventPage() {
                     </div>
                     <button type="button" onClick={() => update('is_paid', !form.is_paid)}
                       className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer flex-shrink-0 ml-4 ${form.is_paid ? 'bg-green-600' : 'bg-gray-300'}`}>
-                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${form.is_paid ? 'left-6' : 'left-0.5'}`}/>
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${form.is_paid ? 'left-6' : 'left-0.5'}`} />
                     </button>
                   </div>
 
@@ -403,7 +437,7 @@ export default function CreateEventPage() {
                       <textarea value={form.payment_instructions} onChange={(e) => update('payment_instructions', e.target.value)}
                         rows={4} maxLength={600}
                         placeholder="e.g. Pay via GCash: 09XX-XXX-XXXX (Treasurer name). Use your School ID as reference number."
-                        className={`${ic(!!errors.payment_instructions)} resize-none`}/>
+                        className={`${ic(!!errors.payment_instructions)} resize-none`} />
                       <p className="text-[11px] text-gray-400 self-end">{form.payment_instructions.length}/600</p>
                     </Field>
                   )}
@@ -417,14 +451,14 @@ export default function CreateEventPage() {
                 </div>
                 <div className="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: 'Title',    value: form.title         || '—' },
-                    { label: 'Category', value: form.category      || '—' },
-                    { label: 'Venue',    value: VENUES.find((v) => v.id === form.venue_id)?.name || '—' },
+                    { label: 'Title', value: form.title || '—' },
+                    { label: 'Category', value: form.category || '—' },
+                    { label: 'Venue', value: VENUES.find((v) => v.id === form.venue_id)?.name || '—' },
                     { label: 'Capacity', value: form.capacity ? `${form.capacity} slots` : '—' },
-                    { label: 'Start',    value: form.start_date ? `${form.start_date} ${form.start_time}` : '—' },
-                    { label: 'End',      value: form.end_date   ? `${form.end_date} ${form.end_time}` : '—' },
+                    { label: 'Start', value: form.start_date ? `${form.start_date} ${form.start_time}` : '—' },
+                    { label: 'End', value: form.end_date ? `${form.end_date} ${form.end_time}` : '—' },
                     { label: 'Audience', value: AUDIENCE_OPTIONS.find((a) => a.value === form.audience_type)?.label || '—' },
-                    { label: 'Payment',  value: form.is_paid ? 'Paid' : 'Free' },
+                    { label: 'Payment', value: form.is_paid ? 'Paid' : 'Free' },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex flex-col gap-0.5">
                       <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</span>
@@ -438,7 +472,7 @@ export default function CreateEventPage() {
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep(1)}
                   className="flex items-center gap-2 text-[13px] font-semibold text-gray-500 border border-gray-200 hover:bg-gray-100 px-5 py-2.5 rounded-xl transition-colors cursor-pointer">
-                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M16 10H4M9 5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M16 10H4M9 5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   Back
                 </button>
 
@@ -447,11 +481,11 @@ export default function CreateEventPage() {
                 <button type="submit" disabled={saveState === 'saving' || saveState === 'success'}
                   className="flex items-center gap-2 bg-green-700 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[14px] font-semibold px-6 py-3 rounded-xl transition-colors cursor-pointer">
                   {saveState === 'saving' ? (
-                    <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>Publishing...</>
+                    <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>Publishing...</>
                   ) : saveState === 'success' ? (
-                    <><svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>Published!</>
+                    <><svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>Published!</>
                   ) : (
-                    <><svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M10 2v12M5 9l5-7 5 7M4 17h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>Publish event</>
+                    <><svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M10 2v12M5 9l5-7 5 7M4 17h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>Publish event</>
                   )}
                 </button>
               </div>
