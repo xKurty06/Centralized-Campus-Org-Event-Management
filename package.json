@@ -1,0 +1,18 @@
+{
+    "name": "salikop",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Root workspace to run Salikop Next.js and Laravel concurrently",
+    "workspaces": [
+        "app"
+    ],
+    "scripts": {
+        "dev:app": "cd app && npm run dev",
+        "dev:backend": "cd backend && php artisan serve --port=8000",
+        "dev": "concurrently -n \"NEXTJS,LARAVEL\" -c \"cyan.bold,green.bold\" \"npm run dev:app\" \"npm run dev:backend\"",
+        "setup": "cd app && npm install && cd ../backend && composer install && php artisan key:generate"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
