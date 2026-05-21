@@ -8,6 +8,7 @@ use Database\Seeders\DepartmentsSeeder;
 use Database\Seeders\VenuesSeeder;
 use Database\Seeders\EventCategoriesSeeder;
 use Database\Seeders\OrgCategoriesSeeder;
+use Database\Seeders\CoursesSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -23,6 +24,7 @@ class DatabaseSeeder extends Seeder
             VenuesSeeder::class,
             EventCategoriesSeeder::class,
             OrgCategoriesSeeder::class,
+            CoursesSeeder::class,
         ]);
     }
 }

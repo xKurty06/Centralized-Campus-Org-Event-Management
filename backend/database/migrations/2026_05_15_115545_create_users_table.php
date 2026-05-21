@@ -36,7 +36,7 @@ return new class extends Migration
             $table->foreign('dept_id')->references('id')->on('departments')->onDelete('restrict');
 
             // course_id references courses.id (UUID)
-            $table->uuid('course_id');
+            $table->unsignedBigInteger('course_id');
             $table->foreign('course_id')->references('id')->on('courses')->onDelete('restrict');
 
             // ACADEMIC INFO
