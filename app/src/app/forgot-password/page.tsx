@@ -125,7 +125,7 @@ function EmailStep({ onSuccess }: { onSuccess: (email: string) => void }) {
                         id="email"
                         type="email"
                         className="input-has-left-icon"
-                        placeholder="you@cvsu.edu.ph"
+                        placeholder="yourname.lastname@cvsu.edu.ph"
                         value={email}
                         onChange={e => { setEmail(e.target.value); setErrorMsg(''); }}
                         disabled={isLoading}

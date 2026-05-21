@@ -8,8 +8,8 @@ type FormState = 'idle' | 'loading' | 'error';
 type Tab       = 'login' | 'guest';
 
 // ─── Config ───────────────────────────────────────────────────
-// school_id format: YYYY-D-NNNNN  e.g. 2023-1-00123
-const SCHOOL_ID_REGEX = /^\d{4}-\d-\d{5}$/;
+// school_id format: YYYY-NN-NNN  e.g. 2024-05-123
+const SCHOOL_ID_REGEX = /^\d{4}-\d{2}-\d{3}$/;
 
 // ─────────────────────────────────────────────────────────────
 // Sub-components
@@ -144,17 +144,16 @@ const UserIcon = () => (
  * Output: YYYY-D-NNNNN
  */
 function formatSchoolId(raw: string): string {
-  // Strip everything that isn't a digit
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length <= 4) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-  return `${digits.slice(0, 4)}-${digits.slice(4, 5)}-${digits.slice(5, 10)}`;
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 9)}`;
 }
 
 function validateSchoolId(val: string): string | null {
   if (!val) return 'School ID is required.';
   if (!SCHOOL_ID_REGEX.test(val))
-    return 'Enter a valid School ID (e.g. 2023-1-00123).';
+    return 'Enter a valid School ID (e.g. 2024-05-123).';
   return null;
 }
 
@@ -214,7 +213,7 @@ function LoginForm() {
       <Field
         id="school-id"
         label="School ID"
-        hint="Format: YYYYNNNNN (e.g. 202405123)"
+        hint="Format: YYYY-MM-NNN (e.g. 2024-05-123)"
       >
         <div className="input-icon-wrapper">
           <InputIcon><IdCardIcon /></InputIcon>
@@ -227,7 +226,7 @@ function LoginForm() {
             placeholder="202405123"
             autoComplete="username"
             disabled={isLoading}
-            maxLength={9} /* YYYY-D-NNNNN = 9 chars */
+            maxLength={11} /* YYYY-NN-NNN = 11 chars */
             className="input-has-left-icon"
           />
         </div>

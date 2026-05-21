@@ -76,15 +76,6 @@ function LockIcon() {
     );
 }
 
-function ShieldCheckIcon() {
-    return (
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-light)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            <polyline points="9 12 11 14 15 10" />
-        </svg>
-    );
-}
-
 function CheckCircleIcon() {
     return (
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -488,14 +479,6 @@ export default function ChangePasswordPage() {
                                 Student Events Portal
                             </p>
                         </div>
-                    </div>
-
-                    {/* Shield icon */}
-                    <div
-                        className="mb-4 p-3 rounded-xl"
-                        style={{ background: 'var(--color-primary-muted)', border: '1px solid rgba(34,160,80,.2)' }}
-                    >
-                        <ShieldCheckIcon />
                     </div>
 
                     <h1 className="text-2xl font-bold mb-1.5" style={{ color: 'var(--color-text)' }}>

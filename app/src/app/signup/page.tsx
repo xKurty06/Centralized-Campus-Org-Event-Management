@@ -25,39 +25,105 @@ interface FormData {
 // ─── Placeholder Data ──────────────────────────────────────────
 // TODO: Replace with API calls to /api/departments and /api/courses
 const DEPARTMENTS = [
-    { id: '1', name: 'College of Arts and Sciences', code: 'CAS' },
-    { id: '2', name: 'College of Engineering', code: 'COE' },
-    { id: '3', name: 'College of Education', code: 'COEd' },
-    { id: '4', name: 'College of Business Administration', code: 'CBA' },
-    { id: '5', name: 'College of Information and Communications Technology', code: 'CICT' },
-    { id: '6', name: 'College of Agriculture', code: 'CA' },
+    { id: '1', name: 'College of Engineering and Information Technology', code: 'CEIT' },
+    { id: '2', name: 'College of Economics, Management and Development Studies', code: 'CEMDS' },
+    { id: '3', name: 'College of Arts and Sciences', code: 'CAS' },
+    { id: '4', name: 'College of Nursing', code: 'CON' },
+    { id: '5', name: 'College of Veterinary Medicine and Biomedical Sciences', code: 'CVMBS' },
+    { id: '6', name: 'College of Tourism and Hospitality Management', code: 'CTHM' },
+    { id: '7', name: 'College of Criminal Justice', code: 'CCJ' },
+    { id: '8', name: 'College of Sports, Physical Education and Recreation', code: 'CSPEAR' },
+    { id: '9', name: 'College of Agriculture, Food, Environment, and Natural Resources', code: 'CAFENR' },
+    { id: '10', name: 'College of Education', code: 'CED' },
+    { id: '11', name: 'College of Medicine', code: 'COM' },
 ];
 
 const COURSES_BY_DEPT: Record<string, { id: string; code: string; name: string }[]> = {
-    '5': [
-        { id: 'c1', code: 'BSCS', name: 'Bachelor of Science in Computer Science' },
-        { id: 'c2', code: 'BSIT', name: 'Bachelor of Science in Information Technology' },
-        { id: 'c3', code: 'BSCpE', name: 'Bachelor of Science in Computer Engineering' },
-    ],
-    '2': [
-        { id: 'c4', code: 'BSCE', name: 'Bachelor of Science in Civil Engineering' },
-        { id: 'c5', code: 'BSEE', name: 'Bachelor of Science in Electrical Engineering' },
-        { id: 'c6', code: 'BSME', name: 'Bachelor of Science in Mechanical Engineering' },
-    ],
+    // CEIT
     '1': [
-        { id: 'c7', code: 'BSMATH', name: 'Bachelor of Science in Mathematics' },
-        { id: 'c8', code: 'ABCOM', name: 'Bachelor of Arts in Communication' },
+        { id: '1', code: 'BSABE', name: 'Bachelor of Science in Agricultural and Biosystems Engineering' },
+        { id: '2', code: 'BSARCH', name: 'Bachelor of Science in Architecture' },
+        { id: '3', code: 'BSCE', name: 'Bachelor of Science in Civil Engineering' },
+        { id: '4', code: 'BSCOE', name: 'Bachelor of Science in Computer Engineering' },
+        { id: '5', code: 'BSCS', name: 'Bachelor of Science in Computer Science' },
+        { id: '6', code: 'BSEE', name: 'Bachelor of Science in Electrical Engineering' },
+        { id: '7', code: 'BSECE', name: 'Bachelor of Science in Electronics Engineering' },
+        { id: '8', code: 'BSIE', name: 'Bachelor of Science in Industrial Engineering' },
+        { id: '9', code: 'BSINDT', name: 'Bachelor of Science in Industrial Technology' },
+        { id: '10', code: 'BSIT', name: 'Bachelor of Science in Information Technology' },
     ],
+    // CEMDS
+    '2': [
+        { id: '11', code: 'BSOA', name: 'Bachelor of Science in Office Administration' },
+        { id: '12', code: 'BSACC', name: 'Bachelor of Science in Accountancy' },
+        { id: '13', code: 'BSBA', name: 'BS Business Administration' },
+        { id: '14', code: 'BSECON', name: 'BS Economics' },
+        { id: '15', code: 'BSDM', name: 'BS Development Management' },
+        { id: '16', code: 'BSIS', name: 'BS International Studies' },
+    ],
+    // CAS
     '3': [
-        { id: 'c9', code: 'BEED', name: 'Bachelor of Elementary Education' },
-        { id: 'c10', code: 'BSED', name: 'Bachelor of Secondary Education' },
+        { id: '17', code: 'BACOMM', name: 'Bachelor of Arts in Communication' },
+        { id: '18', code: 'BSDEVCOM', name: 'Bachelor of Science in Development Communication' },
+        { id: '19', code: 'BSBIO', name: 'Bachelor of Science in Biology' },
+        { id: '20', code: 'BAJOURN', name: 'Bachelor of Arts in Journalism' },
+        { id: '21', code: 'BAELS', name: 'Bachelor of Arts in English Language Studies' },
+        { id: '22', code: 'BSPSYCH', name: 'Bachelor of Science in Psychology' },
+        { id: '23', code: 'BAPS', name: 'Bachelor of Arts in Political Science' },
+        { id: '24', code: 'BSSW', name: 'Bachelor of Science in Social Work' },
+        { id: '25', code: 'BSAM', name: 'Bachelor of Science in Applied Mathematics' },
     ],
+    // CON
     '4': [
-        { id: 'c11', code: 'BSBA', name: 'Bachelor of Science in Business Administration' },
-        { id: 'c12', code: 'BSACC', name: 'Bachelor of Science in Accountancy' },
+        { id: '26', code: 'BSN', name: 'Bachelor of Science in Nursing' },
+        { id: '27', code: 'BSMT', name: 'Bachelor of Science in Medical Technology / Medical Laboratory Science' },
+        { id: '28', code: 'BSM', name: 'Bachelor of Science in Midwifery' },
+        { id: '29', code: 'DIPMID', name: 'Diploma in Midwifery' },
     ],
+    // CVMBS
+    '5': [
+        { id: '30', code: 'DVM', name: 'Doctor of Veterinary Medicine' },
+        { id: '31', code: 'BSVTECH', name: 'BS Veterinary Technology' },
+        { id: '32', code: 'BSAHM', name: 'BS Animal Health and Management' },
+        { id: '33', code: 'BSBIOMED', name: 'BS Biomedical Science' },
+        { id: '34', code: 'MVST', name: 'Master in Veterinary Studies' },
+        { id: '35', code: 'MVSC', name: 'Master in Veterinary Science' },
+    ],
+    // CTHM
     '6': [
-        { id: 'c13', code: 'BSA', name: 'Bachelor of Science in Agriculture' },
+        { id: '36', code: 'BSHM', name: 'Bachelor of Science in Hospitality Management' },
+        { id: '37', code: 'BSTM', name: 'Bachelor of Science in Tourism Management' },
+    ],
+    // CCJ
+    '7': [
+        { id: '38', code: 'BSCRIM', name: 'Bachelor of Science in Criminology' },
+        { id: '39', code: 'BSISA', name: 'Bachelor of Science in Industrial Security Administration' },
+    ],
+    // CSPEAR
+    '8': [
+        { id: '40', code: 'BPE', name: 'Bachelor of Physical Education' },
+        { id: '41', code: 'BSESS', name: 'Bachelor of Exercise and Sports Sciences' },
+    ],
+    // CAFENR
+    '9': [
+        { id: '42', code: 'BSA', name: 'BS Agriculture' },
+        { id: '43', code: 'BSES', name: 'BS in Environmental Science' },
+        { id: '44', code: 'BSFT', name: 'BS in Food Technology' },
+        { id: '45', code: 'BSLUDM', name: 'BS in Land Use Design and Management' },
+        { id: '46', code: 'BAE', name: 'Bachelor in Agricultural Entrepreneurship' },
+        { id: '47', code: 'CERTAS', name: 'Certificate in Agricultural Science' },
+    ],
+    // CED
+    '10': [
+        { id: '48', code: 'BEED', name: 'Bachelor of Elementary Education' },
+        { id: '49', code: 'BECED', name: 'Bachelor of Early Childhood Education' },
+        { id: '50', code: 'BSNED', name: 'Bachelor of Special Needs Education' },
+        { id: '51', code: 'BTLED', name: 'Bachelor of Technology and Livelihood Education' },
+        { id: '52', code: 'BSED', name: 'Bachelor of Secondary Education' },
+    ],
+    // COM
+    '11': [
+        { id: '53', code: 'MD', name: 'Doctor of Medicine' },
     ],
 };
 
@@ -220,7 +286,7 @@ function Step1({
     function validate(): boolean {
         const e: typeof errors = {};
         if (!SCHOOL_ID_REGEX.test(data.school_id))
-            e.school_id = 'Enter a valid School ID (e.g. 2023-1-00123).';
+            e.school_id = 'Enter a valid School ID (e.g. 2024-05-123).';
         if (!data.email.endsWith(EMAIL_DOMAIN) || data.email === EMAIL_DOMAIN)
             e.email = `Must be a valid ${EMAIL_DOMAIN} address.`;
         if (data.password.length < 8)
@@ -238,7 +304,7 @@ function Step1({
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
             {/* School ID */}
-            <Field id="school_id" label="School ID" hint="Format: YYYYNNNNN (e.g. 202405123)" error={errors.school_id}>
+            <Field id="school_id" label="School ID" hint="Format: YYYY-MM-NNN (e.g. 2024-05-123)" error={errors.school_id}>
                 <div className="input-icon-wrapper">
                     <span className="input-icon-left">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -249,8 +315,8 @@ function Step1({
                         id="school_id"
                         type="text"
                         inputMode="numeric"
-                        maxLength={13}
-                        placeholder="202405123"
+                        maxLength={11}
+                        placeholder="2024-05-123"
                         value={data.school_id}
                         onChange={e => { onChange('school_id', formatSchoolId(e.target.value)); setErrors(p => ({ ...p, school_id: '' })); }}
                         className="input-has-left-icon"
