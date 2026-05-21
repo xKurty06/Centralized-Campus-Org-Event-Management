@@ -63,24 +63,23 @@ const PLACEHOLDER_ORG: OrgProfile = {
 };
 
 const PLACEHOLDER_OFFICERS: Officer[] = [
-    { id: 'off-1', userId: 'u-1', name: 'Juan Dela Cruz', schoolId: '2022-1-00045', email: 'j.delacruz@cvsu.edu.ph', position: 'President', isActive: true, joinedAt: '2023-06-01' },
-    { id: 'off-2', userId: 'u-2', name: 'Maria Reyes', schoolId: '2022-1-00078', email: 'm.reyes@cvsu.edu.ph', position: 'Vice President', isActive: true, joinedAt: '2023-06-01' },
-    { id: 'off-3', userId: 'u-3', name: 'Carlo Mendoza', schoolId: '2023-1-00112', email: 'c.mendoza@cvsu.edu.ph', position: 'Secretary', isActive: true, joinedAt: '2023-06-01' },
-    { id: 'off-4', userId: 'u-5', name: 'Paolo Santos', schoolId: '2021-1-00023', email: 'p.santos@cvsu.edu.ph', position: 'Treasurer', isActive: false, joinedAt: '2022-06-01' },
-    { id: 'off-5', userId: 'u-4', name: 'Ana Villanueva', schoolId: '2023-1-00134', email: 'a.villanueva@cvsu.edu.ph', position: 'Auditor', isActive: true, joinedAt: '2023-06-01' },
+    { id: 'off-1', userId: 'u-1', name: 'Juan Dela Cruz', schoolId: '202205045', email: 'j.delacruz@cvsu.edu.ph', position: 'President', isActive: true, joinedAt: '2023-06-01' },
+    { id: 'off-2', userId: 'u-2', name: 'Maria Reyes', schoolId: '202205078', email: 'm.reyes@cvsu.edu.ph', position: 'Vice President', isActive: true, joinedAt: '2023-06-01' },
+    { id: 'off-3', userId: 'u-3', name: 'Carlo Mendoza', schoolId: '202305112', email: 'c.mendoza@cvsu.edu.ph', position: 'Secretary', isActive: true, joinedAt: '2023-06-01' },
+    { id: 'off-4', userId: 'u-5', name: 'Paolo Santos', schoolId: '202105023', email: 'p.santos@cvsu.edu.ph', position: 'Treasurer', isActive: false, joinedAt: '2022-06-01' },
+    { id: 'off-5', userId: 'u-4', name: 'Ana Villanueva', schoolId: '202305134', email: 'a.villanueva@cvsu.edu.ph', position: 'Auditor', isActive: true, joinedAt: '2023-06-01' },
 ];
 
 const PLACEHOLDER_MEMBERS: Member[] = [
-    { id: 'mem-1', name: 'Ella Cruz', schoolId: '2022-1-01001', email: 'e.cruz@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-01-12' },
-    { id: 'mem-2', name: 'Mark Santos', schoolId: '2022-1-01002', email: 'm.santos@cvsu.edu.ph', status: 'Active', feeStatus: 'Partial', joinedAt: '2024-02-03' },
-    { id: 'mem-3', name: 'Jessa Flores', schoolId: '2023-1-01003', email: 'j.flores@cvsu.edu.ph', status: 'Pending', feeStatus: 'Unpaid', joinedAt: '2024-02-20' },
-    { id: 'mem-4', name: 'Kevin Diaz', schoolId: '2023-1-01004', email: 'k.diaz@cvsu.edu.ph', status: 'Inactive', feeStatus: 'Unpaid', joinedAt: '2023-12-05' },
-    { id: 'mem-5', name: 'Aira Lim', schoolId: '2022-1-01005', email: 'a.lim@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-6', name: 'Leo Garcia', schoolId: '2021-1-01006', email: 'l.garcia@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-7', name: 'Sophia Reyes', schoolId: '2023-1-01007', email: 's.reyes@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-8', name: 'Daniel Lee', schoolId: '2022-1-01008', email: 'd.lee@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-9', name: 'Grace Kim', schoolId: '2023-1-01009', email: 'g.kim@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-10', name: 'Jake Thompson', schoolId: '2022-1-01010', email: 'j.thompson@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' }
+    { id: 'mem-1', name: 'Ella Cruz', schoolId: '202205001', email: 'e.cruz@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-01-12' },
+    { id: 'mem-2', name: 'Mark Santos', schoolId: '202205002', email: 'm.santos@cvsu.edu.ph', status: 'Active', feeStatus: 'Partial', joinedAt: '2024-02-03' },
+    { id: 'mem-3', name: 'Jessa Flores', schoolId: '202305003', email: 'j.flores@cvsu.edu.ph', status: 'Pending', feeStatus: 'Unpaid', joinedAt: '2024-02-20' },
+    { id: 'mem-4', name: 'Kevin Diaz', schoolId: '202305004', email: 'k.diaz@cvsu.edu.ph', status: 'Inactive', feeStatus: 'Unpaid', joinedAt: '2023-12-05' },
+    { id: 'mem-5', name: 'Aira Lim', schoolId: '202205005', email: 'a.lim@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
+    { id: 'mem-6', name: 'Leo Garcia', schoolId: '202105006', email: 'l.garcia@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
+    { id: 'mem-8', name: 'Daniel Lee', schoolId: '202205008', email: 'd.lee@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
+    { id: 'mem-9', name: 'Grace Kim', schoolId: '202305009', email: 'g.kim@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
+    { id: 'mem-10', name: 'Jake Thompson', schoolId: '202205010', email: 'j.thompson@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' }
 ];
 
 /* ----------------------------------------------------------------

@@ -69,7 +69,7 @@ const PLACEHOLDER_ACTIVITY: ActivityItem[] = [
     { id: 'a1', type: 'accreditation', actor: 'You', target: 'Cultural Arts Circle → Suspended', timestamp: '2h ago' },
     { id: 'a2', type: 'event_created', actor: 'CSS Officer', target: 'Leadership Summit 2025 published', timestamp: '5h ago' },
     { id: 'a3', type: 'event_cancelled', actor: 'CAC Officer', target: 'Annual Art Showcase cancelled', timestamp: '1d ago' },
-    { id: 'a4', type: 'user_deactivated', actor: 'You', target: 'User 2022-3-00511 deactivated', timestamp: '2d ago' },
+    { id: 'a4', type: 'user_deactivated', actor: 'You', target: 'User 202210051 deactivated', timestamp: '2d ago' },
     { id: 'a5', type: 'accreditation', actor: 'You', target: 'Environmental Advocates → Active', timestamp: '3d ago' },
 ];
 

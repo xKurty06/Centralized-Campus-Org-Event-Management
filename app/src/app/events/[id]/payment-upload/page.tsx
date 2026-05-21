@@ -84,7 +84,7 @@ export default function PaymentUploadPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '2021-00142', department: 'BSCS 3A' }} />
+      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202105142', department: 'BSCS 3A' }} />
 
       <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-10 flex flex-col gap-6">
 

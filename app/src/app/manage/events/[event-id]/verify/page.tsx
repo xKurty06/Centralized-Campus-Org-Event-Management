@@ -151,11 +151,11 @@ const PLACEHOLDER_QUEUE: QueuedAction[] = [
 ];
 
 const PLACEHOLDER_RECENT: RecentActivity[] = [
-  { id: 'r-1', studentName: 'Ana Reyes', schoolId: '2024-1-00789', action: 'Check_In', timestamp: '08:12' },
-  { id: 'r-2', studentName: 'Pedro Villar', schoolId: '2021-3-00301', action: 'Verify_Payment', timestamp: '08:10' },
-  { id: 'r-3', studentName: 'Grace Torres', schoolId: '2023-2-00204', action: 'Check_In', timestamp: '08:08' },
-  { id: 'r-4', studentName: 'Mark Ramos', schoolId: '2022-1-00155', action: 'Check_In', timestamp: '08:05' },
-  { id: 'r-5', studentName: 'Nina Castillo', schoolId: '2024-2-00612', action: 'Verify_Payment', timestamp: '08:02' },
+  { id: 'r-1', studentName: 'Ana Reyes', schoolId: '202401789', action: 'Check_In', timestamp: '08:12' },
+  { id: 'r-2', studentName: 'Pedro Villar', schoolId: '20210300301', action: 'Verify_Payment', timestamp: '08:10' },
+  { id: 'r-3', studentName: 'Grace Torres', schoolId: '20230200204', action: 'Check_In', timestamp: '08:08' },
+  { id: 'r-4', studentName: 'Mark Ramos', schoolId: '20220100155', action: 'Check_In', timestamp: '08:05' },
+  { id: 'r-5', studentName: 'Nina Castillo', schoolId: '20240200612', action: 'Verify_Payment', timestamp: '08:02' },
 ];
 
 /* ────────────────────────────────────────────────────────────────
@@ -828,7 +828,7 @@ export default function EntrancePanelPage() {
                     <input
                       ref={inputRef}
                       type="text"
-                      placeholder="e.g. 2023-1-00123"
+                      placeholder="e.g. 202305123"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={handleKeyDown}

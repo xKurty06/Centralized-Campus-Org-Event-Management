@@ -139,7 +139,7 @@ function SuccessContent() {
               <p className="text-[13px] font-semibold text-gray-800">Bring your School ID</p>
               <p className="text-[12px] text-gray-500 leading-relaxed">
                 Present your CvSU School ID at the entrance for verification. Your registered ID is{' '}
-                <span className="font-semibold text-green-700">2021-00142</span>.
+                <span className="font-semibold text-green-700">202105142</span>.
               </p>
             </div>
           </div>
@@ -200,7 +200,7 @@ function SuccessContent() {
 export default function RegistrationSuccessPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '2021-00142', department: 'BSCS 3A' }} />
+      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202105142', department: 'BSCS 3A' }} />
       
       <Suspense fallback={
         <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex items-center justify-center">

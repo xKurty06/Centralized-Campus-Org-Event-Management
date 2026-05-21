@@ -284,7 +284,7 @@ export default function EventDetailPage() {
           role="student"
           user={{
             name: 'Juan dela Cruz',
-            schoolId: '2021-00142',
+            schoolId: '202105142',
             department: 'BSCS 3A',
           }}
         />
@@ -347,7 +347,7 @@ export default function EventDetailPage() {
         role="student"
         user={{
           name: 'Juan dela Cruz',
-          schoolId: '2021-00142',
+          schoolId: '202105142',
           department: 'BSCS 3A',
         }}
       />
@@ -550,7 +550,7 @@ export default function EventDetailPage() {
                     </div>
                     <div className="flex flex-col leading-tight">
                       <span className="text-[12px] font-semibold text-gray-800">Juan dela Cruz</span>
-                      <span className="text-[11px] text-gray-400">2021-00142 · BSCS 3A</span>
+                      <span className="text-[11px] text-gray-400">202105142 · BSCS 3A</span>
                     </div>
                   </div>
                 </div>

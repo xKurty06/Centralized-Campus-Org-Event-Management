@@ -61,7 +61,7 @@ interface ActivitySummary {
    ---------------------------------------------------------------- */
 const MOCK_USER: UserProfile = {
   id: 'usr_001',
-  school_id: '2021-00142',
+  school_id: '202405123',
   email: 'juandelacruz@cvsu.edu.ph',
   first_name: 'Juan',
   last_name: 'dela Cruz',

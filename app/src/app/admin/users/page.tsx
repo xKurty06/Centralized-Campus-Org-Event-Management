@@ -28,18 +28,18 @@ interface User {
    Placeholder Data
    ---------------------------------------------------------------- */
 const USERS: User[] = [
-    { id: 'u-1', schoolId: '2022-1-00045', email: 'j.delacruz@cvsu.edu.ph', firstName: 'Juan', lastName: 'Dela Cruz', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ CSS'] },
-    { id: 'u-2', schoolId: '2022-1-00078', email: 'm.reyes@cvsu.edu.ph', firstName: 'Maria', lastName: 'Reyes', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 1, globalRole: 'User', isActive: true, orgRoles: ['VP @ CSS'] },
-    { id: 'u-3', schoolId: '2023-1-00112', email: 'c.mendoza@cvsu.edu.ph', firstName: 'Carlo', lastName: 'Mendoza', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 3, globalRole: 'User', isActive: true, orgRoles: ['Secretary @ CSS'] },
-    { id: 'u-4', schoolId: '2023-1-00134', email: 'a.villanueva@cvsu.edu.ph', firstName: 'Ana', lastName: 'Villanueva', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
-    { id: 'u-5', schoolId: '2021-1-00023', email: 'p.santos@cvsu.edu.ph', firstName: 'Paolo', lastName: 'Santos', dept: 'CEIT', course: 'BSCpE', yearLevel: 4, section: 2, globalRole: 'User', isActive: false },
-    { id: 'u-6', schoolId: '2024-1-00067', email: 'l.castro@cvsu.edu.ph', firstName: 'Lara', lastName: 'Castro', dept: 'CAS', course: 'BSBA', yearLevel: 1, section: 1, globalRole: 'User', isActive: true },
-    { id: 'u-7', schoolId: '2022-2-00089', email: 'm.torres@cvsu.edu.ph', firstName: 'Miguel', lastName: 'Torres', dept: 'CAS', course: 'BSBA', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ SPECS'] },
-    { id: 'u-8', schoolId: '2023-2-00045', email: 's.navarro@cvsu.edu.ph', firstName: 'Sofia', lastName: 'Navarro', dept: 'CON', course: 'BSN', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
-    { id: 'u-9', schoolId: '0000-0-00001', email: 'j.doe@cvsu.edu.ph', firstName: 'John', lastName: 'Doe', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-10', schoolId: '0000-0-00002', email: 'j.smith@cvsu.edu.ph', firstName: 'Jane', lastName: 'Smith', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-11', schoolId: '2021-1-00099', email: 'r.pangilinan@cvsu.edu.ph', firstName: 'Rico', lastName: 'Pangilinan', dept: 'COE', course: 'BSCE', yearLevel: 4, section: 3, globalRole: 'User', isActive: false },
-    { id: 'u-12', schoolId: '2024-2-00033', email: 't.ocampo@cvsu.edu.ph', firstName: 'Tricia', lastName: 'Ocampo', dept: 'CBA', course: 'BSAc', yearLevel: 1, section: 2, globalRole: 'User', isActive: true },
+    { id: 'u-1', schoolId: '202201045', email: 'j.delacruz@cvsu.edu.ph', firstName: 'Juan', lastName: 'Dela Cruz', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ CSS'] },
+    { id: 'u-2', schoolId: '202201078', email: 'm.reyes@cvsu.edu.ph', firstName: 'Maria', lastName: 'Reyes', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 1, globalRole: 'User', isActive: true, orgRoles: ['VP @ CSS'] },
+    { id: 'u-3', schoolId: '202301112', email: 'c.mendoza@cvsu.edu.ph', firstName: 'Carlo', lastName: 'Mendoza', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 3, globalRole: 'User', isActive: true, orgRoles: ['Secretary @ CSS'] },
+    { id: 'u-4', schoolId: '202301134', email: 'a.villanueva@cvsu.edu.ph', firstName: 'Ana', lastName: 'Villanueva', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
+    { id: 'u-5', schoolId: '202101023', email: 'p.santos@cvsu.edu.ph', firstName: 'Paolo', lastName: 'Santos', dept: 'CEIT', course: 'BSCpE', yearLevel: 4, section: 2, globalRole: 'User', isActive: false },
+    { id: 'u-6', schoolId: '202401067', email: 'l.castro@cvsu.edu.ph', firstName: 'Lara', lastName: 'Castro', dept: 'CAS', course: 'BSBA', yearLevel: 1, section: 1, globalRole: 'User', isActive: true },
+    { id: 'u-7', schoolId: '20220200089', email: 'm.torres@cvsu.edu.ph', firstName: 'Miguel', lastName: 'Torres', dept: 'CAS', course: 'BSBA', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ SPECS'] },
+    { id: 'u-8', schoolId: '20230200045', email: 's.navarro@cvsu.edu.ph', firstName: 'Sofia', lastName: 'Navarro', dept: 'CON', course: 'BSN', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
+    { id: 'u-9', schoolId: '00000000001', email: 'j.doe@cvsu.edu.ph', firstName: 'John', lastName: 'Doe', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
+    { id: 'u-10', schoolId: '00000000002', email: 'j.smith@cvsu.edu.ph', firstName: 'Jane', lastName: 'Smith', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
+    { id: 'u-11', schoolId: '20210100099', email: 'r.pangilinan@cvsu.edu.ph', firstName: 'Rico', lastName: 'Pangilinan', dept: 'COE', course: 'BSCE', yearLevel: 4, section: 3, globalRole: 'User', isActive: false },
+    { id: 'u-12', schoolId: '20240200033', email: 't.ocampo@cvsu.edu.ph', firstName: 'Tricia', lastName: 'Ocampo', dept: 'CBA', course: 'BSAc', yearLevel: 1, section: 2, globalRole: 'User', isActive: true },
 ];
 
 /* ----------------------------------------------------------------

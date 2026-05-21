@@ -8,8 +8,8 @@ type FormState = 'idle' | 'loading' | 'error';
 type Tab       = 'login' | 'guest';
 
 // ─── Config ───────────────────────────────────────────────────
-// school_id format: YYYY-NN-NNN  e.g. 2024-05-123
-const SCHOOL_ID_REGEX = /^\d{4}-\d{2}-\d{3}$/;
+// school_id format: YYYYMMNNN  e.g. 202405123
+const SCHOOL_ID_REGEX = /^\d{9}$/;
 
 // ─────────────────────────────────────────────────────────────
 // Sub-components
@@ -143,17 +143,11 @@ const UserIcon = () => (
  * Accepts digits only and inserts dashes at positions 4 and 6.
  * Output: YYYY-D-NNNNN
  */
-function formatSchoolId(raw: string): string {
-    const digits = raw.replace(/\D/g, '');
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 9)}`;
-}
 
 function validateSchoolId(val: string): string | null {
   if (!val) return 'School ID is required.';
   if (!SCHOOL_ID_REGEX.test(val))
-    return 'Enter a valid School ID (e.g. 2024-05-123).';
+    return 'Enter a valid School ID (e.g. 202405123).';
   return null;
 }
 
@@ -169,7 +163,7 @@ function LoginForm() {
   const [errorMsg, setErrorMsg]     = useState('');
 
   function handleSchoolIdChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSchoolId(formatSchoolId(e.target.value));
+    setSchoolId(e.target.value);
     setErrorMsg('');
     setFormState('idle');
   }
@@ -213,7 +207,7 @@ function LoginForm() {
       <Field
         id="school-id"
         label="School ID"
-        hint="Format: YYYY-MM-NNN (e.g. 2024-05-123)"
+        hint="Format: YYYYNNNNN (e.g. 202405123)"
       >
         <div className="input-icon-wrapper">
           <InputIcon><IdCardIcon /></InputIcon>
@@ -226,7 +220,7 @@ function LoginForm() {
             placeholder="202405123"
             autoComplete="username"
             disabled={isLoading}
-            maxLength={11} /* YYYY-NN-NNN = 11 chars */
+            maxLength={9} /* YYYYMMNNN = 9 chars */
             className="input-has-left-icon"
           />
         </div>

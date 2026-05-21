@@ -127,16 +127,8 @@ const COURSES_BY_DEPT: Record<string, { id: string; code: string; name: string }
     ],
 };
 
-const SCHOOL_ID_REGEX = /^\d{4}-\d{2}-\d{3}$/;
+const SCHOOL_ID_REGEX = /^\d{9}$/;
 const EMAIL_DOMAIN = '@cvsu.edu.ph';
-
-// ─── Helpers ──────────────────────────────────────────────────
-function formatSchoolId(raw: string): string {
-    const digits = raw.replace(/\D/g, '');
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 9)}`;
-}
 
 function passwordStrength(pw: string): { score: number; label: string; color: string } {
     let score = 0;
@@ -286,7 +278,7 @@ function Step1({
     function validate(): boolean {
         const e: typeof errors = {};
         if (!SCHOOL_ID_REGEX.test(data.school_id))
-            e.school_id = 'Enter a valid School ID (e.g. 2024-05-123).';
+            e.school_id = 'Enter a valid School ID (e.g. 202405123).';
         if (!data.email.endsWith(EMAIL_DOMAIN) || data.email === EMAIL_DOMAIN)
             e.email = `Must be a valid ${EMAIL_DOMAIN} address.`;
         if (data.password.length < 8)
@@ -304,7 +296,7 @@ function Step1({
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
             {/* School ID */}
-            <Field id="school_id" label="School ID" hint="Format: YYYY-MM-NNN (e.g. 2024-05-123)" error={errors.school_id}>
+            <Field id="school_id" label="School ID" hint="Format: YYYYMMNNN (e.g. 202405123)" error={errors.school_id}>
                 <div className="input-icon-wrapper">
                     <span className="input-icon-left">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -315,10 +307,10 @@ function Step1({
                         id="school_id"
                         type="text"
                         inputMode="numeric"
-                        maxLength={11}
-                        placeholder="2024-05-123"
+                        maxLength={9}
+                        placeholder="202405123"
                         value={data.school_id}
-                        onChange={e => { onChange('school_id', formatSchoolId(e.target.value)); setErrors(p => ({ ...p, school_id: '' })); }}
+                        onChange={e => { onChange('school_id', e.target.value); setErrors(p => ({ ...p, school_id: '' })); }}
                         className="input-has-left-icon"
                         style={errors.school_id ? { borderColor: 'var(--color-error)' } : {}}
                     />
