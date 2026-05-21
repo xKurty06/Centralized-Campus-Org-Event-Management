@@ -274,7 +274,7 @@ export default function OrganizationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202101142', department: 'BSCS 3A' }} />
+      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202101142', department: 'BSCS 2-2' }} />
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -419,20 +419,6 @@ export default function OrganizationsPage() {
           </div>
         )}
       </main>
-
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">
-              Contact Support
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

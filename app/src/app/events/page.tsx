@@ -257,7 +257,7 @@ function EventCard({ event, isOrgMembersOnly }: { event: CampusEvent, isOrgMembe
 
           </span>
           {isOrgMembersOnly && (
-            <span className="text-[11px] font-semibold bg-blue-500 text-white px-2.5 py-1 rounded-full">Members Only</span>
+            <span className="text-[11px] font-semibold badge badge-green px-2.5 py-1 rounded-full">Exclusive</span>
           )}
         </div>
 
@@ -367,7 +367,7 @@ export default function EventsPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar
         role="student"
-        user={{ name: 'Zean Kurt Balboobs', schoolId: '20246769', department: 'BSCS 3A' }}
+        user={{ name: 'Zean Kurt Balboobs', schoolId: '20246769', department: 'BSCS 2-2' }}
       />
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
@@ -494,15 +494,7 @@ export default function EventsPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline transition-colors">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline transition-colors">Contact Support</Link>
-          </div>
-        </div>
-      </footer>
+      
     </div>
   );
 }

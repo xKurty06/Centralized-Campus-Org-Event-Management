@@ -69,12 +69,12 @@ const MOCK_ORGS: Record<string, Organization> = {
     mission: 'To empower CvSU Computer Science students through quality academic programs, technical training, and meaningful industry connections that prepare them for careers in technology.',
     vision: 'A community of technically excellent, socially responsible, and globally competitive computer science professionals.',
     officers: [
-      { id: '1', name: 'Maria Clara Santos',   position: 'President',          schoolId: '202405101', department: 'BSCS 4A' },
-      { id: '2', name: 'Jose Ramon Cruz',      position: 'Vice President',     schoolId: '202100102', department: 'BSCS 4A' },
-      { id: '3', name: 'Ana Luisa Reyes',      position: 'Secretary',          schoolId: '202200201', department: 'BSCS 3B' },
-      { id: '4', name: 'Carlo Miguel Torres',  position: 'Treasurer',          schoolId: '202200202', department: 'BSCS 3A' },
-      { id: '5', name: 'Isabella Grace Lim',   position: 'Auditor',            schoolId: '202200203', department: 'BSCS 3B' },
-      { id: '6', name: 'Rafael Juan Garcia',   position: 'Public Relations',   schoolId: '202300301', department: 'BSCS 2A' },
+      { id: '1', name: 'Maria Clara Santos',   position: 'President',          schoolId: '202405101', department: 'BSCS 4-2' },
+      { id: '2', name: 'Jose Ramon Cruz',      position: 'Vice President',     schoolId: '202100102', department: 'BSCS 4-3' },
+      { id: '3', name: 'Ana Luisa Reyes',      position: 'Secretary',          schoolId: '202200201', department: 'BSCS 3-2' },
+      { id: '4', name: 'Carlo Miguel Torres',  position: 'Treasurer',          schoolId: '202200202', department: 'BSCS 3-1' },
+      { id: '5', name: 'Isabella Grace Lim',   position: 'Auditor',            schoolId: '202200203', department: 'BSCS 2-5' },
+      { id: '6', name: 'Rafael Juan Garcia',   position: 'Public Relations',   schoolId: '202300301', department: 'BSCS 2-2' },
     ],
     events: [
       { id: '1', title: 'Web Development Summit 2025',  category: 'Workshop',    date: '2025-03-12', venue: 'Main Hall',          type: 'Free',                capacity: 150, registered: 42,  bannerColor: 'bg-blue-100'   },
@@ -97,10 +97,10 @@ const MOCK_ORGS: Record<string, Organization> = {
     mission: 'To serve as the voice of the CvSU student body by promoting student welfare, upholding academic integrity, and fostering a vibrant campus community through inclusive and transparent governance.',
     vision: 'A unified, empowered, and service-oriented student government that champions the rights and welfare of every CvSU student.',
     officers: [
-      { id: '1', name: 'Ramon Eduardo Villanueva', position: 'President',      schoolId: '202000050', department: 'BSBA 4A' },
-      { id: '2', name: 'Patricia Anne Flores',     position: 'Vice President', schoolId: '202000051', department: 'BSN 4B'  },
-      { id: '3', name: 'Marco Luis Bautista',      position: 'Secretary',      schoolId: '202100150', department: 'BSED 3A' },
-      { id: '4', name: 'Diana Rose Mendoza',       position: 'Treasurer',      schoolId: '202100151', department: 'BSBA 3B' },
+      { id: '1', name: 'Ramon Eduardo Villanueva', position: 'President',      schoolId: '202000050', department: 'BSBA 2-2' },
+      { id: '2', name: 'Patricia Anne Flores',     position: 'Vice President', schoolId: '202000051', department: 'BSN 2-2'  },
+      { id: '3', name: 'Marco Luis Bautista',      position: 'Secretary',      schoolId: '202100150', department: 'BSED 2-2' },
+      { id: '4', name: 'Diana Rose Mendoza',       position: 'Treasurer',      schoolId: '202100151', department: 'BSBA 2-2' },
     ],
     events: [
       { id: '2', title: 'Leadership & Governance Talk', category: 'Seminar',  date: '2025-03-15', venue: 'AVR Building B', type: 'Paid', fee: 50, capacity: 80,   registered: 67,  bannerColor: 'bg-purple-100' },
@@ -145,7 +145,7 @@ export default function OrgProfilePage() {
   if (!org) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202101142', department: 'BSCS 3A' }} />
+        <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202101142', department: 'BSCS 2-2' }} />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
             <svg className="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="none">
@@ -163,7 +163,7 @@ export default function OrgProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202101142', department: 'BSCS 3A' }} />
+      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202101142', department: 'BSCS 2-2' }} />
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6">
 
@@ -389,17 +389,6 @@ export default function OrgProfilePage() {
           </div>
         )}
       </main>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

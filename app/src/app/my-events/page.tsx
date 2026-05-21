@@ -424,7 +424,7 @@ export default function MyEventsPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar
         role="student"
-        user={{ name: 'Juan dela Cruz', schoolId: '202100142', department: 'BSCS 3A' }}
+        user={{ name: 'Juan dela Cruz', schoolId: '202100142', department: 'BSCS 2-2' }}
       />
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
@@ -508,19 +508,6 @@ export default function MyEventsPage() {
           </div>
         )}
       </main>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">
-            © {new Date().getFullYear()} Cavite State University · SALIKOP
-          </p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline transition-colors">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline transition-colors">Contact Support</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

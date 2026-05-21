@@ -200,7 +200,7 @@ function SuccessContent() {
 export default function RegistrationSuccessPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202105142', department: 'BSCS 3A' }} />
+      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202105142', department: 'BSCS 2-2' }} />
       
       <Suspense fallback={
         <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex items-center justify-center">
@@ -209,16 +209,6 @@ export default function RegistrationSuccessPage() {
       }>
         <SuccessContent />
       </Suspense>
-
-      <footer className="border-t border-gray-200 bg-white mt-auto">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Privacy Policy</Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">Contact Support</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

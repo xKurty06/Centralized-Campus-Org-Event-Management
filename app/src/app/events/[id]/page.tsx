@@ -55,9 +55,9 @@ const MOCK_EVENTS: Record<string, CampusEvent & { is_member: boolean }> = {
     id: '1',
     title: 'Web Development Summit 2025',
     category: 'Workshop',
-    organization: 'Computer Science Society',
+    organization: 'Computer Science Student Organization',
     orgId: 'csso',
-    host_org_id: 'csso',
+    host_org_id: 'CSSO',
     audience_type: 'Org_Members_Only',
     is_member: false,
     orgCategory: 'Academic',
@@ -86,7 +86,7 @@ Participants will work on hands-on projects and receive a certificate of partici
     category: 'Seminar',
     organization: 'University Student Council',
     orgId: 'usc',
-    host_org_id: 'usc',
+    host_org_id: 'USC',
     audience_type: 'Org_Members_Only',
     is_member: true,
     orgCategory: 'Non-Academic',
@@ -114,7 +114,7 @@ Attendees will receive a certificate of participation. The ₱50 registration fe
     category: 'Cultural',
     organization: 'Fine Arts Club',
     orgId: 'facs',
-    host_org_id: 'facs',
+    host_org_id: 'FACS',
     audience_type: 'Org_Members_Only',
     is_member: false,
     orgCategory: 'Non-Academic',
@@ -285,7 +285,7 @@ export default function EventDetailPage() {
           user={{
             name: 'Juan dela Cruz',
             schoolId: '202105142',
-            department: 'BSCS 3A',
+            department: 'BSCS 2-2',
           }}
         />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
@@ -348,7 +348,7 @@ export default function EventDetailPage() {
         user={{
           name: 'Juan dela Cruz',
           schoolId: '202105142',
-          department: 'BSCS 3A',
+          department: 'BSCS 2-2',
         }}
       />
 
@@ -388,8 +388,8 @@ export default function EventDetailPage() {
               </span>
             )}
             {event.audience_type === 'Org_Members_Only' && (
-              <span className="text-[12px] font-semibold bg-blue-700 text-white px-3 py-1 rounded-full">
-                Members Only
+              <span className="text-[12px] font-semibold badge badge-green px-3 py-1 rounded-full">
+                Exclusive
               </span>
             )}
           </div>
@@ -550,7 +550,7 @@ export default function EventDetailPage() {
                     </div>
                     <div className="flex flex-col leading-tight">
                       <span className="text-[12px] font-semibold text-gray-800">Juan dela Cruz</span>
-                      <span className="text-[11px] text-gray-400">202105142 · BSCS 3A</span>
+                      <span className="text-[11px] text-gray-400">202105142 · BSCS 2-2</span>
                     </div>
                   </div>
                 </div>
@@ -563,7 +563,7 @@ export default function EventDetailPage() {
                         disabled
                         className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
                       >
-                        Members only
+                        Exclusive to {event.host_org_id} members
                       </button>
                       <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-[12px] text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                         This event is exclusive to active members of {event.organization}.
@@ -651,20 +651,6 @@ export default function EventDetailPage() {
           </div>
         </div>
       </main>
-
-      <footer className="border-t border-gray-200 bg-white mt-12">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[12px] text-gray-400">© {new Date().getFullYear()} Cavite State University · SALIKOP</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="text-[12px] text-gray-400 hover:text-gray-600 no-underline">
-              Contact Support
-            </Link>
-          </div>
-        </div>
-      </footer>
 
       {showPaymentModal && (
         <div
