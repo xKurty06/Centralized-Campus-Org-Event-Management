@@ -7,16 +7,6 @@ import ManageShell from '@/components/ManageShell';
 
 /* ----------------------------------------------------------------
    Types — aligned to DB schema
-
-   Events table:
-     id, host_org_id, venue_id → Venues(id,name),
-     category_id → Event_Categories(id,name),
-     title, banner_url, description,
-     start_date, end_date (DateTime),
-     capacity,
-     audience_type (CvSU_Only | Org_Members_Only),
-     is_paid, payment_instructions,
-     status (defaults to Upcoming on creation)
    ---------------------------------------------------------------- */
 
 type AudienceType = 'CvSU_Only' | 'Org_Members_Only';
@@ -35,6 +25,7 @@ interface FormData {
   audience_type: AudienceType;
   description: string;
   is_paid: boolean;
+  price: string; // NEW
   payment_instructions: string;
   banner_file: File | null;
   banner_preview: string | null;
@@ -50,11 +41,12 @@ interface FormErrors {
   end_time?: string;
   capacity?: string;
   description?: string;
+  price?: string; // NEW
   payment_instructions?: string;
 }
 
 /* ----------------------------------------------------------------
-   Seed data — replace with GET /api/venues + /api/event-categories
+   Seed data
    ---------------------------------------------------------------- */
 const VENUES = [
   { id: 'v1', name: 'Main Hall' },
@@ -88,12 +80,10 @@ const INITIAL: FormData = {
   title: '', category: '', venue_id: '',
   start_date: '', start_time: '', end_date: '', end_time: '',
   capacity: '', audience_type: 'CvSU_Only',
-  description: '', is_paid: false, payment_instructions: '',
+  description: '', is_paid: false, price: '', payment_instructions: '',
   banner_file: null, banner_preview: null,
 };
-/* ----------------------------------------------------------------
-   Helpers
-   ---------------------------------------------------------------- */
+
 const getTodayDate = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -104,27 +94,25 @@ const TODAY = getTodayDate();
 function validate(form: FormData): FormErrors {
   const e: FormErrors = {};
 
-  // Existing checks...
   if (!form.title.trim()) e.title = 'Event title is required.';
   if (!form.category) e.category = 'Please select a category.';
   if (!form.venue_id) e.venue_id = 'Please select a venue.';
   if (!form.start_date) e.start_date = 'Start date is required.';
-
-  // NEW: Check if start date is in the past
   else if (form.start_date < TODAY) e.start_date = 'Start date cannot be in the past.';
 
   if (!form.start_time) e.start_time = 'Start time is required.';
   if (!form.end_date) e.end_date = 'End date is required.';
-
-  // NEW: Check if end date is before start date
   else if (form.start_date && form.end_date < form.start_date) e.end_date = 'End date must be after start date.';
 
   if (!form.end_time) e.end_time = 'End time is required.';
 
-  // Rest of your existing checks...
   if (!form.capacity || isNaN(+form.capacity) || +form.capacity < 1) e.capacity = 'Enter a valid capacity (min 1).';
   if (!form.description.trim()) e.description = 'Event description is required.';
-  if (form.is_paid && !form.payment_instructions.trim()) e.payment_instructions = 'Payment instructions are required for paid events.';
+  
+  if (form.is_paid) {
+    if (!form.price || isNaN(+form.price) || +form.price <= 0) e.price = 'Enter a valid price greater than 0.';
+    if (!form.payment_instructions.trim()) e.payment_instructions = 'Payment instructions are required for paid events.';
+  }
 
   return e;
 }
@@ -294,7 +282,7 @@ export default function CreateEventPage() {
                       type="date"
                       value={form.start_date}
                       onChange={(e) => update('start_date', e.target.value)}
-                      min={TODAY} /* <-- ADD THIS */
+                      min={TODAY}
                       className={ic(!!errors.start_date)}
                     />
                   </Field>
@@ -309,7 +297,7 @@ export default function CreateEventPage() {
                       type="date"
                       value={form.end_date}
                       onChange={(e) => update('end_date', e.target.value)}
-                      min={form.start_date || TODAY} /* <-- UPDATE THIS: defaults to TODAY if start_date isn't picked yet */
+                      min={form.start_date || TODAY}
                       className={ic(!!errors.end_date)}
                     />
                   </Field>
@@ -431,15 +419,27 @@ export default function CreateEventPage() {
                   </div>
 
                   {form.is_paid && (
-                    <Field label="Payment instructions" required
-                      hint="Shown to students after they choose a payment method. Include GCash number, account name, and reference format."
-                      error={errors.payment_instructions}>
-                      <textarea value={form.payment_instructions} onChange={(e) => update('payment_instructions', e.target.value)}
-                        rows={4} maxLength={600}
-                        placeholder="e.g. Pay via GCash: 09XX-XXX-XXXX (Treasurer name). Use your School ID as reference number."
-                        className={`${ic(!!errors.payment_instructions)} resize-none`} />
-                      <p className="text-[11px] text-gray-400 self-end">{form.payment_instructions.length}/600</p>
-                    </Field>
+                    <div className="flex flex-col gap-4 animate-fade-in">
+                      <div className="w-full sm:w-1/2">
+                        <Field label="Registration Price" required hint="Amount to be paid in PHP (₱)." error={errors.price}>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-gray-500 font-medium">₱</span>
+                            <input type="number" value={form.price} onChange={(e) => update('price', e.target.value)}
+                              min={1} placeholder="e.g. 150" className={`${ic(!!errors.price)} pl-8`} />
+                          </div>
+                        </Field>
+                      </div>
+
+                      <Field label="Payment instructions" required
+                        hint="Shown to students after they choose a payment method. Include GCash number, account name, and reference format."
+                        error={errors.payment_instructions}>
+                        <textarea value={form.payment_instructions} onChange={(e) => update('payment_instructions', e.target.value)}
+                          rows={4} maxLength={600}
+                          placeholder="e.g. Pay via GCash: 09XX-XXX-XXXX (Treasurer name). Use your School ID as reference number."
+                          className={`${ic(!!errors.payment_instructions)} resize-none`} />
+                        <p className="text-[11px] text-gray-400 self-end">{form.payment_instructions.length}/600</p>
+                      </Field>
+                    </div>
                   )}
                 </div>
               </SectionCard>
@@ -458,7 +458,7 @@ export default function CreateEventPage() {
                     { label: 'Start', value: form.start_date ? `${form.start_date} ${form.start_time}` : '—' },
                     { label: 'End', value: form.end_date ? `${form.end_date} ${form.end_time}` : '—' },
                     { label: 'Audience', value: AUDIENCE_OPTIONS.find((a) => a.value === form.audience_type)?.label || '—' },
-                    { label: 'Payment', value: form.is_paid ? 'Paid' : 'Free' },
+                    { label: 'Payment', value: form.is_paid ? `Paid (₱${form.price || '0'})` : 'Free' },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex flex-col gap-0.5">
                       <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</span>

@@ -230,13 +230,6 @@ function LoginForm() {
       <div className="form-group">
         <div className="flex items-center justify-between">
           <label htmlFor="password" className="form-label">Password</label>
-          <Link
-            href="/forgot-password"
-            className="text-xs font-medium"
-            style={{ color: 'var(--color-primary-light)' }}
-          >
-            Forgot password?
-          </Link>
         </div>
         <div className="input-icon-wrapper">
           <InputIcon><LockIcon /></InputIcon>
@@ -260,6 +253,13 @@ function LoginForm() {
             <EyeIcon open={showPass} />
           </button>
         </div>
+        <Link
+            href="/forgot-password"
+            className="text-xs font-medium mt-1 self-end"
+            style={{ color: 'var(--color-primary-light)' }}
+          >
+            Forgot password?
+          </Link>
       </div>
 
       {/* Remember me */}

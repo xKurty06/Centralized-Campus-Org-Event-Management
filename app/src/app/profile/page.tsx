@@ -167,12 +167,12 @@ export default function ProfilePage() {
 
           {/* Banner strip — tall enough so avatar clears it */}
           <div
-            className="h-28"
+            className="relative h-28" // FIX: Added relative
             style={{ background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary-light) 100%)' }}
           >
             {/* Subtle grid texture */}
             <div
-              className="absolute inset-0 opacity-[0.07]"
+              className="absolute inset-0 opacity-[0.07] pointer-events-none" // FIX: Added pointer-events-none
               style={{
                 backgroundImage: `linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)`,
                 backgroundSize: '28px 28px',
@@ -186,7 +186,7 @@ export default function ProfilePage() {
             {/* Avatar overlapping the banner */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 -mt-11 mb-4">
               <div
-                className="w-[84px] h-[84px] rounded-2xl border-4 border-white shadow-md flex items-center justify-center flex-shrink-0"
+                className="relative z-10 w-[84px] h-[84px] rounded-2xl border-4 border-white shadow-md flex items-center justify-center flex-shrink-0"
                 style={{ background: 'var(--color-primary-muted)' }}
               >
                 <span
@@ -337,8 +337,8 @@ export default function ProfilePage() {
             {/* Quick links */}
             <SectionCard title="Quick links">
               <div className="flex flex-col gap-2">
-                <QuickLink href="/my-events"     icon={<IconCalendar />} label="My Events"      desc="View your registrations"    />
-                <QuickLink href="/events"         icon={<IconSearch />}   label="Browse Events"  desc="Discover upcoming events"   />
+                <QuickLink href="/my-events"     icon={<IconCalendar />} label="My Events"     desc="View your registrations"    />
+                <QuickLink href="/events"        icon={<IconSearch />}   label="Browse Events"  desc="Discover upcoming events"  />
                 <QuickLink href="/organizations"  icon={<IconOrgs />}     label="Organizations"  desc="Explore student orgs"       />
               </div>
             </SectionCard>

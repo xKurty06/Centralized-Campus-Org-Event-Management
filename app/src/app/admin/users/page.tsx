@@ -54,6 +54,7 @@ export default function AdminUsersPage() {
 
     // ── Deactivate / Reactivate confirm
     const [confirmToggle, setConfirmToggle] = useState<User | null>(null);
+    const [deactivateReason, setDeactivateReason] = useState('');
 
     // ── Role change: dangerous confirm modal
     const [roleChangePending, setRoleChangePending] = useState<{ user: User; newRole: GlobalRole } | null>(null);
@@ -85,9 +86,21 @@ export default function AdminUsersPage() {
     /* ── Handlers ── */
     function handleToggleActive() {
         if (!confirmToggle) return;
+        
+        // Prevent submission if deactivating and reason is empty
+        if (confirmToggle.isActive && !deactivateReason.trim()) return;
+
         setUsers((prev) => prev.map((u) => u.id === confirmToggle.id ? { ...u, isActive: !u.isActive } : u));
+        
+        // API: PATCH /api/admin/users/:id { is_active: !confirmToggle.isActive, reason: deactivateReason }
+        
         setConfirmToggle(null);
-        // API: PATCH /api/admin/users/:id { is_active }
+        setDeactivateReason('');
+    }
+
+    function closeToggleModal() {
+        setConfirmToggle(null);
+        setDeactivateReason('');
     }
 
     function handleRoleChange() {
@@ -133,7 +146,6 @@ export default function AdminUsersPage() {
                 </div>
 
                 {/* ── Filters ── */}
-                {/* ── Filters ─────────────────────────────────────────────── */}
                 <div className="card">
                     <div className="card-body py-3.5">
                         <div className="flex flex-col gap-2.5">
@@ -379,7 +391,7 @@ export default function AdminUsersPage() {
             {confirmToggle && (
                 <Modal
                     title={confirmToggle.isActive ? 'Deactivate Account?' : 'Reactivate Account?'}
-                    onClose={() => setConfirmToggle(null)}
+                    onClose={closeToggleModal}
                     danger={confirmToggle.isActive}
                 >
                     <div className="flex flex-col gap-4">
@@ -392,11 +404,35 @@ export default function AdminUsersPage() {
                                 : "This will restore the user's access to the platform."
                             }
                         </p>
-                        <div className="flex gap-3 justify-end">
-                            <button className="btn btn-ghost" onClick={() => setConfirmToggle(null)}>Cancel</button>
+
+                        {/* Reason Field for Deactivation */}
+                        {confirmToggle.isActive && (
+                            <div className="flex flex-col gap-1.5 pt-2">
+                                <label className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                                    Reason for deactivation <span style={{ color: 'var(--color-error)' }}>*</span>
+                                </label>
+                                <textarea
+                                    value={deactivateReason}
+                                    onChange={(e) => setDeactivateReason(e.target.value)}
+                                    placeholder="Briefly explain why this account is being deactivated..."
+                                    className="w-full rounded-md p-3 text-sm border focus:outline-none resize-none"
+                                    style={{
+                                        borderColor: 'var(--color-border)',
+                                        background: 'var(--color-bg-secondary, #f9fafb)',
+                                        color: 'var(--color-text)'
+                                    }}
+                                    rows={3}
+                                    required
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex gap-3 justify-end mt-2">
+                            <button className="btn btn-ghost" onClick={closeToggleModal}>Cancel</button>
                             <button
                                 className={`btn ${confirmToggle.isActive ? 'btn-danger' : 'btn-primary'}`}
                                 onClick={handleToggleActive}
+                                disabled={confirmToggle.isActive && !deactivateReason.trim()}
                             >
                                 {confirmToggle.isActive ? 'Yes, Deactivate' : 'Yes, Reactivate'}
                             </button>

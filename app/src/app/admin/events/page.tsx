@@ -26,6 +26,7 @@ interface AdminEvent {
     capacity: number;
     registrants: number;
     isFlagged: boolean;
+    flagReason?: string; // Added flag reason
 }
 
 /* ----------------------------------------------------------------
@@ -37,11 +38,11 @@ const PLACEHOLDER_EVENTS: AdminEvent[] = [
     { id: 'ev-3', title: 'Career Talk: Tech Industry', hostOrg: 'CSS', venue: 'SMT Hall', category: 'Seminar', audienceType: 'CvSU_Only', startDate: '2025-09-20', status: 'Upcoming', isPaid: false, capacity: 100, registrants: 0, isFlagged: false },
     { id: 'ev-4', title: 'Night of Stars: SPECS Anniversary', hostOrg: 'SPECS', venue: 'Open Grounds', category: 'Cultural', audienceType: 'Open', startDate: '2025-04-05', status: 'Cancelled', isPaid: true, capacity: 200, registrants: 12, isFlagged: false },
     { id: 'ev-5', title: 'Nursing Skills Training', hostOrg: 'NSO', venue: 'Sim Lab', category: 'Training', audienceType: 'Org_Members_Only', startDate: '2025-07-15', status: 'Open', isPaid: false, capacity: 30, registrants: 28, isFlagged: false },
-    { id: 'ev-6', title: 'Community Feeding Drive', hostOrg: 'YFC', venue: 'TBA', category: 'Outreach', audienceType: 'Open', startDate: '2025-08-20', status: 'Upcoming', isPaid: false, capacity: 60, registrants: 4, isFlagged: true },
+    { id: 'ev-6', title: 'Community Feeding Drive', hostOrg: 'YFC', venue: 'TBA', category: 'Outreach', audienceType: 'Open', startDate: '2025-08-20', status: 'Upcoming', isPaid: false, capacity: 60, registrants: 4, isFlagged: true, flagReason: 'Needs venue confirmation before wider promotion.' },
     { id: 'ev-7', title: 'Business Plan Competition', hostOrg: 'JMA', venue: 'AVR 1', category: 'Competition', audienceType: 'CvSU_Only', startDate: '2025-09-05', status: 'Upcoming', isPaid: true, capacity: 40, registrants: 0, isFlagged: false },
     { id: 'ev-8', title: 'Dance Workshop: Folklorico', hostOrg: 'CCC', venue: 'Mini Theater', category: 'Cultural', audienceType: 'Open', startDate: '2025-06-28', status: 'Full', isPaid: true, capacity: 25, registrants: 25, isFlagged: false },
     { id: 'ev-9', title: 'Budget 101: Financial Literacy', hostOrg: 'JMA', venue: 'AVR 2', category: 'Seminar', audienceType: 'Open', startDate: '2025-05-22', status: 'Completed', isPaid: false, capacity: 70, registrants: 55, isFlagged: false },
-    { id: 'ev-10', title: 'App Dev Bootcamp', hostOrg: 'CSS', venue: 'CIT Lab 3', category: 'Workshop', audienceType: 'CvSU_Only', startDate: '2025-10-02', status: 'Upcoming', isPaid: true, capacity: 35, registrants: 0, isFlagged: true },
+    { id: 'ev-10', title: 'App Dev Bootcamp', hostOrg: 'CSS', venue: 'CIT Lab 3', category: 'Workshop', audienceType: 'CvSU_Only', startDate: '2025-10-02', status: 'Upcoming', isPaid: true, capacity: 35, registrants: 0, isFlagged: true, flagReason: 'Missing registration fee details.' },
 ];
 
 /* ----------------------------------------------------------------
@@ -71,8 +72,11 @@ export default function AdminEventsPage() {
     const [filterCategory, setFilterCategory] = useState<'All' | EventCategory>('All');
     const [filterOrg, setFilterOrg] = useState('All');
     const [filterFlagged, setFilterFlagged] = useState(false);
+
     const [confirmRemove, setConfirmRemove] = useState<AdminEvent | null>(null);
     const [confirmFlag, setConfirmFlag] = useState<AdminEvent | null>(null);
+    const [flagReasonInput, setFlagReasonInput] = useState(''); // Holds the reason typed in the modal
+
     const [events, setEvents] = useState<AdminEvent[]>(PLACEHOLDER_EVENTS);
 
     const orgs = useMemo(() => {
@@ -104,19 +108,28 @@ export default function AdminEventsPage() {
         setConfirmRemove(null);
     }
 
-    function handleToggleFlag(ev: AdminEvent) {
+    function handleToggleFlag(ev: AdminEvent, reason?: string) {
         setEvents((prev) =>
-            prev.map((e) => e.id === ev.id ? { ...e, isFlagged: !e.isFlagged } : e)
+            prev.map((e) =>
+                e.id === ev.id
+                    ? {
+                        ...e,
+                        isFlagged: !e.isFlagged,
+                        flagReason: !e.isFlagged ? reason : undefined
+                    }
+                    : e
+            )
         );
         setConfirmFlag(null);
+        setFlagReasonInput('');
     }
+
     const hasActiveFilters = !!search || filterStatus !== 'All' || filterCategory !== 'All' || filterOrg !== 'All' || filterFlagged;
 
     return (
         <AdminShell>
             <main className="flex flex-col gap-6 animate-fade-in">
 
-                {/* ── Header ── */}
                 {/* ── Header ── */}
                 <div>
                     <p
@@ -145,7 +158,6 @@ export default function AdminEventsPage() {
                     <StatCard label="Completed" value={stats.completed} color="gray" />
                 </div>
 
-                {/* ── Filters ── */}
                 {/* ── Filters ─────────────────────────────────────────────── */}
                 <div className="card mb-6">
                     <div className="card-body py-3.5">
@@ -293,7 +305,10 @@ export default function AdminEventsPage() {
                                         <td>
                                             <div className="flex items-center gap-2">
                                                 {ev.isFlagged && (
-                                                    <span title="Flagged" className="text-amber-500 flex-shrink-0">
+                                                    <span
+                                                        title={`Flagged${ev.flagReason ? `: ${ev.flagReason}` : ''}`}
+                                                        className="text-amber-500 flex-shrink-0 cursor-help"
+                                                    >
                                                         <IconFlag />
                                                     </span>
                                                 )}
@@ -346,7 +361,10 @@ export default function AdminEventsPage() {
                                             <div className="flex items-center gap-1.5">
                                                 {/* Flag / Unflag */}
                                                 <button
-                                                    onClick={() => setConfirmFlag(ev)}
+                                                    onClick={() => {
+                                                        setConfirmFlag(ev);
+                                                        setFlagReasonInput(ev.flagReason || '');
+                                                    }}
                                                     title={ev.isFlagged ? 'Unflag' : 'Flag'}
                                                     className={`btn btn-sm ${ev.isFlagged ? 'btn-outline' : 'btn-ghost'} px-2`}
                                                 >
@@ -407,26 +425,43 @@ export default function AdminEventsPage() {
             {/* ── Flag Confirm Modal ── */}
             {confirmFlag && (
                 <>
-                    <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setConfirmFlag(null)} />
+                    <div className="fixed inset-0 bg-black/40 z-50" onClick={() => { setConfirmFlag(null); setFlagReasonInput(''); }} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
                         <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in">
                             <h3 className="text-base font-semibold text-[var(--color-text)] mb-2">
                                 {confirmFlag.isFlagged ? 'Remove Flag?' : 'Flag Event?'}
                             </h3>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-1">
+                            <p className="text-sm text-[var(--color-text-secondary)] mb-2">
                                 Event: <span className="font-semibold">{confirmFlag.title}</span>
                             </p>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+                            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
                                 {confirmFlag.isFlagged
                                     ? 'This will clear the flag on this event. It will no longer appear in the flagged filter.'
                                     : 'Flagging this event marks it for review. The event remains visible to students but is highlighted for admin attention.'
                                 }
                             </p>
-                            <div className="flex gap-3 justify-end">
-                                <button className="btn btn-ghost" onClick={() => setConfirmFlag(null)}>Cancel</button>
+
+                            {!confirmFlag.isFlagged && (
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-[var(--color-text)]">
+                                        Reason for flagging <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        value={flagReasonInput}
+                                        onChange={(e) => setFlagReasonInput(e.target.value)}
+                                        className="w-full mt-1.5 p-3 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] resize-y min-h-[80px]"
+                                        placeholder="e.g., Missing venue details, suspicious links, etc."
+                                        autoFocus
+                                    />
+                                </div>
+                            )}
+
+                            <div className={`flex gap-3 justify-end ${confirmFlag.isFlagged ? 'mt-6' : ''}`}>
+                                <button className="btn btn-ghost" onClick={() => { setConfirmFlag(null); setFlagReasonInput(''); }}>Cancel</button>
                                 <button
                                     className={`btn ${confirmFlag.isFlagged ? 'btn-outline' : 'btn-primary'}`}
-                                    onClick={() => handleToggleFlag(confirmFlag)}
+                                    onClick={() => handleToggleFlag(confirmFlag, flagReasonInput)}
+                                    disabled={!confirmFlag.isFlagged && !flagReasonInput.trim()}
                                 >
                                     {confirmFlag.isFlagged ? 'Remove Flag' : 'Yes, Flag It'}
                                 </button>
