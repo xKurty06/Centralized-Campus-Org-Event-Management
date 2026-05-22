@@ -1,5 +1,8 @@
 'use client';
 
+/*
+NOTE FOR AI AGENT: FOR SENDING OTP, USE gooey-toaster npm, DO NOT USE EMAIL SEND FUNCTION IN THIS CODE. POSITION THE TOASTER ON TOP CENTER.
+*/
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

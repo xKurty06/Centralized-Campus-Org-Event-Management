@@ -152,7 +152,7 @@ export default function ResetPasswordPage() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [formState, setFormState] = useState<FormState>('idle');
     const [errorMsg, setErrorMsg] = useState('');
-    const [countdown, setCountdown] = useState(5);
+    const [countdown, setCountdown] = useState(3);
 
     useEffect(() => { setMounted(true); }, []);
 
