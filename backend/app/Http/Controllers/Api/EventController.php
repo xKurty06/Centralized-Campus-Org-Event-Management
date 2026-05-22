@@ -1,0 +1,159 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Event\RegisterEventRequest;
+use App\Http\Requests\Event\PaymentUploadRequest;
+use App\Http\Resources\EventResource;
+use App\Http\Resources\RegistrationResource;
+use App\Http\Resources\PaymentProofResource;
+use App\Services\RegistrationService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class EventController extends Controller
+{
+    public function index(Request $req)
+    {
+        try {
+            $perPage = (int) $req->query('per_page', 15);
+            $query = DB::table('events');
+
+            if ($req->filled('org_id')) {
+                $query->where('host_org_id', $req->org_id);
+            }
+            if ($req->filled('category_id')) {
+                $query->where('category_id', $req->category_id);
+            }
+            if ($req->filled('venue_id')) {
+                $query->where('venue_id', $req->venue_id);
+            }
+            if ($req->filled('audience_type')) {
+                $query->where('audience_type', $req->audience_type);
+            }
+
+            $events = $query->latest()->paginate($perPage);
+            return response()->json([
+                'success' => true,
+                'data' => EventResource::collection($events),
+                'meta' => [
+                    'total' => $events->total(),
+                    'per_page' => $events->perPage(),
+                    'current_page' => $events->currentPage(),
+                    'last_page' => $events->lastPage(),
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $event = DB::table('events')->where('id', $id)->first();
+            if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            return response()->json(['success' => true, 'data' => new EventResource($event)], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function myEvents(Request $req)
+    {
+        try {
+            $user = $req->user();
+            $perPage = (int) $req->query('per_page', 15);
+            $regs = DB::table('registrations as r')
+                ->join('events as e', 'r.event_id', '=', 'e.id')
+                ->where('r.user_id', $user->id)
+                ->select('r.*')
+                ->latest('r.created_at')
+                ->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => RegistrationResource::collection($regs),
+                'meta' => [
+                    'total' => $regs->total(),
+                    'per_page' => $regs->perPage(),
+                    'current_page' => $regs->currentPage(),
+                    'last_page' => $regs->lastPage(),
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function register(RegisterEventRequest $req, $id)
+    {
+        try {
+            $user = $req->user();
+            $payment_selection = $req->input('payment_selection', 'N/A');
+            $service = new RegistrationService();
+            $service->register($id, $user->id, $payment_selection);
+            return response()->json(['success' => true, 'message' => 'Registration successful.'], 201);
+        } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            return response()->json(['success' => false, 'error' => $msg ?: 'Registration failed.'], 400);
+        }
+    }
+
+    public function paymentUpload(PaymentUploadRequest $req, $id)
+    {
+        try {
+            $user = $req->user();
+            $file = $req->file('image');
+            if (!$file) return response()->json(['success' => false, 'error' => 'No file uploaded.'], 400);
+            $path = $file->store('payment_proofs');
+            $reg = DB::table('registrations')->where('event_id', $id)->where('user_id', $user->id)->first();
+            if (!$reg) return response()->json(['success' => false, 'error' => 'Registration not found.'], 404);
+            $proof = DB::table('payment_proofs')->where('reg_id', $reg->id)->first();
+            if ($proof) {
+                DB::table('payment_proofs')->where('id', $proof->id)->update(['image_url' => $path, 'uploaded_at' => now(), 'status' => 'Pending_Review', 'updated_at' => now()]);
+                $data = DB::table('payment_proofs')->where('id', $proof->id)->first();
+            } else {
+                $proofId = (string) Str::uuid();
+                DB::table('payment_proofs')->insert(['id' => $proofId, 'reg_id' => $reg->id, 'image_url' => $path, 'uploaded_at' => now(), 'status' => 'Pending_Review', 'created_at' => now(), 'updated_at' => now()]);
+                $data = DB::table('payment_proofs')->where('id', $proofId)->first();
+            }
+            return response()->json(['success' => true, 'data' => new PaymentProofResource($data)], 201);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function organizations(Request $req)
+    {
+        try {
+            $perPage = (int) $req->query('per_page', 15);
+            $orgs = DB::table('organizations')->latest()->paginate($perPage);
+            return response()->json([
+                'success' => true,
+                'data' => \App\Http\Resources\OrganizationResource::collection($orgs->items()),
+                'meta' => [
+                    'total' => $orgs->total(),
+                    'per_page' => $orgs->perPage(),
+                    'current_page' => $orgs->currentPage(),
+                    'last_page' => $orgs->lastPage(),
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function organization($id)
+    {
+        try {
+            $org = DB::table('organizations')->where('id', $id)->first();
+            if (!$org) return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+            return response()->json(['success' => true, 'data' => new \App\Http\Resources\OrganizationResource($org)], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+}
