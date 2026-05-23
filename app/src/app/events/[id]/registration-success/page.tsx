@@ -136,9 +136,9 @@ function SuccessContent() {
               </svg>
             </div>
             <div className="flex flex-col gap-0.5">
-              <p className="text-[13px] font-semibold text-gray-800">Bring your School ID</p>
+              <p className="text-[13px] font-semibold text-gray-800">Bring your Student ID</p>
               <p className="text-[12px] text-gray-500 leading-relaxed">
-                Present your CvSU School ID at the entrance for verification. Your registered ID is{' '}
+                Present your CvSU Student ID at the entrance for verification. Your registered ID is{' '}
                 <span className="font-semibold text-green-700">202105142</span>.
               </p>
             </div>
@@ -152,18 +152,18 @@ function SuccessContent() {
             <div className="px-6 py-4">
               <h2 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Next steps</h2>
               <div className="flex flex-col gap-2.5">
-                {state === 'pending-online' && (
+                    {state === 'pending-online' && (
                   <>
                     <StepItem number={1} text="An officer will review your payment screenshot." done />
                     <StepItem number={2} text="You'll receive a confirmation notification once verified." />
-                    <StepItem number={3} text="Present your School ID at the entrance on the event day." />
+                    <StepItem number={3} text="Present your Student ID at the entrance on the event day." />
                   </>
                 )}
                 {state === 'pending-onsite' && (
                   <>
                     <StepItem number={1} text="Arrive at the venue on the event day." />
                     <StepItem number={2} text={`Pay the ₱${event.fee} entry fee at the registration table.`} />
-                    <StepItem number={3} text="Present your School ID for final verification." />
+                    <StepItem number={3} text="Present your Student ID for final verification." />
                   </>
                 )}
               </div>

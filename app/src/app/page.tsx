@@ -164,9 +164,9 @@ const UserIcon = () => (
  */
 
 function validateSchoolId(val: string): string | null {
-  if (!val) return 'School ID is required.';
+  if (!val) return 'Student ID is required.';
   if (!SCHOOL_ID_REGEX.test(val))
-    return 'Enter a valid School ID (e.g. 202405123).';
+    return 'Enter a valid Student ID (e.g. 202405123).';
   return null;
 }
 
@@ -258,10 +258,10 @@ function LoginForm() {
         </div>
       )}
 
-      {/* School ID */}
+      {/* Student ID */}
       <Field
         id="school-id"
-        label="School ID"
+        label="Student ID"
         hint="Format: YYYYNNNNN (e.g. 202405123)"
       >
         <div className="input-icon-wrapper">
@@ -368,7 +368,7 @@ function GuestAccess() {
         </svg>
         <p className="text-sm leading-snug" style={{ color: 'var(--color-primary)' }}>
           Guest access lets you <strong>browse events only</strong>.
-          Sign in with your School ID for full access.
+          Sign in with your Student ID for full access.
         </p>
       </div>
 
@@ -461,7 +461,7 @@ export default function LoginPage() {
           </h1>
           <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             {tab === 'login'
-              ? 'Sign in with your CvSU School ID to continue'
+              ? 'Sign in with your CvSU Student ID to continue'
               : 'Browse open events without an account'}
           </p>
 

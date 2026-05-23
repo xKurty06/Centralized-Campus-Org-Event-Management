@@ -229,7 +229,7 @@ export default function ManageMembersPage() {
     async function handleLookup() {
         setAddError('');
         setLookupResult(null);
-        if (!addSchoolId.trim()) { setAddError('Enter a School ID first.'); return; }
+        if (!addSchoolId.trim()) { setAddError('Enter a Student ID first.'); return; }
         if (members.some((m) => m.schoolId === addSchoolId.trim())) {
             setAddError('This student is already a member of this organization.');
             return;
@@ -239,7 +239,7 @@ export default function ManageMembersPage() {
         setAddLoading(false);
         // Simulate not found
         if (addSchoolId.trim() === '0000-0-00000') {
-            setAddError('No verified account found with that School ID.');
+            setAddError('No verified account found with that Student ID.');
             return;
         }
         // Simulate found — replace with real API response shape
@@ -391,7 +391,7 @@ export default function ManageMembersPage() {
                                         type="text"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search by name, school ID, email, or course…"
+                                        placeholder="Search by name, student ID, email, or course…"
                                         className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
                                     />
                                     {search && (
@@ -490,7 +490,7 @@ export default function ManageMembersPage() {
                         <thead>
                             <tr>
                                 <th>Member</th>
-                                <th>School ID</th>
+                                <th>Student ID</th>
                                 <th>Course</th>
                                 <th>Yr / Sec</th>
                                 <th>Joined</th>
@@ -556,12 +556,12 @@ export default function ManageMembersPage() {
                 <Modal title="Add Member" onClose={closeAddModal}>
                     <div className="flex flex-col gap-4">
                         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                            Look up a student by School ID to manually add them to the roster.
+                            Look up a student by Student ID to manually add them to the roster.
                             Use this for walk-in signups who pay dues in person.
                         </p>
 
                         <div className="form-group">
-                            <label className="form-label">School ID</label>
+                            <label className="form-label">Student ID</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"

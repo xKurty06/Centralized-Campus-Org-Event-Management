@@ -83,7 +83,7 @@ const FAQ_ITEMS = [
     },
     {
         q: 'My account was deactivated. What should I do?',
-        a: 'Deactivated accounts are managed by platform administrators. Submit a support request using the form below with your School ID and institutional email and we\'ll investigate.',
+        a: 'Deactivated accounts are managed by platform administrators. Submit a support request using the form below with your Student ID and institutional email and we\'ll investigate.',
     },
     {
         q: 'I submitted payment proof but my status still shows Pending.',
@@ -260,10 +260,10 @@ function ContactForm() {
                 </div>
             </div>
 
-            {/* School ID (optional) */}
+            {/* Student ID (optional) */}
             <div className="form-group">
                 <label htmlFor="schoolId" className="form-label">
-                    School ID <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>(optional)</span>
+                    Student ID <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>(optional)</span>
                 </label>
                 <div className="input-icon-wrapper">
                     <span className="input-icon-left">

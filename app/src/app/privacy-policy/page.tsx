@@ -124,8 +124,8 @@ const SECTIONS: Section[] = [
                     parties within the institutional environment:
                 </p>
                 <ul className="mt-3 flex flex-col gap-2">
-                    {[
-                        { who: 'Organization Officers', what: 'Can view the name, School ID, course, year level, and payment status of students registered for their organization\'s events.' },
+                        {[
+                        { who: 'Organization Officers', what: 'Can view the name, Student ID, course, year level, and payment status of students registered for their organization\'s events.' },
                         { who: 'Platform Administrators (Overseers)', what: 'Have access to all user accounts, organizations, and events for system-wide moderation and account management.' },
                         { who: 'You', what: 'Can view and access all data tied to your own account through your profile and event dashboard.' },
                     ].map(({ who, what }) => (

@@ -340,8 +340,8 @@ function Step1({
 
     function validate(): boolean {
         const e: typeof errors = {};
-        if (!SCHOOL_ID_REGEX.test(data.school_id))
-            e.school_id = 'Enter a valid School ID (e.g. 202405123).';
+            if (!SCHOOL_ID_REGEX.test(data.school_id))
+                e.school_id = 'Enter a valid Student ID (e.g. 202405123).';
         if (!data.email.endsWith(EMAIL_DOMAIN) || data.email === EMAIL_DOMAIN)
             e.email = `Must be a valid ${EMAIL_DOMAIN} address.`;
         if (data.password.length < 8)
@@ -358,8 +358,8 @@ function Step1({
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
-            {/* School ID */}
-            <Field id="school_id" label="School ID" hint="Format: YYYYMMNNN (e.g. 202405123)" error={errors.school_id}>
+            {/* Student ID */}
+            <Field id="school_id" label="Student ID" hint="Format: YYYYMMNNN (e.g. 202405123)" error={errors.school_id}>
                 <div className="input-icon-wrapper">
                     <span className="input-icon-left">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -649,7 +649,7 @@ function Step3({
     const isLoading = formState === 'loading';
 
     const rows = [
-        { label: 'School ID', value: data.school_id },
+        { label: 'Student ID', value: data.school_id },
         { label: 'Email', value: data.email },
         { label: 'Full Name', value: `${data.first_name} ${data.last_name}` },
         { label: 'Department', value: dept ? `${dept.code} — ${dept.name}` : '—' },
@@ -725,7 +725,7 @@ function SuccessScreen({ name }: { name: string }) {
                 <h2 className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>Account Created!</h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                     Welcome to Salikop, <strong>{name}</strong>.<br />
-                    You can now sign in with your School ID.
+                    You can now sign in with your Student ID.
                 </p>
             </div>
             <Link href="/" className="btn btn-primary btn-full mt-1">

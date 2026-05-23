@@ -248,7 +248,7 @@ export default function ProfilePage() {
             <SectionCard title="Identity information">
               <div className="flex flex-col">
                 <InfoRow label="Full name"    value={fullName}        />
-                <InfoRow label="School ID"    value={user.school_id} mono />
+                <InfoRow label="Student ID"    value={user.school_id} mono />
                 <InfoRow label="Email"        value={user.email}      />
                 <InfoRow label="College"      value={`${user.college.name} (${user.college.code})`} />
                 <InfoRow label="Course"       value={`${user.course.name} (${user.course.code})`}   />

@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
                                         type="text"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search by name, school ID, or email…"
+                                        placeholder="Search by name, student ID, or email…"
                                         className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
                                     />
                                     {search && (
@@ -247,7 +247,7 @@ export default function AdminUsersPage() {
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>School ID</th>
+                                <th>Student ID</th>
                                 <th>Dept</th>
                                 <th>Course</th>
                                 <th>Yr / Sec</th>

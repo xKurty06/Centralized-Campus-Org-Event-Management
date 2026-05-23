@@ -157,10 +157,10 @@ export default function AdminOrgDetailPage() {
 
     function handleAddOfficer() {
         setAddError('');
-        if (!addSchoolId.trim()) { setAddError('School ID is required.'); return; }
+        if (!addSchoolId.trim()) { setAddError('Student ID is required.'); return; }
         if (!addPosition.trim()) { setAddError('Position is required.'); return; }
         // Simulate school_id lookup
-        if (addSchoolId === '0000-0-00001') { setAddError('No user found with that School ID.'); return; }
+        if (addSchoolId === '0000-0-00001') { setAddError('No user found with that Student ID.'); return; }
         const newOfficer: Officer = {
             id: `off-${Date.now()}`,
             userId: `u-new-${Date.now()}`,
@@ -302,7 +302,7 @@ export default function AdminOrgDetailPage() {
                         <thead>
                             <tr>
                                 <th>Officer</th>
-                                <th>School ID</th>
+                                <th>Student ID</th>
                                 <th>Position</th>
                                 <th>Since</th>
                                 <th>Status</th>
@@ -525,7 +525,7 @@ export default function AdminOrgDetailPage() {
                                 <thead className="sticky top-0 z-10 bg-[var(--color-surface)]">
                                     <tr>
                                         <th>Member</th>
-                                        <th>School ID</th>
+                                        <th>Student ID</th>
                                         <th>Status</th>
                                         <th>Fee Status</th>
                                         <th>Joined</th>
@@ -681,10 +681,10 @@ export default function AdminOrgDetailPage() {
                 <Modal title="Add Officer" onClose={() => setShowAddOfficerModal(false)}>
                     <div className="flex flex-col gap-4">
                         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                            Enter the student's School ID to look up their account and grant them officer access to this organization.
+                            Enter the student's Student ID to look up their account and grant them officer access to this organization.
                         </p>
                         <div className="form-group">
-                            <label className="form-label">School ID</label>
+                            <label className="form-label">Student ID</label>
                             <input
                                 type="text"
                                 placeholder="e.g. 202405123"

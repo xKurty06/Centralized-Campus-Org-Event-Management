@@ -213,7 +213,7 @@ function IdleCard() {
       </div>
       <div className="text-center">
         <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">Waiting for scan</p>
-        <p className="text-[13px] text-[var(--color-text-muted)] mt-1">Enter or scan a School ID to begin</p>
+        <p className="text-[13px] text-[var(--color-text-muted)] mt-1">Enter or scan a Student ID to begin</p>
       </div>
     </div>
   );
