@@ -3,9 +3,22 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 class RegistrationResource extends JsonResource
 {
+    private function normalizeDate($value): ?string
+    {
+        if (!$value) return null;
+        if ($value instanceof \DateTimeInterface) return $value->format(DATE_ATOM);
+
+        try {
+            return Carbon::parse((string) $value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function toArray($request): array
     {
         return [
@@ -17,8 +30,8 @@ class RegistrationResource extends JsonResource
             'payment_status' => $this->payment_status,
             'attendance_status' => $this->attendance_status,
             'check_in_at' => $this->check_in_at ? (string) $this->check_in_at : null,
-            'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
-            'updated_at' => $this->updated_at ? $this->updated_at->toIso8601String() : null,
+            'created_at' => $this->normalizeDate($this->created_at),
+            'updated_at' => $this->normalizeDate($this->updated_at),
         ];
     }
 }

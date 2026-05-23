@@ -217,6 +217,8 @@ function LoginForm() {
       const storage = rememberMe ? window.localStorage : window.sessionStorage;
       storage.setItem('auth_token', payload.data.token);
       storage.setItem('auth_user', JSON.stringify(payload.data.user));
+      document.cookie = `auth_role=${encodeURIComponent(String(payload.data.user.global_role ?? 'User'))}; Path=/; Max-Age=${60 * 60 * 2}; SameSite=Lax`;
+      document.cookie = `auth_session=1; Path=/; Max-Age=${60 * 60 * 2}; SameSite=Lax`;
 
       const role = payload.data.user.global_role;
       const isOfficer = role === 'Officer';

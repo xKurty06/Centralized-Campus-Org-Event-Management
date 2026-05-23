@@ -20,33 +20,58 @@ class AdminController extends Controller
     public function createOrg(StoreOrgRequest $req)
     {
         try {
-            $data = $req->only([
-                'name',
-                'code_name',
-                'description',
-                'logo_url',
-                'adviser',
-                'founded_date',
-                'category_id',
-                'accreditation_status',
-            ]);
-
+            $data = $req->validated();
             $id = (string) \Illuminate\Support\Str::uuid();
-            DB::table('organizations')->insert([
-                'id' => $id,
-                'name' => $data['name'],
-                'code_name' => $data['code_name'],
-                'description' => $data['description'] ?? null,
-                'logo_url' => $data['logo_url'] ?? null,
-                'adviser' => $data['adviser'] ?? null,
-                'founded_date' => $data['founded_date'] ?? null,
-                'category_id' => $data['category_id'],
-                'accreditation_status' => $data['accreditation_status'] ?? 'Active',
-                'accredited_by' => $req->user()->id,
-                'accredited_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+
+            DB::transaction(function () use ($req, $data, $id) {
+                DB::table('organizations')->insert([
+                    'id' => $id,
+                    'name' => $data['name'],
+                    'code_name' => $data['code_name'],
+                    'description' => $data['description'] ?? null,
+                    'logo_url' => $data['logo_url'] ?? null,
+                    'adviser' => $data['adviser'] ?? null,
+                    'founded_date' => $data['founded_date'] ?? null,
+                    'category_id' => $data['category_id'],
+                    'accreditation_status' => $data['accreditation_status'] ?? 'Active',
+                    'accredited_by' => $req->user()->id,
+                    'accredited_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $officers = $data['officers'] ?? [];
+                if (!empty($officers)) {
+                    $schoolIds = array_values(array_unique(array_map(fn($o) => trim((string) $o['school_id']), $officers)));
+                    $usersBySchoolId = DB::table('users')
+                        ->whereIn('school_id', $schoolIds)
+                        ->where('is_active', 1)
+                        ->pluck('id', 'school_id');
+
+                    $rows = [];
+                    foreach ($officers as $officer) {
+                        $schoolId = trim((string) $officer['school_id']);
+                        $userId = $usersBySchoolId[$schoolId] ?? null;
+                        if (!$userId) {
+                            continue;
+                        }
+
+                        $rows[] = [
+                            'id' => (string) \Illuminate\Support\Str::uuid(),
+                            'user_id' => $userId,
+                            'org_id' => $id,
+                            'position' => trim((string) $officer['position']),
+                            'is_active' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+
+                    if (!empty($rows)) {
+                        DB::table('org_officers')->insert($rows);
+                    }
+                }
+            });
 
             $org = DB::table('organizations')->where('id', $id)->first();
 
@@ -239,6 +264,66 @@ class AdminController extends Controller
                     'per_page'     => $users->perPage(),
                     'current_page' => $users->currentPage(),
                     'last_page'    => $users->lastPage(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function lookupUserBySchoolId(Request $req)
+    {
+        try {
+            $schoolId = trim((string) $req->query('school_id', ''));
+            if ($schoolId === '') {
+                return response()->json(['success' => false, 'error' => 'school_id is required.'], 422);
+            }
+            if (!preg_match('/^\d{9}$/', $schoolId)) {
+                return response()->json(['success' => false, 'error' => 'Student ID must be exactly 9 digits.'], 422);
+            }
+
+            $user = DB::table('users as u')
+                ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
+                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
+                ->whereRaw('TRIM(u.school_id) = ?', [$schoolId])
+                ->where('u.is_active', 1)
+                ->select(
+                    'u.id',
+                    'u.school_id',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.email',
+                    'u.course_id',
+                    'u.dept_id',
+                    'u.year_level',
+                    'u.section',
+                    'c.course_code',
+                    'c.course_name as course',
+                    'd.code as dept_code',
+                    'd.name as dept'
+                )
+                ->first();
+
+            if (!$user) {
+                return response()->json(['success' => false, 'error' => 'User not found.'], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'user_id' => $user->id,
+                    'school_id' => $user->school_id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'course_id' => $user->course_id,
+                    'course_code' => $user->course_code ?? null,
+                    'course' => $user->course ?? null,
+                    'dept_id' => $user->dept_id,
+                    'dept_code' => $user->dept_code ?? null,
+                    'dept' => $user->dept ?? null,
+                    'year_level' => $user->year_level,
+                    'section' => $user->section,
                 ],
             ]);
         } catch (\Exception $e) {

@@ -147,10 +147,12 @@ function Sidebar({
     collapsed,
     setCollapsed,
     isMounted,
+    sessionUser,
 }: {
     collapsed: boolean;
     setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
     isMounted: boolean;
+    sessionUser: SessionUser | null;
 }) {
     const pathname = usePathname();
 
@@ -375,7 +377,7 @@ function Sidebar({
                         }}
                     >
                         {/* Replace with officer initials from session */}
-                        OF
+                        {initials(sessionUser?.first_name, sessionUser?.last_name)}
                     </div>
 
                     <div
@@ -389,14 +391,14 @@ function Sidebar({
                             style={{ color: 'var(--color-text)' }}
                         >
                             {/* Replace with session officer name */}
-                            Officer Name
+                            {sessionUser ? `${sessionUser.first_name ?? ''} ${sessionUser.last_name ?? ''}`.trim() : 'Officer'}
                         </p>
                         <p
                             className="text-[11px]"
                             style={{ color: 'var(--color-text-muted)' }}
                         >
                             {/* Replace with Org_Officers.position from session */}
-                            Officer
+                            {sessionUser?.school_id ?? 'Officer'}
                         </p>
                     </div>
                 </div>
@@ -407,7 +409,7 @@ function Sidebar({
 
 // ─── Topbar ─────────────────────────────────────────────────
 
-function Topbar({ pageTitle }: { pageTitle: string }) {
+function Topbar({ pageTitle, sessionUser }: { pageTitle: string; sessionUser: SessionUser | null }) {
     return (
         <header className="topbar" style={{ paddingLeft: '1.5rem' }}>
             <p
@@ -424,7 +426,7 @@ function Topbar({ pageTitle }: { pageTitle: string }) {
                     color: 'var(--color-primary)',
                 }}
             >
-                Officer
+                {sessionUser?.school_id && 'Officer'}
             </span>
         </header>
     );
@@ -435,6 +437,15 @@ function Topbar({ pageTitle }: { pageTitle: string }) {
 interface ManageShellProps {
     children: React.ReactNode;
     pageTitle?: string;
+}
+interface SessionUser {
+    first_name?: string;
+    last_name?: string;
+    school_id?: string;
+}
+function initials(first = '', last = '') {
+    const value = `${first.slice(0, 1)}${last.slice(0, 1)}`.toUpperCase();
+    return value || 'OF';
 }
 
 export default function ManageShell({
@@ -450,9 +461,18 @@ export default function ManageShell({
 
     // Defer transitions to prevent width animation on first paint.
     const [isMounted, setIsMounted] = useState(false);
+    const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsMounted(true), 100);
+        const raw = window.localStorage.getItem('auth_user') ?? window.sessionStorage.getItem('auth_user');
+        if (raw) {
+            try {
+                setSessionUser(JSON.parse(raw));
+            } catch {
+                setSessionUser(null);
+            }
+        }
         return () => clearTimeout(timer);
     }, []);
 
@@ -468,6 +488,7 @@ export default function ManageShell({
                 collapsed={collapsed}
                 setCollapsed={setCollapsed}
                 isMounted={isMounted}
+                sessionUser={sessionUser}
             />
 
             <div
@@ -479,7 +500,7 @@ export default function ManageShell({
                         : 'var(--sidebar-width)',
                 }}
             >
-                <Topbar pageTitle={pageTitle} />
+                <Topbar pageTitle={pageTitle} sessionUser={sessionUser} />
 
                 <main className="flex-1 overflow-x-hidden">
                     <div className="w-full px-5 lg:px-8 py-6">{children}</div>

@@ -19,6 +19,35 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    private function resolveEffectiveRole(User $user): string
+    {
+        if ($user->global_role === 'Overseer') {
+            return 'Overseer';
+        }
+
+        $hasActiveOfficerRole = DB::table('org_officers')
+            ->where('user_id', $user->id)
+            ->where('is_active', 1)
+            ->exists();
+
+        return $hasActiveOfficerRole ? 'Officer' : 'User';
+    }
+
+    private function authUserPayload(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'school_id' => $user->school_id,
+            'email' => $user->email,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'dept_id' => $user->dept_id,
+            'year_level' => $user->year_level,
+            'is_active' => (bool) $user->is_active,
+            'global_role' => $this->resolveEffectiveRole($user),
+        ];
+    }
+
     public function register(RegisterRequest $req)
     {
         try {
@@ -73,7 +102,7 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
-            return response()->json(['success' => true, 'data' => ['user' => new UserResource($user), 'token' => $token]], 200);
+            return response()->json(['success' => true, 'data' => ['user' => $this->authUserPayload($user), 'token' => $token]], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
         }
@@ -94,7 +123,7 @@ class AuthController extends Controller
     {
         try {
             $user = $req->user();
-            return response()->json(['success' => true, 'data' => new UserResource($user)], 200);
+            return response()->json(['success' => true, 'data' => $this->authUserPayload($user)], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
         }

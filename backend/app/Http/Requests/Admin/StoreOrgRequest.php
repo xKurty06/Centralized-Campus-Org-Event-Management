@@ -22,6 +22,9 @@ class StoreOrgRequest extends FormRequest
             'founded_date' => 'nullable|date',
             'category_id' => 'required|integer|exists:org_categories,id',
             'accreditation_status' => 'nullable|in:Active,Suspended',
+            'officers' => 'nullable|array',
+            'officers.*.school_id' => 'required_with:officers|string|size:9|exists:users,school_id|distinct',
+            'officers.*.position' => 'required_with:officers|string|max:100',
         ];
     }
 }

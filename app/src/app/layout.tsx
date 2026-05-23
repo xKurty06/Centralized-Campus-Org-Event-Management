@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import Link from "next/dist/client/link";
+import RouteAccessGuard from "@/components/RouteAccessGuard";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-poppins)] bg-gray-50 text-gray-900">
+        <RouteAccessGuard />
         {children}
         <footer className="border-t border-gray-200 bg-white mt-8">
           <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">

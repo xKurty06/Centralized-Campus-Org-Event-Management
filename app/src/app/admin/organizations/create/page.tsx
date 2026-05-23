@@ -19,7 +19,7 @@ import AdminShell from '@/components/AdminShell';
    POST  /api/admin/organizations
          body: { name, code_name, category_id, founded_date?,
                  description, adviser, logo_url?,
-                 officer?: { school_id, position } }
+                 officers?: [{ school_id, position }] }
          → 201 { id, name, code_name }
 
    GET   /api/admin/users/lookup?school_id=:id
@@ -35,6 +35,7 @@ type OrgCategory = 'Academic' | 'Non-Academic' | 'Religious';
 type FormState = 'idle' | 'loading' | 'success' | 'error';
 type LookupState = 'idle' | 'loading' | 'found' | 'not_found' | 'error';
 type Step = 1 | 2 | 3;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 interface OfficerLookupResult {
     userId: string;
@@ -48,6 +49,20 @@ interface OfficerLookupResult {
     section: number | string;
 }
 
+// ── NEW: a committed officer entry (looked-up + position assigned) ──
+interface OfficerEntry {
+    userId: string;
+    schoolId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    course: string;
+    dept: string;
+    yearLevel: number | string;
+    section: number | string;
+    position: string;
+}
+
 interface OrgForm {
     // Step 1 — Identity
     name: string;
@@ -58,9 +73,6 @@ interface OrgForm {
     description: string;
     adviser: string;
     logoUrl: string;
-    // Step 3 — Initial Officer
-    officerSchoolId: string;
-    officerPosition: string;
 }
 
 interface FieldError { [key: string]: string }
@@ -107,7 +119,7 @@ const CATEGORIES: {
 const STEPS = [
     { num: 1 as Step, label: 'Identity', short: 'Basic Info' },
     { num: 2 as Step, label: 'Profile Details', short: 'Profile' },
-    { num: 3 as Step, label: 'Initial Officer', short: 'Officer' },
+    { num: 3 as Step, label: 'Initial Officers', short: 'Officers' },
 ];
 
 const POSITIONS = [
@@ -118,7 +130,9 @@ const POSITIONS = [
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
-const initials = (f: string, l: string) => (f?.[0] || '') + (l?.[0] || '').toUpperCase();
+const initials = (f: string, l: string) =>
+    ((f?.[0] || '') + (l?.[0] || '')).toUpperCase();
+
 const fullName = (r: Pick<OfficerLookupResult, 'firstName' | 'lastName'>) =>
     `${r.firstName} ${r.lastName}`;
 
@@ -193,7 +207,7 @@ function AlertBanner({ msg, type = 'error' }: { msg: string; type?: 'error' | 'i
 // ─────────────────────────────────────────────────────────────
 // Live Preview Card
 // ─────────────────────────────────────────────────────────────
-function PreviewCard({ form }: { form: OrgForm }) {
+function PreviewCard({ form, officers }: { form: OrgForm; officers: OfficerEntry[] }) {
     const cat = CATEGORIES.find(c => c.value === form.category);
     return (
         <div className="sticky top-24 flex flex-col gap-3">
@@ -251,11 +265,6 @@ function PreviewCard({ form }: { form: OrgForm }) {
                                         <span style={{ color: 'var(--color-text-muted)' }}>Organization Name</span>
                                     )}
                                 </h3>
-                                {form.codeName && (
-                                    <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                                        {form.codeName}
-                                    </p>
-                                )}
                             </div>
                             {cat && (
                                 <span
@@ -331,6 +340,41 @@ function PreviewCard({ form }: { form: OrgForm }) {
                                 </div>
                             ))}
                         </div>
+
+                        {/* Officer preview in card */}
+                        {officers.length > 0 && (
+                            <>
+                                <hr className="divider" style={{ margin: '12px 0' }} />
+                                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2"
+                                    style={{ color: 'var(--color-text-muted)' }}>
+                                    Officers ({officers.length})
+                                </p>
+                                <div className="flex flex-col gap-1.5">
+                                    {officers.map(o => (
+                                        <div key={o.userId} className="flex items-center gap-2">
+                                            <div
+                                                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                                                style={{ background: 'var(--color-primary-light)', color: '#fff' }}
+                                            >
+                                                {initials(o.firstName, o.lastName)}
+                                            </div>
+                                            <span className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                                                {fullName(o)}
+                                            </span>
+                                            <span
+                                                className="text-[10px] ml-auto shrink-0 px-1.5 py-0.5 rounded"
+                                                style={{
+                                                    background: 'var(--color-primary-muted)',
+                                                    color: 'var(--color-primary)',
+                                                }}
+                                            >
+                                                {o.position}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -588,9 +632,9 @@ function Step2({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Officer Lookup Result Card
+// Officer Lookup Result Card (inline — shown before adding)
 // ─────────────────────────────────────────────────────────────
-function OfficerResultCard({
+function OfficerLookupCard({
     result,
     onClear,
 }: {
@@ -605,28 +649,20 @@ function OfficerResultCard({
                 border: '1.5px solid var(--color-primary-light)',
             }}
         >
-            {/* Avatar */}
             <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                 style={{ background: 'var(--color-primary-light)', color: '#fff' }}
             >
                 {initials(result.firstName, result.lastName)}
             </div>
-
-            {/* Info */}
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                     {fullName(result)}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--color-primary)' }}>
-                    {result.schoolId} · {result.course} · {result.dept}
-                </p>
-                <p className="text-xs" style={{ color: 'var(--color-primary)' }}>
-                    Year {result.yearLevel || 'N/A'}, Sec {result.section || 'N/A'}
+                    {result.schoolId} · {result.course} {result.yearLevel || '?'}-{result.section || '?'}
                 </p>
             </div>
-
-            {/* Verified check + clear */}
             <div className="flex items-center gap-2 shrink-0">
                 <svg width="18" height="18" viewBox="0 0 20 20"
                     style={{ color: 'var(--color-primary)' }}>
@@ -653,27 +689,226 @@ function OfficerResultCard({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Step 3 — Initial Officer (with School ID lookup)
+// Officer Row — committed entry in the officers list
+// ─────────────────────────────────────────────────────────────
+function OfficerRow({
+    officer,
+    index,
+    onRemove,
+}: {
+    officer: OfficerEntry;
+    index: number;
+    onRemove: (userId: string) => void;
+}) {
+    return (
+        <div
+            className="flex items-center gap-3 p-3 rounded-[--radius-md] border animate-fade-in"
+            style={{
+                backgroundColor: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+            }}
+        >
+            {/* Index badge */}
+            <span
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}
+            >
+                {index + 1}
+            </span>
+
+            {/* Avatar */}
+            <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                style={{ background: 'var(--color-primary-light)', color: '#fff' }}
+            >
+                {initials(officer.firstName, officer.lastName)}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text)' }}>
+                    {fullName(officer)}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                    {officer.schoolId} · {officer.course} {officer.yearLevel || '?'}-{officer.section || '?'}
+                </p>
+            </div>
+
+            {/* Position badge */}
+            <span
+                className="text-xs px-2 py-1 rounded-full shrink-0 font-medium"
+                style={{
+                    background: 'var(--color-primary-muted)',
+                    color: 'var(--color-primary)',
+                    border: '1px solid rgba(34,160,80,.2)',
+                }}
+            >
+                {officer.position}
+            </span>
+
+            {/* Remove */}
+            <button
+                type="button"
+                onClick={() => onRemove(officer.userId)}
+                className="btn btn-ghost btn-sm shrink-0"
+                style={{ padding: '5px', color: 'var(--color-text-muted)' }}
+                title="Remove officer"
+            >
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor"
+                        strokeWidth="1.75" strokeLinecap="round" />
+                </svg>
+            </button>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Step 3 — Officers (multi-add with lookup)
 // ─────────────────────────────────────────────────────────────
 function Step3({
-    form, errors, onChange,
-    lookupState, lookupResult, lookupError,
-    onLookup, onClearLookup,
+    officers,
+    onAddOfficer,
+    onRemoveOfficer,
+    errors,
 }: {
-    form: OrgForm;
+    officers: OfficerEntry[];
+    onAddOfficer: (result: OfficerLookupResult, position: string) => void;
+    onRemoveOfficer: (userId: string) => void;
     errors: FieldError;
-    onChange: (k: keyof OrgForm, v: string) => void;
-    lookupState: LookupState;
-    lookupResult: OfficerLookupResult | null;
-    lookupError: string;
-    onLookup: () => void;
-    onClearLookup: () => void;
 }) {
+    // Local state for the lookup input — scoped here so adding resets the form
+    const [schoolId, setSchoolId] = useState('');
+    const [position, setPosition] = useState('');
+    const [customPosition, setCustomPosition] = useState('');
+    const [lookupState, setLookupState] = useState<LookupState>('idle');
+    const [lookupResult, setLookupResult] = useState<OfficerLookupResult | null>(null);
+    const [lookupError, setLookupError] = useState('');
+    const [addError, setAddError] = useState('');
+
+    // The resolved position to store — either the selected value or the custom text
+    const resolvedPosition = position === 'Other' ? customPosition.trim() : position;
+
+    const STUDENT_ID_PATTERN = /^\d{9}$/;
     const isSearching = lookupState === 'loading';
+
+    const handleLookup = useCallback(async () => {
+        const queryId = schoolId.trim();
+        if (!queryId) {
+            setLookupError('Please enter a Student ID to search.');
+            return;
+        }
+        if (!STUDENT_ID_PATTERN.test(queryId)) {
+            setLookupError('Student ID must be exactly 9 digits.');
+            return;
+        }
+
+        setLookupState('loading');
+        setLookupError('');
+        setLookupResult(null);
+        setAddError('');
+
+        try {
+            const token =
+                window.localStorage.getItem('auth_token') ??
+                window.sessionStorage.getItem('auth_token');
+            if (!token) throw new Error('You are not authenticated. Please sign in again.');
+
+            const res = await fetch(
+                `${API_BASE_URL}/admin/users/lookup?school_id=${encodeURIComponent(queryId)}`,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    throw new Error('Your session has expired or is invalid. Please sign in again.');
+                }
+                if (res.status === 403) {
+                    throw new Error('You do not have permission to look up users.');
+                }
+                if (res.status === 404) {
+                    setLookupState('not_found');
+                    setLookupError('No active user found with that Student ID.');
+                    return;
+                }
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || errData.message || res.statusText || 'Failed to search user.');
+            }
+
+            const rawData = await res.json();
+            const user = rawData.data || rawData.user || rawData;
+
+            if (!user || (!user.user_id && !user.id)) {
+                throw new Error('Invalid user data received from the server.');
+            }
+
+            setLookupResult({
+                userId: user.user_id || user.id,
+                schoolId: user.school_id,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                email: user.email,
+                course: user.course_code || user.course || 'N/A',
+                dept: user.dept || user.dept_id || 'N/A',
+                yearLevel: user.year_level || 'N/A',
+                section: user.section || 'N/A',
+            });
+            setLookupState('found');
+        } catch (error: any) {
+            setLookupState('error');
+            setLookupError(error.message || 'An error occurred during lookup.');
+        }
+    }, [schoolId]);
+
+    const handleClearLookup = () => {
+        setLookupState('idle');
+        setLookupResult(null);
+        setLookupError('');
+        setAddError('');
+        setSchoolId('');
+        setPosition('');
+        setCustomPosition('');
+    };
+
+    const handleAdd = () => {
+        setAddError('');
+
+        if (!lookupResult) {
+            setAddError('Look up a student first.');
+            return;
+        }
+        if (!position) {
+            setAddError('Please select a position before adding.');
+            return;
+        }
+        if (position === 'Other' && !customPosition.trim()) {
+            setAddError('Please specify the custom position title.');
+            return;
+        }
+        // Prevent duplicates by userId
+        if (officers.some(o => o.userId === lookupResult.userId)) {
+            setAddError('This student is already added as an officer.');
+            return;
+        }
+        // Prevent duplicate positions (compare against resolved value)
+        if (officers.some(o => o.position === resolvedPosition)) {
+            setAddError(`A "${resolvedPosition}" has already been assigned. Each position can only be held by one officer.`);
+            return;
+        }
+
+        onAddOfficer(lookupResult, resolvedPosition);
+        // Reset the lookup form for the next entry
+        handleClearLookup();
+    };
 
     return (
         <div className="flex flex-col gap-6 animate-fade-in">
-            <SectionLabel>Initial Officer Assignment</SectionLabel>
+            <SectionLabel>Officer Assignments</SectionLabel>
 
             {/* Optional notice */}
             <div
@@ -693,106 +928,174 @@ function Step3({
                     <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                         Optional Step
                     </p>
-                    <p
-                        className="text-xs mt-0.5 leading-relaxed"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                    >
-                        Assign an initial officer now by looking up their Student ID, or skip this
-                        step and assign officers later from the organization's management panel.
+                    <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                        Look up students by ID, assign their position, then click <strong>Add Officer</strong>.
+                        You can add multiple officers. Skip entirely to assign officers later from the management panel.
                     </p>
                 </div>
             </div>
 
-            {/* ── School ID lookup ── */}
-            <div className="form-group">
-                <label htmlFor="officerSchoolId" className="form-label">
-                    Officer Student ID
-                </label>
+            {/* ── Lookup input ── */}
+            <div className="flex flex-col gap-4 p-4 rounded-[--radius-md] border"
+                style={{ backgroundColor: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}>
 
-                {/* Input + Look up button side-by-side fix */}
-                <div className="flex items-center gap-3 w-full">
-                    <div className="input-icon-wrapper flex-1">
-                        <span className="input-icon-left">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" strokeWidth="2">
-                                <rect x="2" y="5" width="20" height="14" rx="2" />
-                                <circle cx="8" cy="12" r="2" />
-                                <path d="M14 9h4M14 12h4M14 15h2" />
-                            </svg>
-                        </span>
-                        <input
-                            id="officerSchoolId"
-                            type="text"
-                            className="input-has-left-icon w-full"
-                            placeholder="e.g. 2023-1-00123"
-                            value={form.officerSchoolId}
-                            onChange={e => {
-                                onChange('officerSchoolId', e.target.value);
-                                onClearLookup();
-                            }}
-                            onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    onLookup();
-                                }
-                            }}
-                            disabled={isSearching}
-                        />
+                <p className="text-xs font-semibold uppercase tracking-widest"
+                    style={{ color: 'var(--color-text-muted)' }}>
+                    {officers.length === 0 ? 'Add First Officer' : 'Add Another Officer'}
+                </p>
+
+                {/* School ID + Lookup button */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="officerSchoolId" className="form-label">Student ID</label>
+                    <div className="flex items-center gap-3 w-full">
+                        <div className="input-icon-wrapper flex-1">
+                            <span className="input-icon-left">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" strokeWidth="2">
+                                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                                    <circle cx="8" cy="12" r="2" />
+                                    <path d="M14 9h4M14 12h4M14 15h2" />
+                                </svg>
+                            </span>
+                            <input
+                                id="officerSchoolId"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="\d*"
+                                maxLength={9}
+                                className="input-has-left-icon w-full"
+                                placeholder="e.g. 202405123"
+                                value={schoolId}
+                                onChange={e => {
+                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 9);
+                                    if (lookupState !== 'idle') handleClearLookup();
+                                    setSchoolId(digits);
+                                }}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') { e.preventDefault(); handleLookup(); }
+                                }}
+                                disabled={isSearching}
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-outline shrink-0 h-[42px]"
+                            onClick={handleLookup}
+                            disabled={isSearching || !STUDENT_ID_PATTERN.test(schoolId)}
+                        >
+                            {isSearching ? <><Spinner size={14} /> Searching...</> : 'Look up'}
+                        </button>
                     </div>
+                    <p className="form-hint mt-1">Must match an existing, active user account in the system.</p>
+
+                    {lookupError && (
+                        <div className="mt-2"><AlertBanner msg={lookupError} type="error" /></div>
+                    )}
+                    {lookupState === 'found' && lookupResult && (
+                        <div className="mt-2">
+                            <OfficerLookupCard result={lookupResult} onClear={handleClearLookup} />
+                        </div>
+                    )}
+                </div>
+
+                {lookupState === 'found' && lookupResult && (
+                    <div className="form-group animate-fade-in" style={{ marginBottom: 0 }}>
+                        <label htmlFor="officerPosition" className="form-label">
+                            Position / Title <span style={{ color: 'var(--color-error)' }}>*</span>
+                        </label>
+                        <div className="input-icon-wrapper">
+                            <span className="input-icon-left">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                            </span>
+                            <select
+                                id="officerPosition"
+                                className="input-has-left-icon w-full"
+                                value={position}
+                                onChange={e => { setPosition(e.target.value); setCustomPosition(''); setAddError(''); }}
+                            >
+                                <option value="">Select a position…</option>
+                                {POSITIONS.map(p => (
+                                    <option
+                                        key={p}
+                                        value={p}
+                                        disabled={p !== 'Other' && officers.some(o => o.position === p)}
+                                    >
+                                        {p}{p !== 'Other' && officers.some(o => o.position === p) ? ' (taken)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Custom position input — shown only when Other is selected */}
+                        {position === 'Other' && (
+                            <div className="mt-2 animate-fade-in">
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Sergeant-at-Arms, Historian…"
+                                    value={customPosition}
+                                    onChange={e => { setCustomPosition(e.target.value); setAddError(''); }}
+                                    maxLength={60}
+                                    autoFocus
+                                />
+                                <p className="form-hint mt-1">Type the exact position title.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Add error */}
+                {addError && (
+                    <div className="animate-fade-in">
+                        <AlertBanner msg={addError} type="error" />
+                    </div>
+                )}
+
+                {/* Add Officer button */}
+                {lookupState === 'found' && lookupResult && (
                     <button
                         type="button"
-                        className="btn btn-outline shrink-0 h-[42px]"
-                        onClick={onLookup}
-                        disabled={isSearching || !form.officerSchoolId.trim()}
+                        className="btn btn-primary w-full animate-fade-in"
+                        onClick={handleAdd}
+                        disabled={!position || (position === 'Other' && !customPosition.trim())}
                     >
-                        {isSearching ? (
-                            <><Spinner size={14} /> Searching...</>
-                        ) : (
-                            'Look up'
-                        )}
-                    </button>
-                </div>
-
-                <p className="form-hint mt-1">Must match an existing, active user account in the system.</p>
-                <FieldErr msg={errors.officerSchoolId} />
-
-                {/* Display Errors */}
-                {lookupError && (
-                    <div className="mt-2">
-                        <AlertBanner msg={lookupError} type="error" />
-                    </div>
-                )}
-
-                {/* Display Success Card */}
-                {lookupState === 'found' && lookupResult && (
-                    <div className="mt-2">
-                        <OfficerResultCard result={lookupResult} onClear={onClearLookup} />
-                    </div>
-                )}
-            </div>
-
-            {/* Position */}
-            <div className="form-group">
-                <label htmlFor="officerPosition" className="form-label">Position / Title</label>
-                <div className="input-icon-wrapper">
-                    <span className="input-icon-left">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                    </span>
-                    <select
-                        id="officerPosition"
-                        className="input-has-left-icon w-full"
-                        value={form.officerPosition}
-                        onChange={e => onChange('officerPosition', e.target.value)}
-                    >
-                        <option value="">Select a position…</option>
-                        {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                </div>
-                <FieldErr msg={errors.officerPosition} />
+                        Add Officer
+                    </button>
+                )}
             </div>
+
+            {/* ── Committed officers list ── */}
+            {officers.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+                            Added Officers
+                            <span
+                                className="ml-2 px-1.5 py-0.5 rounded-full text-[10px]"
+                                style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
+                            >
+                                {officers.length}
+                            </span>
+                        </p>
+                    </div>
+                    {officers.map((o, i) => (
+                        <OfficerRow
+                            key={o.userId}
+                            officer={o}
+                            index={i}
+                            onRemove={onRemoveOfficer}
+                        />
+                    ))}
+                    <hr className="divider my-1" />
+                </div>
+            )}
 
             {/* Org_Officers note */}
             <div
@@ -801,11 +1104,13 @@ function Step3({
             >
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                     <strong style={{ color: 'var(--color-text)' }}>How it works:</strong> Officer assignments are scoped per organization via the{' '}
-                    <code className="px-1 py-0.5 rounded text-[11px]" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}>
+                    <code className="px-1 py-0.5 rounded text-[11px]"
+                        style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}>
                         Org_Officers
                     </code>{' '}
                     table. A user can be an officer in one organization while remaining a regular student in another. Officer access to{' '}
-                    <code className="px-1 py-0.5 rounded text-[11px]" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}>
+                    <code className="px-1 py-0.5 rounded text-[11px]"
+                        style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text)' }}>
                         /manage
                     </code>{' '}
                     is activated immediately upon assignment.
@@ -818,7 +1123,15 @@ function Step3({
 // ─────────────────────────────────────────────────────────────
 // Success State
 // ─────────────────────────────────────────────────────────────
-function SuccessPanel({ orgName, orgCode }: { orgName: string; orgCode: string }) {
+function SuccessPanel({
+    orgName,
+    orgCode,
+    officerCount,
+}: {
+    orgName: string;
+    orgCode: string;
+    officerCount: number;
+}) {
     const router = useRouter();
 
     return (
@@ -845,7 +1158,8 @@ function SuccessPanel({ orgName, orgCode }: { orgName: string; orgCode: string }
             </div>
 
             <div>
-                <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-primary)' }}>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-2"
+                    style={{ color: 'var(--color-primary)' }}>
                     Organization Created
                 </p>
                 <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>{orgName}</h2>
@@ -861,18 +1175,22 @@ function SuccessPanel({ orgName, orgCode }: { orgName: string; orgCode: string }
                 className="w-full max-w-sm rounded-[--radius-md] border p-4 text-left"
                 style={{ backgroundColor: 'var(--color-primary-muted)', borderColor: 'rgba(34,160,80,.2)' }}
             >
-                <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-primary-dark)' }}>Next Steps</p>
+                <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-primary-dark)' }}>
+                    Next Steps
+                </p>
                 <ul className="flex flex-col gap-1.5">
                     {[
                         'Organization is now Active and visible in the directory.',
-                        'Officers can log in and access /manage immediately.',
+                        officerCount > 0
+                            ? `${officerCount} officer${officerCount > 1 ? 's' : ''} assigned and can access /manage immediately.`
+                            : 'Officers can be assigned from the organization\'s management panel.',
                         'The org can now create and publish events.',
                     ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs" style={{ color: 'var(--color-primary)' }}>
+                        <li key={i} className="flex items-start gap-2 text-xs"
+                            style={{ color: 'var(--color-primary)' }}>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                                style={{ flexShrink: 0, marginTop: '2px' }}
-                            >
+                                style={{ flexShrink: 0, marginTop: '2px' }}>
                                 <polyline points="20 6 9 17 4 12" />
                             </svg>
                             {item}
@@ -911,15 +1229,12 @@ export default function AdminCreateOrganizationPage() {
     const [globalErr, setGlobalErr] = useState('');
     const formTopRef = useRef<HTMLDivElement>(null);
 
-    // Lookup State
-    const [lookupState, setLookupState] = useState<LookupState>('idle');
-    const [lookupResult, setLookupResult] = useState<OfficerLookupResult | null>(null);
-    const [lookupError, setLookupError] = useState('');
+    // ── Officers list (multi-add) ──
+    const [officers, setOfficers] = useState<OfficerEntry[]>([]);
 
     const [form, setForm] = useState<OrgForm>({
         name: '', codeName: '', category: '', foundedDate: '',
         description: '', adviser: '', logoUrl: '',
-        officerSchoolId: '', officerPosition: '',
     });
 
     useEffect(() => { setMounted(true); }, []);
@@ -930,66 +1245,27 @@ export default function AdminCreateOrganizationPage() {
         setGlobalErr('');
     }
 
-    // Lookup logic
-    const handleLookup = useCallback(async () => {
-        const queryId = form.officerSchoolId.trim();
+    // ── Officer list handlers ──
+    const handleAddOfficer = useCallback((result: OfficerLookupResult, position: string) => {
+        setOfficers(prev => [
+            ...prev,
+            {
+                userId: result.userId,
+                schoolId: result.schoolId,
+                firstName: result.firstName,
+                lastName: result.lastName,
+                email: result.email,
+                course: result.course,
+                dept: result.dept,
+                yearLevel: result.yearLevel,
+                section: result.section,
+                position,
+            },
+        ]);
+    }, []);
 
-        if (!queryId) {
-            setLookupError('Please enter a Student ID to search.');
-            return;
-        }
-
-        setLookupState('loading');
-        setLookupError('');
-        setLookupResult(null);
-
-        try {
-            // encodeURIComponent ensures special characters are properly transmitted 
-            const res = await fetch(`/api/admin/users/lookup?school_id=${encodeURIComponent(queryId)}`);
-
-            if (!res.ok) {
-                if (res.status === 404) {
-                    setLookupState('not_found');
-                    setLookupError('No active user found with that Student ID.');
-                    return;
-                }
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.message || 'Failed to search user.');
-            }
-
-            const rawData = await res.json();
-
-            // Resilient parsing: accommodate if the API returns `{ data: {...} }` or `{ user: {...} }`
-            const user = rawData.data || rawData.user || rawData;
-
-            if (!user || (!user.user_id && !user.id)) {
-                throw new Error('Invalid user data received from the server.');
-            }
-
-            setLookupResult({
-                // Fallbacks implemented to support slight column name mismatches
-                userId: user.user_id || user.id,
-                schoolId: user.school_id,
-                firstName: user.first_name,
-                lastName: user.last_name,
-                email: user.email,
-                course: user.course || user.course_id || 'N/A',
-                dept: user.dept || user.dept_id || 'N/A',
-                yearLevel: user.year_level || 'N/A',
-                section: user.section || 'N/A'
-            });
-
-            setLookupState('found');
-        } catch (error: any) {
-            setLookupState('error');
-            setLookupError(error.message || 'An error occurred during lookup.');
-        }
-    }, [form.officerSchoolId]);
-
-    const handleClearLookup = useCallback(() => {
-        setLookupState('idle');
-        setLookupResult(null);
-        setLookupError('');
+    const handleRemoveOfficer = useCallback((userId: string) => {
+        setOfficers(prev => prev.filter(o => o.userId !== userId));
     }, []);
 
     // ── Validation per step ──
@@ -1007,24 +1283,17 @@ export default function AdminCreateOrganizationPage() {
                 e.description = 'Description must be at least 20 characters.';
             if (!form.adviser.trim()) e.adviser = 'Faculty adviser name is required.';
         }
-        if (s === 3) {
-            // Officer is optional — but if they filled one field, validate both
-            if (form.officerSchoolId && !form.officerPosition)
-                e.officerPosition = 'Please select a position for this officer.';
-            if (form.officerPosition && !form.officerSchoolId)
-                e.officerSchoolId = 'Please enter the officer\'s Student ID.';
-
-            // Require lookup validation if an officer is specified
-            if (form.officerSchoolId && lookupState !== 'found') {
-                e.officerSchoolId = 'Please look up and verify the Student ID first.';
-            }
-        }
+        // Step 3 has no required fields — officers are optional
         return e;
     }
 
     function handleNext() {
         const e = validateStep(step);
-        if (Object.keys(e).length) { setErrors(e); formTopRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
+        if (Object.keys(e).length) {
+            setErrors(e);
+            formTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
         setErrors({});
         setStep(s => (s < 3 ? (s + 1) as Step : s));
     }
@@ -1036,19 +1305,16 @@ export default function AdminCreateOrganizationPage() {
 
     async function handleSubmit() {
         const e = validateStep(3);
-        if (Object.keys(e).length) {
-            setErrors(e);
-            return;
-        }
+        if (Object.keys(e).length) { setErrors(e); return; }
 
         setFormState('loading');
         setErrors({});
 
         try {
-            // Map category string to category ID for backend
-            const categoryId = form.category ? CATEGORY_ID_MAP[form.category as OrgCategory] : undefined;
+            const categoryId = form.category
+                ? CATEGORY_ID_MAP[form.category as OrgCategory]
+                : undefined;
 
-            // Construct payload
             const payload = {
                 name: form.name,
                 code_name: form.codeName,
@@ -1057,21 +1323,31 @@ export default function AdminCreateOrganizationPage() {
                 description: form.description,
                 adviser: form.adviser,
                 logo_url: form.logoUrl || undefined,
-                officer: form.officerSchoolId && form.officerPosition ? {
-                    school_id: form.officerSchoolId.trim(),
-                    position: form.officerPosition
-                } : undefined
+                // Send full officers array (empty array = no officers)
+                officers: officers.map(o => ({
+                    school_id: o.schoolId,
+                    position: o.position,
+                })),
             };
 
-            const res = await fetch('/api/admin/organizations', {
+            const token =
+                window.localStorage.getItem('auth_token') ??
+                window.sessionStorage.getItem('auth_token');
+            if (!token) throw new Error('You are not authenticated. Please sign in again.');
+
+            const res = await fetch(`${API_BASE_URL}/admin/organizations`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || 'Failed to create organization');
+                throw new Error(data.error || data.message || 'Failed to create organization');
             }
 
             setFormState('success');
@@ -1087,7 +1363,11 @@ export default function AdminCreateOrganizationPage() {
         return (
             <AdminShell>
                 <div className="max-w-4xl mx-auto py-8">
-                    <SuccessPanel orgName={form.name} orgCode={form.codeName} />
+                    <SuccessPanel
+                        orgName={form.name}
+                        orgCode={form.codeName}
+                        officerCount={officers.length}
+                    />
                 </div>
             </AdminShell>
         );
@@ -1099,21 +1379,30 @@ export default function AdminCreateOrganizationPage() {
 
                 {/* Header */}
                 <div className="mb-8">
-                    <Link href="/admin/organizations" className="text-sm flex items-center gap-1 mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <Link
+                        href="/admin/organizations"
+                        className="text-sm flex items-center gap-1 mb-3"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2">
                             <path d="M19 12H5M12 19l-7-7 7-7" />
                         </svg>
                         Back to Organizations
                     </Link>
-                    <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Create Organization</h1>
-                    <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>Add a new organization to the campus directory.</p>
+                    <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+                        Create Organization
+                    </h1>
+                    <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        Add a new organization to the campus directory.
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     {/* Left Form Area */}
                     <div className="lg:col-span-2 space-y-6">
 
-                        {/* Steps Indicator using Design Tokens */}
+                        {/* Steps Indicator */}
                         <div className="step-indicator w-full mb-6 pt-2">
                             {STEPS.map((s, idx) => {
                                 const isActive = step === s.num;
@@ -1123,16 +1412,36 @@ export default function AdminCreateOrganizationPage() {
                                         <div className="flex flex-col items-center relative z-10">
                                             <div className={`step-dot ${isActive ? 'active' : isCompleted ? 'completed' : ''}`}>
                                                 {isCompleted ? (
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" strokeWidth="3"
+                                                        strokeLinecap="round" strokeLinejoin="round">
                                                         <polyline points="20 6 9 17 4 12" />
                                                     </svg>
-                                                ) : (
-                                                    s.num
-                                                )}
+                                                ) : s.num}
                                             </div>
-                                            <span className="absolute top-10 text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
-                                                style={{ color: isActive ? 'var(--color-primary-light)' : isCompleted ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+                                            <span
+                                                className="absolute top-10 text-[11px] font-semibold tracking-wide uppercase whitespace-nowrap"
+                                                style={{
+                                                    color: isActive
+                                                        ? 'var(--color-primary-light)'
+                                                        : isCompleted
+                                                            ? 'var(--color-text)'
+                                                            : 'var(--color-text-muted)',
+                                                }}
+                                            >
                                                 {s.short}
+                                                {/* Show officer count badge on step 3 label */}
+                                                {s.num === 3 && officers.length > 0 && (
+                                                    <span
+                                                        className="ml-1 px-1 py-0.5 rounded-full text-[9px]"
+                                                        style={{
+                                                            background: 'var(--color-primary-muted)',
+                                                            color: 'var(--color-primary)',
+                                                        }}
+                                                    >
+                                                        {officers.length}
+                                                    </span>
+                                                )}
                                             </span>
                                         </div>
                                         {idx < STEPS.length - 1 && (
@@ -1147,8 +1456,16 @@ export default function AdminCreateOrganizationPage() {
                         <div className="card mt-12">
                             <div className="card-body">
                                 {globalErr && (
-                                    <div className="mb-6 p-4 rounded-[--radius-md] border" style={{ backgroundColor: 'var(--color-error-light)', borderColor: 'rgba(217,48,37,0.2)' }}>
-                                        <p className="text-sm" style={{ color: 'var(--color-error)' }}>{globalErr}</p>
+                                    <div
+                                        className="mb-6 p-4 rounded-[--radius-md] border"
+                                        style={{
+                                            backgroundColor: 'var(--color-error-light)',
+                                            borderColor: 'rgba(217,48,37,0.2)',
+                                        }}
+                                    >
+                                        <p className="text-sm" style={{ color: 'var(--color-error)' }}>
+                                            {globalErr}
+                                        </p>
                                     </div>
                                 )}
 
@@ -1156,14 +1473,10 @@ export default function AdminCreateOrganizationPage() {
                                 {step === 2 && <Step2 form={form} errors={errors} onChange={update} />}
                                 {step === 3 && (
                                     <Step3
-                                        form={form}
+                                        officers={officers}
+                                        onAddOfficer={handleAddOfficer}
+                                        onRemoveOfficer={handleRemoveOfficer}
                                         errors={errors}
-                                        onChange={update}
-                                        lookupState={lookupState}
-                                        lookupResult={lookupResult}
-                                        lookupError={lookupError}
-                                        onLookup={handleLookup}
-                                        onClearLookup={handleClearLookup}
                                     />
                                 )}
 
@@ -1173,18 +1486,13 @@ export default function AdminCreateOrganizationPage() {
                                     <button
                                         onClick={handleBack}
                                         disabled={step === 1 || formState === 'loading'}
-                                        className={`btn btn-outline ${step === 1 ? 'opacity-0 pointer-events-none' : ''
-                                            }`}
+                                        className={`btn btn-outline ${step === 1 ? 'opacity-0 pointer-events-none' : ''}`}
                                     >
                                         Back
                                     </button>
 
                                     {step < 3 ? (
-                                        <button
-                                            onClick={handleNext}
-                                            className="btn"
-                                            style={{ backgroundColor: 'var(--color-text)', color: 'var(--color-surface)' }}
-                                        >
+                                        <button onClick={handleNext} className="btn btn-primary">
                                             Next Step
                                         </button>
                                     ) : (
@@ -1194,9 +1502,7 @@ export default function AdminCreateOrganizationPage() {
                                             className="btn btn-primary disabled:opacity-70"
                                         >
                                             {formState === 'loading' ? (
-                                                <>
-                                                    <Spinner /> Creating...
-                                                </>
+                                                <><Spinner /> Creating...</>
                                             ) : 'Create Organization'}
                                         </button>
                                     )}
@@ -1207,7 +1513,7 @@ export default function AdminCreateOrganizationPage() {
 
                     {/* Right Preview Area */}
                     <div className="lg:col-span-1">
-                        <PreviewCard form={form} />
+                        <PreviewCard form={form} officers={officers} />
                     </div>
                 </div>
             </div>

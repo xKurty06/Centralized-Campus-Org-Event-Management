@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 /* ----------------------------------------------------------------
    Types
@@ -61,12 +61,60 @@ function getInitials(name: string): string {
    Navbar
    ---------------------------------------------------------------- */
 export default function Navbar({ role = 'guest', user }: NavbarProps) {
+  const resolveSessionFromStorage = (): { role: UserRole; user?: NavbarProps['user'] } => {
+    if (typeof window === 'undefined') return { role, user };
+
+    const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+    if (!token) return { role: 'guest' };
+
+    const raw = window.localStorage.getItem('auth_user') ?? window.sessionStorage.getItem('auth_user');
+    if (!raw) return { role: 'guest' };
+
+    try {
+      const parsed = JSON.parse(raw) as { first_name?: string; last_name?: string; school_id?: string; global_role?: string };
+      const mappedRole: UserRole =
+        parsed.global_role === 'Overseer' ? 'admin' : parsed.global_role === 'Officer' ? 'officer' : 'student';
+      return {
+        role: mappedRole,
+        user: {
+          name: `${parsed.first_name ?? ''} ${parsed.last_name ?? ''}`.trim() || 'User',
+          schoolId: parsed.school_id ?? '',
+          department: '',
+        },
+      };
+    } catch {
+      return { role: 'guest' };
+    }
+  };
+
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sessionRole, setSessionRole] = useState<UserRole>(() => resolveSessionFromStorage().role);
+  const [sessionUser, setSessionUser] = useState<NavbarProps['user']>(() => resolveSessionFromStorage().user);
 
-  const links = NAV_LINKS[role];
-  const isLoggedIn = role !== 'guest';
+  useEffect(() => {
+    const nextSession = resolveSessionFromStorage();
+    setSessionRole(nextSession.role);
+    setSessionUser(nextSession.user);
+  }, [pathname]);
+
+  const links = useMemo(() => NAV_LINKS[sessionRole], [sessionRole]);
+  const isLoggedIn = sessionRole !== 'guest';
+
+  function handleLogout() {
+    window.localStorage.removeItem('auth_token');
+    window.localStorage.removeItem('auth_user');
+    window.sessionStorage.removeItem('auth_token');
+    window.sessionStorage.removeItem('auth_user');
+    document.cookie = 'auth_role=; Path=/; Max-Age=0; SameSite=Lax';
+    document.cookie = 'auth_session=; Path=/; Max-Age=0; SameSite=Lax';
+    setSessionRole('guest');
+    setSessionUser(undefined);
+    setProfileOpen(false);
+    router.push('/');
+  }
 
   function isActive(href: string) {
     if (href === '/events') return pathname.startsWith('/events');
@@ -113,22 +161,22 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
 
         {/* ── Right (Right Column) ── */}
         <div className="flex items-center gap-2 flex-shrink-0 justify-self-end">
-          {isLoggedIn && user ? (
+          {isLoggedIn && sessionUser ? (
             <div className="relative">
               <button
                 onClick={() => setProfileOpen((v) => !v)}
                 className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full border border-gray-200 bg-white hover:border-green-600 hover:shadow-[0_0_0_3px_#dcfce7] transition-all duration-150 cursor-pointer max-w-xs flex-shrink-0"
               >
                 <div className="w-7 h-7 rounded-full bg-green-50 flex items-center justify-center overflow-hidden flex-shrink-0 border border-green-100">
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                  {sessionUser.avatarUrl ? (
+                    <img src={sessionUser.avatarUrl} alt={sessionUser.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[10px] font-bold text-green-700">{getInitials(user.name)}</span>
+                    <span className="text-[10px] font-bold text-green-700">{getInitials(sessionUser.name)}</span>
                   )}
                 </div>
                 <div className="hidden md:flex flex-col text-left leading-tight flex-1 min-w-0">
-                  <span className="text-[12px] font-semibold text-gray-800 truncate">{user.name}</span>
-                  <span className="text-[10px] text-gray-400 truncate">{user.schoolId}</span>
+                  <span className="text-[12px] font-semibold text-gray-800 truncate">{sessionUser.name}</span>
+                  <span className="text-[10px] text-gray-400 truncate">{sessionUser.schoolId}</span>
                 </div>
                 <svg
                   className={`w-3.5 h-3.5 text-gray-400 hidden md:block transition-transform duration-150 ${profileOpen ? 'rotate-180' : ''}`}
@@ -143,22 +191,22 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
                   <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
                   <div className="absolute right-0 top-[calc(100%+8px)] w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
                     <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                      <p className="text-[13px] font-semibold text-gray-800 truncate">{user.name}</p>
-                      <p className="text-[11px] text-gray-400 truncate">{user.department}</p>
+                      <p className="text-[13px] font-semibold text-gray-800 truncate">{sessionUser.name}</p>
+                      <p className="text-[11px] text-gray-400 truncate">{sessionUser.schoolId}</p>
                       <span className="mt-1.5 inline-block text-[10px] font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-md uppercase tracking-wide">
-                        {role}
+                        {sessionRole}
                       </span>
                     </div>
                     <div className="py-1">
                       <DropdownLink href="/my-events" onClick={() => setProfileOpen(false)} icon={<IconCalendar />}>My Events</DropdownLink>
                       <DropdownLink href="/profile" onClick={() => setProfileOpen(false)} icon={<IconProfile />}>View Profile</DropdownLink>
                       <DropdownLink href="/change-password" onClick={() => setProfileOpen(false)} icon={<IconKey />}>Change Password</DropdownLink>
-                      {role === 'officer' && <DropdownLink href="/manage/dashboard" onClick={() => setProfileOpen(false)} icon={<IconManage />}>Manage Org</DropdownLink>}
-                      {role === 'admin' && <DropdownLink href="/admin/dashboard" onClick={() => setProfileOpen(false)} icon={<IconAdmin />}>Admin Panel</DropdownLink>}
+                      {sessionRole === 'officer' && <DropdownLink href="/manage/dashboard" onClick={() => setProfileOpen(false)} icon={<IconManage />}>Manage Org</DropdownLink>}
+                      {sessionRole === 'admin' && <DropdownLink href="/admin/dashboard" onClick={() => setProfileOpen(false)} icon={<IconAdmin />}>Admin Panel</DropdownLink>}
                     </div>
                     <div className="h-px bg-gray-100" />
                     <div className="py-1">
-                      <button className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors duration-150 cursor-pointer">
+                      <button onClick={handleLogout} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors duration-150 cursor-pointer">
                         <IconLogout /> Log out
                       </button>
                     </div>
