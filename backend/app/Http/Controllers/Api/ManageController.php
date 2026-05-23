@@ -31,6 +31,24 @@ class ManageController extends Controller
             ->first();
     }
 
+    /**
+     * Ensure officer can act on the given event id.
+     */
+    private function resolveOfficerEvent(Request $req, string $eventId): ?object
+    {
+        $orgRow = $this->resolveOfficer($req);
+        if (!$orgRow) {
+            return null;
+        }
+
+        $event = DB::table('events')
+            ->where('id', $eventId)
+            ->where('host_org_id', $orgRow->org_id)
+            ->first();
+
+        return $event ? (object) ['org' => $orgRow, 'event' => $event] : null;
+    }
+
     public function dashboard(Request $req)
     {
         try {
@@ -293,6 +311,11 @@ class ManageController extends Controller
     public function verifySearch(VerifySearchRequest $req, string $event_id)
     {
         try {
+            $eventAccess = $this->resolveOfficerEvent($req, $event_id);
+            if (!$eventAccess) {
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+
             $query = $req->input('query');
 
             $reg = DB::table('registrations as r')
@@ -320,11 +343,26 @@ class ManageController extends Controller
     {
         DB::beginTransaction();
         try {
+            $eventAccess = $this->resolveOfficerEvent($req, $event_id);
+            if (!$eventAccess) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+
+            $registration = DB::table('registrations')
+                ->where('id', $reg_id)
+                ->where('event_id', $event_id)
+                ->first();
+            if (!$registration) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Registration not found.'], 404);
+            }
+
             DB::table('registrations')
                 ->where('id', $reg_id)
                 ->update(['payment_status' => 'Paid', 'updated_at' => now()]);
 
-            $userId = DB::table('registrations')->where('id', $reg_id)->value('user_id');
+            $userId = $registration->user_id;
 
             (new NotificationService())->notify($userId, 'Payment_Success', $reg_id, 'Your payment has been confirmed.');
 
@@ -339,6 +377,19 @@ class ManageController extends Controller
     public function checkin(Request $req, string $event_id, string $reg_id)
     {
         try {
+            $eventAccess = $this->resolveOfficerEvent($req, $event_id);
+            if (!$eventAccess) {
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+
+            $registration = DB::table('registrations')
+                ->where('id', $reg_id)
+                ->where('event_id', $event_id)
+                ->first();
+            if (!$registration) {
+                return response()->json(['success' => false, 'error' => 'Registration not found.'], 404);
+            }
+
             DB::table('registrations')
                 ->where('id', $reg_id)
                 ->update([
@@ -359,12 +410,26 @@ class ManageController extends Controller
 
         DB::beginTransaction();
         try {
+            $eventAccess = $this->resolveOfficerEvent($req, $event_id);
+            if (!$eventAccess) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+
             foreach ($items as $it) {
                 $queueId = $it['id'] ?? null;
                 $action  = $it['action_type'] ?? null;
                 $regId   = $it['reg_id'] ?? null;
 
                 if (!$queueId || !$action || !$regId) {
+                    continue;
+                }
+
+                $regExists = DB::table('registrations')
+                    ->where('id', $regId)
+                    ->where('event_id', $event_id)
+                    ->exists();
+                if (!$regExists) {
                     continue;
                 }
 

@@ -141,7 +141,8 @@ class AdminController extends Controller
             $status = $req->input('accreditation_status');
 
             DB::table('organizations')->where('id', $id)->update([
-                'is_accredited' => $status === 'Accredited' ? 1 : 0,
+                'accreditation_status' => $status,
+                'is_accredited' => $status === 'Active' ? 1 : 0,
                 'accredited_by' => $req->user()->id,
                 'accredited_at' => now(),
                 'updated_at'    => now(),
