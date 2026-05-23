@@ -10,8 +10,9 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\NotificationController;
 
-// All API routes are versioned under /api/v1 and have a lightweight CORS middleware applied
-Route::prefix('v1')->middleware([\App\Http\Middleware\Cors::class])->group(function () {
+// Support both /api and /api/v1 so existing frontend docs and clients keep working.
+foreach (['', 'v1'] as $versionPrefix) {
+    Route::prefix($versionPrefix)->middleware([\App\Http\Middleware\Cors::class])->group(function () {
     // Public
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
@@ -74,4 +75,5 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\Cors::class])->group(funct
             Route::put('/users/{id}/role', [AdminController::class, 'updateUserRole']);
         });
     });
-});
+    });
+}
