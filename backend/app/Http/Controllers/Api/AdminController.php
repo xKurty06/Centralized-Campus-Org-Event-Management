@@ -14,9 +14,35 @@ use App\Http\Resources\OrgOfficerResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
+    private function writeAudit(
+        Request $req,
+        string $category,
+        string $action,
+        string $targetLabel,
+        string $targetId,
+        ?string $meta = null
+    ): void {
+        $actor = $req->user();
+        if (!$actor) return;
+
+        DB::table('audit_logs')->insert([
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'actor_id' => $actor->id,
+            'actor_name' => trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) ?: 'Unknown',
+            'actor_school_id' => $actor->school_id ?? '',
+            'actor_role' => (($actor->global_role ?? 'User') === 'Overseer') ? 'Overseer' : 'Officer',
+            'category' => $category,
+            'action' => $action,
+            'target_label' => $targetLabel,
+            'target_id' => $targetId,
+            'meta' => $meta,
+            'timestamp' => now(),
+        ]);
+    }
     public function createOrg(StoreOrgRequest $req)
     {
         try {
@@ -254,11 +280,64 @@ class AdminController extends Controller
     {
         try {
             $perPage = (int) $req->query('per_page', 15);
-            $users   = DB::table('users')->latest()->paginate($perPage);
+            $users = DB::table('users as u')
+                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
+                ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
+                ->select(
+                    'u.id',
+                    'u.school_id',
+                    'u.email',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.dept_id',
+                    'u.course_id',
+                    'u.year_level',
+                    'u.section',
+                    'u.global_role',
+                    'u.is_active',
+                    'd.code as dept_code',
+                    'c.course_code'
+                )
+                ->orderBy('school_id')
+                ->paginate($perPage);
+
+            $userIds = collect($users->items())->pluck('id')->all();
+            $rolesByUser = [];
+            if (!empty($userIds)) {
+                $officerRows = DB::table('org_officers as oo')
+                    ->join('organizations as o', 'oo.org_id', '=', 'o.id')
+                    ->whereIn('oo.user_id', $userIds)
+                    ->where('oo.is_active', 1)
+                    ->select('oo.user_id', 'oo.position', 'o.code_name')
+                    ->get();
+
+                foreach ($officerRows as $row) {
+                    $rolesByUser[$row->user_id][] = trim(($row->position ?? 'Officer') . ' @ ' . ($row->code_name ?? 'ORG'));
+                }
+            }
+
+            $data = collect($users->items())->map(function ($u) use ($rolesByUser) {
+                return [
+                    'id' => $u->id,
+                    'school_id' => $u->school_id,
+                    'email' => $u->email,
+                    'first_name' => $u->first_name,
+                    'last_name' => $u->last_name,
+                    'dept_id' => $u->dept_id,
+                    'dept_code' => $u->dept_code,
+                    'course_id' => $u->course_id,
+                    'course_code' => $u->course_code,
+                    'year_level' => $u->year_level,
+                    'section' => $u->section,
+                    'global_role' => $u->global_role,
+                    'is_active' => (bool) $u->is_active,
+                    'org_roles' => $rolesByUser[$u->id] ?? [],
+                ];
+            })->values();
 
             return response()->json([
                 'success' => true,
-                'data'    => UserResource::collection($users),
+                'data'    => $data,
                 'meta'    => [
                     'total'        => $users->total(),
                     'per_page'     => $users->perPage(),
@@ -267,6 +346,7 @@ class AdminController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
+            Log::error('Admin users fetch failed.', ['exception' => $e]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -339,12 +419,70 @@ class AdminController extends Controller
                 return response()->json(['success' => false, 'error' => 'User not found.'], 404);
             }
 
-            DB::table('users')->where('id', $id)->update(['is_active' => 0, 'updated_at' => now()]);
+            DB::table('users')->where('id', $id)->update(['is_active' => 0]);
 
             $updated = DB::table('users')->where('id', $id)->first();
+            $this->writeAudit(
+                $req,
+                'User',
+                'Deactivated Account',
+                trim(($updated->first_name ?? '') . ' ' . ($updated->last_name ?? '')) . ' (' . ($updated->school_id ?? '') . ')',
+                (string) $updated->id,
+                $req->input('reason') ? ('Reason: ' . $req->input('reason')) : null
+            );
 
-            return response()->json(['success' => true, 'data' => new UserResource($updated)]);
+            return response()->json(['success' => true, 'data' => $updated]);
         } catch (\Exception $e) {
+            Log::error('Admin deactivate user failed.', ['user_id' => $id, 'exception' => $e]);
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function reactivateUser(Request $req, string $id)
+    {
+        try {
+            $user = DB::table('users')->where('id', $id)->first();
+            if (!$user) {
+                return response()->json(['success' => false, 'error' => 'User not found.'], 404);
+            }
+
+            DB::table('users')->where('id', $id)->update(['is_active' => 1]);
+            $updated = DB::table('users')->where('id', $id)->first();
+            $this->writeAudit(
+                $req,
+                'User',
+                'Reactivated Account',
+                trim(($updated->first_name ?? '') . ' ' . ($updated->last_name ?? '')) . ' (' . ($updated->school_id ?? '') . ')',
+                (string) $updated->id
+            );
+
+            return response()->json(['success' => true, 'data' => $updated]);
+        } catch (\Exception $e) {
+            Log::error('Admin reactivate user failed.', ['user_id' => $id, 'exception' => $e]);
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function audit(Request $req)
+    {
+        try {
+            $perPage = (int) $req->query('per_page', 50);
+            $rows = DB::table('audit_logs')
+                ->orderByDesc('timestamp')
+                ->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $rows->items(),
+                'meta' => [
+                    'total' => $rows->total(),
+                    'per_page' => $rows->perPage(),
+                    'current_page' => $rows->currentPage(),
+                    'last_page' => $rows->lastPage(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin audit fetch failed.', ['exception' => $e]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -359,13 +497,21 @@ class AdminController extends Controller
 
             DB::table('users')->where('id', $id)->update([
                 'global_role' => $req->input('global_role'),
-                'updated_at'  => now(),
             ]);
 
             $updated = DB::table('users')->where('id', $id)->first();
+            $this->writeAudit(
+                $req,
+                'User',
+                'Assigned Global Role',
+                trim(($updated->first_name ?? '') . ' ' . ($updated->last_name ?? '')) . ' (' . ($updated->school_id ?? '') . ')',
+                (string) $updated->id,
+                'global_role: ' . ($user->global_role ?? 'User') . ' -> ' . ($updated->global_role ?? 'User')
+            );
 
-            return response()->json(['success' => true, 'data' => new UserResource($updated)]);
+            return response()->json(['success' => true, 'data' => $updated]);
         } catch (\Exception $e) {
+            Log::error('Admin update user role failed.', ['user_id' => $id, 'exception' => $e]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }

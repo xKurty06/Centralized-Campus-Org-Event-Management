@@ -41,6 +41,7 @@ const NAV_LINKS: Record<UserRole, { label: string; href: string }[]> = {
   admin: [
     { label: 'Events', href: '/events' },
     { label: 'Organizations', href: '/organizations' },
+    { label: 'My Events', href: '/my-events' },
     { label: 'Admin', href: '/admin/dashboard' },
   ],
 };
@@ -91,14 +92,14 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [sessionRole, setSessionRole] = useState<UserRole>(() => resolveSessionFromStorage().role);
-  const [sessionUser, setSessionUser] = useState<NavbarProps['user']>(() => resolveSessionFromStorage().user);
+  const [sessionRole, setSessionRole] = useState<UserRole>(role);
+  const [sessionUser, setSessionUser] = useState<NavbarProps['user']>(user);
 
   useEffect(() => {
     const nextSession = resolveSessionFromStorage();
     setSessionRole(nextSession.role);
     setSessionUser(nextSession.user);
-  }, [pathname]);
+  }, [pathname, role, user]);
 
   const links = useMemo(() => NAV_LINKS[sessionRole], [sessionRole]);
   const isLoggedIn = sessionRole !== 'guest';

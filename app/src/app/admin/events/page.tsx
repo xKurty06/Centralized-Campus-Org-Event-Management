@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
@@ -248,7 +247,7 @@ export default function AdminEventsPage() {
                                         type="button"
                                         onClick={() => { setSearch(''); setFilterStatus('All'); setFilterCategory('All'); setFilterOrg('All'); setFilterFlagged(false); }}
                                         className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
-                                        style={{ color: 'var(--color-error' }}
+                                        style={{ color: 'var(--color-error)' }}
                                     >
                                         Clear all
                                     </button>

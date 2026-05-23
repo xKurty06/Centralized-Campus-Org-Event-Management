@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import AdminShell from "@/components/AdminShell";
-import Link from "next/dist/client/link";
+import Link from "next/link";
 import { FilterSelect, FilterChip } from "@/components/ui/filter";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

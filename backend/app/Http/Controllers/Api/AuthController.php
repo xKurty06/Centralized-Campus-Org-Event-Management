@@ -35,6 +35,22 @@ class AuthController extends Controller
 
     private function authUserPayload(User $user): array
     {
+        $academic = DB::table('users as u')
+            ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
+            ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
+            ->where('u.id', $user->id)
+            ->select(
+                'u.course_id',
+                'u.section',
+                'd.id as department_id',
+                'd.code as department_code',
+                'd.name as department_name',
+                'c.id as course_id',
+                'c.course_code',
+                'c.course_name'
+            )
+            ->first();
+
         return [
             'id' => $user->id,
             'school_id' => $user->school_id,
@@ -42,9 +58,21 @@ class AuthController extends Controller
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'dept_id' => $user->dept_id,
+            'course_id' => $academic->course_id ?? null,
             'year_level' => $user->year_level,
+            'section' => $academic->section ?? null,
             'is_active' => (bool) $user->is_active,
             'global_role' => $this->resolveEffectiveRole($user),
+            'department' => [
+                'id' => $academic->department_id ?? null,
+                'code' => $academic->department_code ?? null,
+                'name' => $academic->department_name ?? null,
+            ],
+            'course' => [
+                'id' => $academic->course_id ?? null,
+                'code' => $academic->course_code ?? null,
+                'name' => $academic->course_name ?? null,
+            ],
         ];
     }
 

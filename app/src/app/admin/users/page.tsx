@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
@@ -8,6 +8,7 @@ import { FilterSelect, FilterChip } from '@/components/ui/filter';
    Types — mirrors Users table exactly
    ---------------------------------------------------------------- */
 type GlobalRole = 'User' | 'Overseer';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 interface User {
     id: string;
@@ -25,28 +26,12 @@ interface User {
 }
 
 /* ----------------------------------------------------------------
-   Placeholder Data
-   ---------------------------------------------------------------- */
-const USERS: User[] = [
-    { id: 'u-1', schoolId: '202201045', email: 'j.delacruz@cvsu.edu.ph', firstName: 'Juan', lastName: 'Dela Cruz', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ CSS'] },
-    { id: 'u-2', schoolId: '202201078', email: 'm.reyes@cvsu.edu.ph', firstName: 'Maria', lastName: 'Reyes', dept: 'CEIT', course: 'BSCS', yearLevel: 3, section: 1, globalRole: 'User', isActive: true, orgRoles: ['VP @ CSS'] },
-    { id: 'u-3', schoolId: '202301112', email: 'c.mendoza@cvsu.edu.ph', firstName: 'Carlo', lastName: 'Mendoza', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 3, globalRole: 'User', isActive: true, orgRoles: ['Secretary @ CSS'] },
-    { id: 'u-4', schoolId: '202301134', email: 'a.villanueva@cvsu.edu.ph', firstName: 'Ana', lastName: 'Villanueva', dept: 'CEIT', course: 'BSIT', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
-    { id: 'u-5', schoolId: '202101023', email: 'p.santos@cvsu.edu.ph', firstName: 'Paolo', lastName: 'Santos', dept: 'CEIT', course: 'BSCpE', yearLevel: 4, section: 2, globalRole: 'User', isActive: false },
-    { id: 'u-6', schoolId: '202401067', email: 'l.castro@cvsu.edu.ph', firstName: 'Lara', lastName: 'Castro', dept: 'CAS', course: 'BSBA', yearLevel: 1, section: 1, globalRole: 'User', isActive: true },
-    { id: 'u-7', schoolId: '20220200089', email: 'm.torres@cvsu.edu.ph', firstName: 'Miguel', lastName: 'Torres', dept: 'CAS', course: 'BSBA', yearLevel: 3, section: 2, globalRole: 'User', isActive: true, orgRoles: ['President @ SPECS'] },
-    { id: 'u-8', schoolId: '20230200045', email: 's.navarro@cvsu.edu.ph', firstName: 'Sofia', lastName: 'Navarro', dept: 'CON', course: 'BSN', yearLevel: 2, section: 1, globalRole: 'User', isActive: true },
-    { id: 'u-9', schoolId: '00000000001', email: 'j.doe@cvsu.edu.ph', firstName: 'John', lastName: 'Doe', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-10', schoolId: '00000000002', email: 'j.smith@cvsu.edu.ph', firstName: 'Jane', lastName: 'Smith', dept: 'OSA', course: '—', yearLevel: 0, section: 0, globalRole: 'Overseer', isActive: true },
-    { id: 'u-11', schoolId: '20210100099', email: 'r.pangilinan@cvsu.edu.ph', firstName: 'Rico', lastName: 'Pangilinan', dept: 'COE', course: 'BSCE', yearLevel: 4, section: 3, globalRole: 'User', isActive: false },
-    { id: 'u-12', schoolId: '20240200033', email: 't.ocampo@cvsu.edu.ph', firstName: 'Tricia', lastName: 'Ocampo', dept: 'CBA', course: 'BSAc', yearLevel: 1, section: 2, globalRole: 'User', isActive: true },
-];
-
-/* ----------------------------------------------------------------
    Page
    ---------------------------------------------------------------- */
 export default function AdminUsersPage() {
-    const [users, setUsers] = useState<User[]>(USERS);
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [search, setSearch] = useState('');
     const [filterRole, setFilterRole] = useState<'All' | GlobalRole>('All');
     const [filterStatus, setFilterStatus] = useState<'All' | 'Active' | 'Deactivated'>('All');
@@ -55,14 +40,81 @@ export default function AdminUsersPage() {
     // ── Deactivate / Reactivate confirm
     const [confirmToggle, setConfirmToggle] = useState<User | null>(null);
     const [deactivateReason, setDeactivateReason] = useState('');
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionError, setActionError] = useState('');
 
     // ── Role change: dangerous confirm modal
     const [roleChangePending, setRoleChangePending] = useState<{ user: User; newRole: GlobalRole } | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+
+    async function loadUsers(showRefreshing = false) {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) {
+            setIsLoading(false);
+            return;
+        }
+        if (showRefreshing) setRefreshing(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/users?per_page=200`, {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            if (res.status === 401 || res.status === 403) {
+                window.localStorage.removeItem('auth_token');
+                window.localStorage.removeItem('auth_user');
+                window.sessionStorage.removeItem('auth_token');
+                window.sessionStorage.removeItem('auth_user');
+                setLoadError('Session expired. Please sign in again.');
+                setUsers([]);
+                return;
+            }
+            if (!res.ok) {
+                setLoadError('Unable to load users right now.');
+                setUsers([]);
+                return;
+            }
+            const payload = await res.json();
+            const rows = Array.isArray(payload?.data) ? payload.data : [];
+            setUsers(rows.map((u: any) => ({
+                id: String(u.id ?? ''),
+                schoolId: String(u.school_id ?? ''),
+                email: String(u.email ?? ''),
+                firstName: String(u.first_name ?? ''),
+                lastName: String(u.last_name ?? ''),
+                dept: String(u.dept_code ?? u.dept_id ?? 'N/A'),
+                course: String(u.course_code ?? u.course_id ?? 'N/A'),
+                yearLevel: Number(u.year_level ?? 0),
+                section: Number(u.section ?? 0),
+                globalRole: (u.global_role === 'Overseer' ? 'Overseer' : 'User') as GlobalRole,
+                isActive: Boolean(u.is_active),
+                orgRoles: Array.isArray(u.org_roles) ? u.org_roles : [],
+            })));
+            setLoadError('');
+        } catch {
+            setLoadError('Unable to load users right now.');
+            setUsers([]);
+        } finally {
+            setIsLoading(false);
+            if (showRefreshing) setRefreshing(false);
+        }
+    }
+
+    useEffect(() => {
+        const shouldLock = !!confirmToggle || !!roleChangePending;
+        const prev = document.body.style.overflow;
+        if (shouldLock) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = prev;
+        };
+    }, [confirmToggle, roleChangePending]);
+
+    useEffect(() => { loadUsers(false); }, []);
 
     const departments = useMemo(() => {
-        const depts = [...new Set(USERS.map((u) => u.dept))].sort();
+        const depts = [...new Set(users.map((u) => u.dept))].sort();
         return ['All', ...depts];
-    }, []);
+    }, [users]);
 
     const filtered = useMemo(() => {
         return users.filter((u) => {
@@ -84,30 +136,68 @@ export default function AdminUsersPage() {
     }), [users]);
 
     /* ── Handlers ── */
-    function handleToggleActive() {
+    async function handleToggleActive() {
         if (!confirmToggle) return;
         
         // Prevent submission if deactivating and reason is empty
         if (confirmToggle.isActive && !deactivateReason.trim()) return;
 
-        setUsers((prev) => prev.map((u) => u.id === confirmToggle.id ? { ...u, isActive: !u.isActive } : u));
-        
-        // API: PATCH /api/admin/users/:id { is_active: !confirmToggle.isActive, reason: deactivateReason }
-        
-        setConfirmToggle(null);
-        setDeactivateReason('');
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) {
+            setActionError('You are not authenticated. Please sign in again.');
+            return;
+        }
+        setActionLoading(true);
+        setActionError('');
+        try {
+            const endpoint = confirmToggle.isActive ? 'deactivate' : 'reactivate';
+            const res = await fetch(`${API_BASE_URL}/admin/users/${confirmToggle.id}/${endpoint}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(
+                    confirmToggle.isActive
+                        ? { reason: deactivateReason.trim() }
+                        : {}
+                ),
+            });
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                setActionError(payload?.error ?? 'Unable to update user status.');
+                return;
+            }
+            setUsers((prev) => prev.map((u) => u.id === confirmToggle.id ? { ...u, isActive: !u.isActive } : u));
+            setConfirmToggle(null);
+            setDeactivateReason('');
+        } catch {
+            setActionError('Network error. Please try again.');
+        } finally {
+            setActionLoading(false);
+        }
     }
 
     function closeToggleModal() {
         setConfirmToggle(null);
         setDeactivateReason('');
+        setActionError('');
+        setActionLoading(false);
     }
 
-    function handleRoleChange() {
+    async function handleRoleChange() {
         if (!roleChangePending) return;
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/admin/users/${roleChangePending.user.id}/role`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ global_role: roleChangePending.newRole }),
+        });
+        if (!res.ok) return;
         setUsers((prev) => prev.map((u) => u.id === roleChangePending.user.id ? { ...u, globalRole: roleChangePending.newRole } : u));
         setRoleChangePending(null);
-        // API: PATCH /api/admin/users/:id { global_role }
     }
     const hasActiveFilters = !!search || filterRole !== 'All' || filterStatus !== 'All' || filterDept !== 'All';
 
@@ -133,6 +223,11 @@ export default function AdminUsersPage() {
                     <StatCard label="Deactivated" value={stats.deactivated} color="red" />
                     <StatCard label="Overseers" value={stats.overseers} color="yellow" />
                 </div>
+                {!!loadError && (
+                    <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'var(--color-error-light)', color: 'var(--color-error)' }}>
+                        {loadError}
+                    </div>
+                )}
 
                 {/* ── Overseer Warning Banner ── */}
                 <div
@@ -241,6 +336,12 @@ export default function AdminUsersPage() {
                     </div>
                 </div>
 
+                <div className="flex justify-end">
+                    <button className="btn btn-outline btn-sm" onClick={() => loadUsers(true)} disabled={refreshing || isLoading}>
+                        {refreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                </div>
+
                 {/* ── Table ── */}
                 <div className="card overflow-x-auto">
                     <table className="table-base">
@@ -258,7 +359,9 @@ export default function AdminUsersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.length === 0 ? (
+                            {isLoading ? (
+                                <tr><td colSpan={9} className="text-center py-12 text-sm" style={{ color: 'var(--color-text-muted)' }}>Loading users...</td></tr>
+                            ) : filtered.length === 0 ? (
                                 <tr>
                                     <td colSpan={9} className="text-center py-12 text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                         No users match your filters.
@@ -298,7 +401,7 @@ export default function AdminUsersPage() {
 
                                         {/* Year / Section */}
                                         <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                                            {user.yearLevel > 0 ? `Y${user.yearLevel} / S${user.section}` : '—'}
+                                            {user.yearLevel > 0 ? `${user.yearLevel} - ${user.section}` : '—'}
                                         </td>
 
                                         {/* Org Roles */}
@@ -426,15 +529,20 @@ export default function AdminUsersPage() {
                                 />
                             </div>
                         )}
+                        {!!actionError && (
+                            <p className="text-sm" style={{ color: 'var(--color-error)' }}>
+                                {actionError}
+                            </p>
+                        )}
 
                         <div className="flex gap-3 justify-end mt-2">
-                            <button className="btn btn-ghost" onClick={closeToggleModal}>Cancel</button>
+                            <button className="btn btn-ghost" onClick={closeToggleModal} disabled={actionLoading}>Cancel</button>
                             <button
                                 className={`btn ${confirmToggle.isActive ? 'btn-danger' : 'btn-primary'}`}
                                 onClick={handleToggleActive}
-                                disabled={confirmToggle.isActive && !deactivateReason.trim()}
+                                disabled={(confirmToggle.isActive && !deactivateReason.trim()) || actionLoading}
                             >
-                                {confirmToggle.isActive ? 'Yes, Deactivate' : 'Yes, Reactivate'}
+                                {actionLoading ? 'Processing...' : (confirmToggle.isActive ? 'Yes, Deactivate' : 'Yes, Reactivate')}
                             </button>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, Fragment, useEffect } from 'react';
 import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 
@@ -119,6 +119,7 @@ const PLACEHOLDER_AUDIT: AuditEntry[] = [
 ];
 
 const CATEGORIES: ActionCategory[] = ['Accreditation', 'User', 'Event', 'Membership', 'Officer', 'Payment'];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 const CATEGORY_BADGE: Record<ActionCategory, string> = {
     Accreditation: 'badge-blue',
@@ -149,13 +150,43 @@ function fmtDate(iso: string) {
    Page
    ---------------------------------------------------------------- */
 export default function AdminAuditPage() {
+    const [entries, setEntries] = useState<AuditEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
     const [categoryFilter, setCat] = useState<ActionCategory | 'All'>('All');
     const [roleFilter, setRoleFilter] = useState<'All' | 'Overseer' | 'Officer'>('All');
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
+    async function loadAudit(showRefreshing = false) {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) {
+            setIsLoading(false);
+            return;
+        }
+        if (showRefreshing) setRefreshing(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/audit`, {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error('fetch-failed');
+            const payload = await res.json();
+            const rows = Array.isArray(payload?.data) ? payload.data : [];
+            setEntries(rows as AuditEntry[]);
+        } catch {
+            setEntries([]);
+        } finally {
+            setIsLoading(false);
+            if (showRefreshing) setRefreshing(false);
+        }
+    }
+
+    useEffect(() => {
+        loadAudit(false);
+    }, []);
+
     const filtered = useMemo(() => {
-        return PLACEHOLDER_AUDIT.filter((e) => {
+        return entries.filter((e) => {
             const q = search.toLowerCase();
             const matchSearch =
                 !q ||
@@ -167,7 +198,7 @@ export default function AdminAuditPage() {
             const matchRole = roleFilter === 'All' || e.actor_role === roleFilter;
             return matchSearch && matchCat && matchRole;
         });
-    }, [search, categoryFilter, roleFilter]);
+    }, [entries, search, categoryFilter, roleFilter]);
     const hasActiveFilters = !!search || categoryFilter !== 'All' || roleFilter !== 'All';
 
     return (
@@ -187,7 +218,6 @@ export default function AdminAuditPage() {
                             <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">
                                 Audit Log
                             </h1>
-
                             <button
                                 className="btn btn-outline btn-sm whitespace-nowrap"
                                 disabled
@@ -207,10 +237,10 @@ export default function AdminAuditPage() {
                 {/* ── Summary Stat Chips ── */}
                 <div className="flex gap-3 flex-wrap">
                     {[
-                        { label: 'Total Entries', value: PLACEHOLDER_AUDIT.length, color: 'var(--color-text)' },
-                        { label: 'Today', value: PLACEHOLDER_AUDIT.filter(e => e.timestamp.startsWith('2025-05-20')).length, color: 'var(--color-primary-light)' },
-                        { label: 'Overseer Actions', value: PLACEHOLDER_AUDIT.filter(e => e.actor_role === 'Overseer').length, color: 'var(--color-info)' },
-                        { label: 'Officer Actions', value: PLACEHOLDER_AUDIT.filter(e => e.actor_role === 'Officer').length, color: 'var(--color-warning)' },
+                        { label: 'Total Entries', value: entries.length, color: 'var(--color-text)' },
+                        { label: 'Today', value: entries.filter(e => e.timestamp?.slice(0, 10) === new Date().toISOString().slice(0, 10)).length, color: 'var(--color-primary-light)' },
+                        { label: 'Overseer Actions', value: entries.filter(e => e.actor_role === 'Overseer').length, color: 'var(--color-info)' },
+                        { label: 'Officer Actions', value: entries.filter(e => e.actor_role === 'Officer').length, color: 'var(--color-warning)' },
                     ].map(s => (
                         <div key={s.label} className="card flex items-center gap-3 px-4 py-3" style={{ boxShadow: 'none' }}>
                             <span className="text-xl font-bold" style={{ color: s.color }}>{s.value}</span>
@@ -308,13 +338,29 @@ export default function AdminAuditPage() {
 
                 {/* ── Result count ── */}
                 <p className="text-xs" style={{ color: 'var(--color-text-muted)', marginTop: '-8px' }}>
-                    Showing <strong>{filtered.length}</strong> of <strong>{PLACEHOLDER_AUDIT.length}</strong> entries
+                    Showing <strong>{filtered.length}</strong> of <strong>{entries.length}</strong> entries
                 </p>
+
+                <div className="flex justify-end">
+                    <button
+                        className="btn btn-outline btn-sm whitespace-nowrap"
+                        onClick={() => loadAudit(true)}
+                        disabled={isLoading || refreshing}
+                    >
+                        {refreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                </div>
 
                 {/* ── Log Table ── */}
                 {/* ── Log Table ── */}
                 <div className="card overflow-x-auto">
-                    {filtered.length === 0 ? (
+                    {isLoading ? (
+                        <div className="py-16 text-center">
+                            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                                Loading audit entries...
+                            </p>
+                        </div>
+                    ) : filtered.length === 0 ? (
                         <div className="py-16 text-center">
                             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                 No audit entries match your filters.

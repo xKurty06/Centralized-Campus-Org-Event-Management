@@ -73,7 +73,9 @@ foreach (['', 'v1'] as $versionPrefix) {
             Route::get('/users', [AdminController::class, 'users']);
             Route::get('/users/lookup', [AdminController::class, 'lookupUserBySchoolId']);
             Route::put('/users/{id}/deactivate', [AdminController::class, 'deactivateUser']);
+            Route::put('/users/{id}/reactivate', [AdminController::class, 'reactivateUser']);
             Route::put('/users/{id}/role', [AdminController::class, 'updateUserRole']);
+            Route::get('/audit', [AdminController::class, 'audit']);
         });
     });
     });
