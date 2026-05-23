@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // ─── Types ────────────────────────────────────────────────────
 type FormState = 'idle' | 'loading' | 'error';
@@ -10,6 +11,24 @@ type Tab       = 'login' | 'guest';
 // ─── Config ───────────────────────────────────────────────────
 // school_id format: YYYYMMNNN  e.g. 202405123
 const SCHOOL_ID_REGEX = /^\d{9}$/;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+
+type GlobalRole = 'Overseer' | 'Officer' | 'User' | string;
+
+interface LoginUser {
+  id: string;
+  school_id: string;
+  global_role: GlobalRole;
+}
+
+interface LoginApiResponse {
+  success?: boolean;
+  data?: {
+    user?: LoginUser;
+    token?: string;
+  };
+  error?: string;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Sub-components
@@ -155,6 +174,7 @@ function validateSchoolId(val: string): string | null {
 // Login Tab
 // ─────────────────────────────────────────────────────────────
 function LoginForm() {
+  const router = useRouter();
   const [schoolId, setSchoolId]     = useState('');
   const [password, setPassword]     = useState('');
   const [showPass, setShowPass]     = useState(false);
@@ -177,9 +197,44 @@ function LoginForm() {
     if (!password) { setErrorMsg('Password is required.'); return; }
 
     setFormState('loading');
-    await new Promise(r => setTimeout(r, 1200));
-    setFormState('error');
-    setErrorMsg('Invalid credentials. Please try again.');
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          school_id: schoolId.trim(),
+          password,
+        }),
+      });
+
+      const payload = (await res.json().catch(() => null)) as LoginApiResponse | null;
+      if (!res.ok || !payload?.success || !payload?.data?.token || !payload?.data?.user) {
+        setFormState('error');
+        setErrorMsg(payload?.error ?? 'Invalid credentials. Please try again.');
+        return;
+      }
+
+      const storage = rememberMe ? window.localStorage : window.sessionStorage;
+      storage.setItem('auth_token', payload.data.token);
+      storage.setItem('auth_user', JSON.stringify(payload.data.user));
+
+      const role = payload.data.user.global_role;
+      const isOfficer = role === 'Officer';
+      if (role === 'Overseer') {
+        router.push('/admin/dashboard');
+        return;
+      }
+
+      if (isOfficer) {
+        router.push('/manage/dashboard');
+        return;
+      }
+
+      router.push('/events');
+    } catch {
+      setFormState('error');
+      setErrorMsg('Unable to sign in right now. Please try again.');
+    }
   }
 
   const isLoading = formState === 'loading';

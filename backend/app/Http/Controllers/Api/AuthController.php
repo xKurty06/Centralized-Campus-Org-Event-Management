@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
@@ -22,23 +23,32 @@ class AuthController extends Controller
     {
         try {
             $data = $req->validated();
-            $user = User::create([
-                'id' => (string) Str::uuid(),
-                'school_id' => $data['school_id'],
-                'email' => $data['email'],
-                'password_hash' => Hash::make($data['password']),
-                'first_name' => $data['first_name'],
-                'last_name' => $data['last_name'],
-                'dept_id' => $data['dept_id'],
-                'year_level' => $data['year_level'],
-                'global_role' => 'User',
-                'is_active' => true,
-            ]);
+            $result = DB::transaction(function () use ($data) {
+                $user = User::create([
+                    'id' => (string) Str::uuid(),
+                    'school_id' => $data['school_id'],
+                    'email' => $data['email'],
+                    'password_hash' => Hash::make($data['password']),
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'dept_id' => $data['dept_id'],
+                    'course_id' => $data['course_id'],
+                    'year_level' => $data['year_level'],
+                    'section' => $data['section'],
+                    'global_role' => 'User',
+                    'is_active' => true,
+                ]);
 
-            $token = $user->createToken('api-token')->plainTextToken;
+                return [
+                    'user' => $user,
+                    'token' => $user->createToken('api-token')->plainTextToken,
+                ];
+            });
 
-            return response()->json(['success' => true, 'data' => ['user' => new UserResource($user), 'token' => $token]], 201);
+            return response()->json(['success' => true, 'data' => ['user' => new UserResource($result['user']), 'token' => $result['token']]], 201);
         } catch (\Exception $e) {
+            Log::error('Registration failed.', ['exception' => $e]);
+
             return response()->json(['success' => false, 'error' => 'Something went wrong. Please try again.'], 500);
         }
     }

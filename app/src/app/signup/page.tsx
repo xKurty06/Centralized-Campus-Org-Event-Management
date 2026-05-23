@@ -22,9 +22,72 @@ interface FormData {
     section: string;
 }
 
-// ─── Placeholder Data ──────────────────────────────────────────
-// TODO: Replace with API calls to /api/departments and /api/courses
-const DEPARTMENTS = [
+// Academic catalog API
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+
+interface ApiResponse<T> {
+    success?: boolean;
+    data?: T;
+    error?: string;
+}
+
+interface Department {
+    id: string;
+    name: string;
+    code: string;
+}
+
+interface Course {
+    id: string;
+    dept_id: string;
+    code: string;
+    name: string;
+}
+
+function payloadData<T>(payload: ApiResponse<T> | T | null): T | undefined {
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+        return payload.data;
+    }
+
+    return payload as T;
+}
+
+function arrayData(payload: unknown): unknown[] {
+    const data = payloadData<unknown[] | { data?: unknown[] }>(payload as ApiResponse<unknown[] | { data?: unknown[] }> | unknown[] | { data?: unknown[] } | null);
+    if (Array.isArray(data)) return data;
+    return Array.isArray(data?.data) ? data.data : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object';
+}
+
+function normalizeDepartment(value: unknown): Department | null {
+    if (!isRecord(value)) return null;
+
+    const id = value.id;
+    const code = value.code;
+    const name = value.name;
+
+    if (id == null || typeof code !== 'string' || typeof name !== 'string') return null;
+
+    return { id: String(id), code, name };
+}
+
+function normalizeCourse(value: unknown): Course | null {
+    if (!isRecord(value)) return null;
+
+    const id = value.id;
+    const deptId = value.dept_id ?? value.department_id;
+    const code = value.code ?? value.course_code;
+    const name = value.name ?? value.course_name;
+
+    if (id == null || deptId == null || typeof code !== 'string' || typeof name !== 'string') return null;
+
+    return { id: String(id), dept_id: String(deptId), code, name };
+}
+
+const FALLBACK_DEPARTMENTS: Department[] = [
     { id: '1', name: 'College of Engineering and Information Technology', code: 'CEIT' },
     { id: '2', name: 'College of Economics, Management and Development Studies', code: 'CEMDS' },
     { id: '3', name: 'College of Arts and Sciences', code: 'CAS' },
@@ -38,7 +101,7 @@ const DEPARTMENTS = [
     { id: '11', name: 'College of Medicine', code: 'COM' },
 ];
 
-const COURSES_BY_DEPT: Record<string, { id: string; code: string; name: string }[]> = {
+const FALLBACK_COURSES_BY_DEPT: Record<string, { id: string; code: string; name: string }[]> = {
     // CEIT
     '1': [
         { id: '1', code: 'BSABE', name: 'Bachelor of Science in Agricultural and Biosystems Engineering' },
@@ -416,18 +479,26 @@ function Step1({
 // ─── Step 2: Identity ─────────────────────────────────────────
 function Step2({
     data,
+    departments,
+    courses,
+    catalogLoading,
+    catalogError,
     onChange,
     onNext,
     onBack,
 }: {
     data: FormData;
+    departments: Department[];
+    courses: Course[];
+    catalogLoading: boolean;
+    catalogError: string;
     onChange: (k: keyof FormData, v: string) => void;
     onNext: () => void;
     onBack: () => void;
 }) {
     const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-    const availableCourses = COURSES_BY_DEPT[data.dept_id] ?? [];
+    const availableCourses = courses.filter(course => course.dept_id === data.dept_id);
 
     // Reset course when dept changes
     const handleDeptChange = (val: string) => {
@@ -482,11 +553,12 @@ function Step2({
                 <select
                     id="dept_id"
                     value={data.dept_id}
+                    disabled={catalogLoading || Boolean(catalogError)}
                     onChange={e => { handleDeptChange(e.target.value); setErrors(p => ({ ...p, dept_id: '' })); }}
                     style={errors.dept_id ? { borderColor: 'var(--color-error)' } : {}}
                 >
                     <option value="">Select department…</option>
-                    {DEPARTMENTS.map(d => (
+                    {departments.map(d => (
                         <option key={d.id} value={d.id}>{d.code} — {d.name}</option>
                     ))}
                 </select>
@@ -497,7 +569,7 @@ function Step2({
                 <select
                     id="course_id"
                     value={data.course_id}
-                    disabled={!data.dept_id}
+                    disabled={!data.dept_id || catalogLoading || Boolean(catalogError)}
                     onChange={e => { onChange('course_id', e.target.value); setErrors(p => ({ ...p, course_id: '' })); }}
                     style={errors.course_id ? { borderColor: 'var(--color-error)' } : {}}
                 >
@@ -559,17 +631,20 @@ function Step2({
 // ─── Step 3: Review & Submit ──────────────────────────────────
 function Step3({
     data,
+    departments,
+    courses,
     onBack,
     onSubmit,
     formState,
 }: {
     data: FormData;
+    departments: Department[];
+    courses: Course[];
     onBack: () => void;
     onSubmit: () => void;
     formState: FormState;
 }) {
-    const dept = DEPARTMENTS.find(d => d.id === data.dept_id);
-    const courses = COURSES_BY_DEPT[data.dept_id] ?? [];
+    const dept = departments.find(d => d.id === data.dept_id);
     const course = courses.find(c => c.id === data.course_id);
     const isLoading = formState === 'loading';
 
@@ -672,18 +747,106 @@ export default function SignupPage() {
     const [step, setStep] = useState<Step>(1);
     const [formData, setFormData] = useState<FormData>(INITIAL);
     const [formState, setFormState] = useState<FormState>('idle');
+    const [submitError, setSubmitError] = useState('');
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [catalogLoading, setCatalogLoading] = useState(true);
+    const [catalogError, setCatalogError] = useState('');
 
     useEffect(() => { setMounted(true); }, []);
 
+    useEffect(() => {
+        const controller = new AbortController();
+
+        async function loadCatalog() {
+            setCatalogLoading(true);
+            setCatalogError('');
+
+            try {
+                const [departmentsRes, coursesRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/departments`, { signal: controller.signal }),
+                    fetch(`${API_BASE_URL}/courses`, { signal: controller.signal }),
+                ]);
+
+                const [departmentsPayload, coursesPayload] = await Promise.all([
+                    departmentsRes.json().catch(() => null),
+                    coursesRes.json().catch(() => null),
+                ]);
+
+                if (!departmentsRes.ok || !coursesRes.ok) {
+                    throw new Error('Unable to load departments and courses.');
+                }
+                if (isRecord(departmentsPayload) && departmentsPayload.success === false) {
+                    throw new Error(String(departmentsPayload.error ?? 'Unable to load departments.'));
+                }
+                if (isRecord(coursesPayload) && coursesPayload.success === false) {
+                    throw new Error(String(coursesPayload.error ?? 'Unable to load courses.'));
+                }
+
+                const departmentRows = arrayData(departmentsPayload);
+                const courseRows = arrayData(coursesPayload);
+
+                setDepartments(departmentRows.map(normalizeDepartment).filter((d): d is Department => Boolean(d)));
+                setCourses(courseRows.map(normalizeCourse).filter((c): c is Course => Boolean(c)));
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') return;
+                setDepartments(FALLBACK_DEPARTMENTS);
+                setCourses(Object.entries(FALLBACK_COURSES_BY_DEPT).flatMap(([deptId, deptCourses]) => (
+                    deptCourses.map(course => ({ ...course, dept_id: deptId }))
+                )));
+                setCatalogError('');
+            } finally {
+                if (!controller.signal.aborted) setCatalogLoading(false);
+            }
+        }
+
+        loadCatalog();
+
+        return () => controller.abort();
+    }, []);
+
     const handleChange = useCallback((k: keyof FormData, v: string) => {
         setFormData(p => ({ ...p, [k]: v }));
-    }, []);
+        if (submitError) setSubmitError('');
+    }, [submitError]);
 
     async function handleSubmit() {
         setFormState('loading');
-        // TODO: POST /api/auth/signup with formData
-        await new Promise(r => setTimeout(r, 1500));
-        setFormState('success');
+        setSubmitError('');
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    school_id: formData.school_id,
+                    email: formData.email,
+                    password: formData.password,
+                    password_confirmation: formData.confirm_password,
+                    first_name: formData.first_name,
+                    last_name: formData.last_name,
+                    dept_id: Number(formData.dept_id),
+                    course_id: Number(formData.course_id),
+                    year_level: Number(formData.year_level),
+                    section: Number(formData.section),
+                }),
+            });
+
+            const payload = await res.json().catch(() => null);
+            if (!res.ok || !payload?.success) {
+                const validationErrors = payload?.errors
+                    ? Object.values(payload.errors).flat().join(' ')
+                    : null;
+                setSubmitError(validationErrors || payload?.error || 'Unable to create account. Please check your details and try again.');
+                setFormState('error');
+                return;
+            }
+
+            setFormState('success');
+        } catch {
+            setSubmitError('Unable to reach the server. Please try again.');
+            setFormState('error');
+        }
     }
 
     const stepTitle: Record<Step, string> = {
@@ -736,9 +899,42 @@ export default function SignupPage() {
                         ) : (
                             <>
                                 <StepBar current={step} />
+                                {submitError && (
+                                    <div
+                                        role="alert"
+                                        className="mb-4 rounded-[--radius-md] border px-3.5 py-3 text-sm"
+                                        style={{
+                                            background: 'var(--color-error-light)',
+                                            borderColor: 'rgba(217,48,37,.2)',
+                                            color: 'var(--color-error)',
+                                        }}
+                                    >
+                                        {submitError}
+                                    </div>
+                                )}
                                 {step === 1 && <Step1 data={formData} onChange={handleChange} onNext={() => setStep(2)} />}
-                                {step === 2 && <Step2 data={formData} onChange={handleChange} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
-                                {step === 3 && <Step3 data={formData} onBack={() => setStep(2)} onSubmit={handleSubmit} formState={formState} />}
+                                {step === 2 && (
+                                    <Step2
+                                        data={formData}
+                                        departments={departments}
+                                        courses={courses}
+                                        catalogLoading={catalogLoading}
+                                        catalogError={catalogError}
+                                        onChange={handleChange}
+                                        onNext={() => setStep(3)}
+                                        onBack={() => setStep(1)}
+                                    />
+                                )}
+                                {step === 3 && (
+                                    <Step3
+                                        data={formData}
+                                        departments={departments}
+                                        courses={courses}
+                                        onBack={() => setStep(2)}
+                                        onSubmit={handleSubmit}
+                                        formState={formState}
+                                    />
+                                )}
                             </>
                         )}
                     </div>

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AcademicCatalogController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\ManageController;
 use App\Http\Controllers\Api\AdminController;
@@ -17,6 +18,8 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\Cors::class])->group(funct
     Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
+    Route::get('/departments', [AcademicCatalogController::class, 'departments']);
+    Route::get('/courses', [AcademicCatalogController::class, 'courses']);
     Route::get('/events', [EventController::class, 'index']);
     Route::get('/events/{id}', [EventController::class, 'show']);
     Route::get('/organizations', [EventController::class, 'organizations']);
@@ -59,6 +62,7 @@ Route::prefix('v1')->middleware([\App\Http\Middleware\Cors::class])->group(funct
         // Admin routes
         Route::prefix('admin')->middleware(\App\Http\Middleware\CheckOverseer::class)->group(function () {
             Route::get('/dashboard', [AdminController::class, 'dashboard']);
+            Route::post('/organizations', [AdminController::class, 'createOrg']);
             Route::get('/organizations', [AdminController::class, 'organizations']);
             Route::get('/organizations/{id}', [AdminController::class, 'organization']);
             Route::put('/organizations/{id}/accreditation', [AdminController::class, 'toggleAccreditation']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AccreditationRequest;
+use App\Http\Requests\Admin\StoreOrgRequest;
 use App\Http\Requests\Admin\UpdateOrgRequest;
 use App\Http\Requests\Admin\UpdateUserRoleRequest;
 use App\Http\Resources\OrganizationResource;
@@ -16,6 +17,45 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminController extends Controller
 {
+    public function createOrg(StoreOrgRequest $req)
+    {
+        try {
+            $data = $req->only([
+                'name',
+                'code_name',
+                'description',
+                'logo_url',
+                'adviser',
+                'founded_date',
+                'category_id',
+                'accreditation_status',
+            ]);
+
+            $id = (string) \Illuminate\Support\Str::uuid();
+            DB::table('organizations')->insert([
+                'id' => $id,
+                'name' => $data['name'],
+                'code_name' => $data['code_name'],
+                'description' => $data['description'] ?? null,
+                'logo_url' => $data['logo_url'] ?? null,
+                'adviser' => $data['adviser'] ?? null,
+                'founded_date' => $data['founded_date'] ?? null,
+                'category_id' => $data['category_id'],
+                'accreditation_status' => $data['accreditation_status'] ?? 'Active',
+                'accredited_by' => $req->user()->id,
+                'accredited_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $org = DB::table('organizations')->where('id', $id)->first();
+
+            return response()->json(['success' => true, 'data' => new OrganizationResource($org)], 201);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
     public function dashboard(Request $req)
     {
         try {

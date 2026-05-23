@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Manage;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 
 class StoreEventRequest extends FormRequest
 {
@@ -27,5 +28,33 @@ class StoreEventRequest extends FormRequest
             'payment_instructions' => 'nullable|string',
             'status' => 'required|in:Upcoming,Open,Full,Closed,Completed,Cancelled',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $venueId = $this->input('venue_id');
+        if (is_string($venueId) && preg_match('/^v(\d+)$/i', $venueId, $m)) {
+            $venueId = (int) $m[1];
+        }
+
+        $categoryId = $this->input('category_id');
+        if (!$categoryId && is_string($this->input('category'))) {
+            $catName = trim($this->input('category'));
+            $mapped = DB::table('event_categories')->where('name', $catName)->value('id');
+            if ($mapped) {
+                $categoryId = (int) $mapped;
+            }
+        }
+
+        $status = $this->input('status') ?: 'Upcoming';
+        $isPaid = filter_var($this->input('is_paid'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($isPaid === null) $isPaid = false;
+
+        $this->merge([
+            'venue_id' => is_numeric($venueId) ? (int) $venueId : $venueId,
+            'category_id' => is_numeric($categoryId) ? (int) $categoryId : $categoryId,
+            'status' => $status,
+            'is_paid' => $isPaid,
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -20,7 +21,13 @@ class RegisterRequest extends FormRequest
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'dept_id' => 'required|integer|exists:departments,id',
+            'course_id' => [
+                'required',
+                'integer',
+                Rule::exists('courses', 'id')->where(fn ($query) => $query->where('dept_id', $this->input('dept_id'))),
+            ],
             'year_level' => 'required|integer|min:1|max:5',
+            'section' => 'required|integer|min:1|max:20',
         ];
     }
 }

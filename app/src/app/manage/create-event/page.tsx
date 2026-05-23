@@ -12,6 +12,7 @@ import ManageShell from '@/components/ManageShell';
 type AudienceType = 'CvSU_Only' | 'Org_Members_Only';
 type EventCategory = 'Workshop' | 'Seminar' | 'Competition' | 'Activity' | 'Training' | 'Outreach' | 'Cultural' | 'Other';
 type SaveState = 'idle' | 'saving' | 'success' | 'error';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 interface FormData {
   title: string;
@@ -49,18 +50,21 @@ interface FormErrors {
    Seed data
    ---------------------------------------------------------------- */
 const VENUES = [
-  { id: 'v1', name: 'Main Hall' },
-  { id: 'v2', name: 'AVR Building A' },
-  { id: 'v3', name: 'AVR Building B' },
-  { id: 'v4', name: 'Gymnasium' },
-  { id: 'v5', name: 'Library AVR' },
-  { id: 'v6', name: 'ICT Building Lab 1' },
-  { id: 'v7', name: 'ICT Building Lab 2' },
-  { id: 'v8', name: 'Open Court' },
-  { id: 'v9', name: 'Sports Complex' },
-  { id: 'v10', name: 'Chapel' },
-  { id: 'v11', name: 'Clinic Area' },
-  { id: 'v12', name: 'Off-campus' },
+  { id: '1', name: 'Rolle Hall' },
+  { id: '2', name: 'ICON' },
+  { id: '3', name: 'Quadrangle' },
+  { id: '4', name: 'Grandstand' },
+  { id: '5', name: 'Campus Oval' },
+  { id: '6', name: 'Softball Field' },
+  { id: '7', name: 'Open Court' },
+  { id: '8', name: 'Gymnasium' },
+  { id: '9', name: 'Hostel' },
+  { id: '10', name: 'Administration' },
+  { id: '11', name: 'University Chapel' },
+  { id: '12', name: 'Bahay ng Alumni' },
+  { id: '13', name: 'International House' },
+  { id: '14', name: "Laya't Diwa" },
+  { id: '15', name: 'University Resort' },
 ];
 
 const EVENT_CATEGORIES: EventCategory[] = [
@@ -197,11 +201,77 @@ export default function CreateEventPage() {
     const errs = validate(form);
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSaveState('saving');
-    // TODO: POST /api/manage/events (multipart FormData for banner_url)
-    await new Promise((r) => setTimeout(r, 1400));
-    setSaveState('success');
-    await new Promise((r) => setTimeout(r, 700));
-    router.push('/manage/dashboard');
+    try {
+      const token =
+        window.localStorage.getItem('auth_token') ??
+        window.sessionStorage.getItem('auth_token');
+
+      if (!token) {
+        setSaveState('error');
+        return;
+      }
+
+      const categoryId = EVENT_CATEGORIES.findIndex((c) => c === form.category) + 1;
+      const payload = {
+        venue_id: Number(form.venue_id),
+        category_id: categoryId,
+        title: form.title.trim(),
+        banner_url: null,
+        description: form.description.trim(),
+        start_date: `${form.start_date} ${form.start_time}:00`,
+        end_date: `${form.end_date} ${form.end_time}:00`,
+        capacity: Number(form.capacity),
+        audience_type: form.audience_type,
+        is_paid: form.is_paid,
+        payment_instructions: form.is_paid ? form.payment_instructions.trim() : null,
+        status: 'Upcoming',
+      };
+
+      const res = await fetch(`${API_BASE_URL}/manage/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const response = await res.json().catch(() => null) as
+        | { success?: boolean; error?: string; errors?: Record<string, string[] | string> }
+        | null;
+
+      if (!res.ok || !response?.success) {
+        const fieldErrors: FormErrors = {};
+        if (response?.errors && typeof response.errors === 'object') {
+          const first = (key: keyof FormErrors) => {
+            const val = response.errors?.[key];
+            if (Array.isArray(val) && val[0]) fieldErrors[key] = val[0];
+            else if (typeof val === 'string') fieldErrors[key] = val;
+          };
+          first('title');
+          first('description');
+          first('capacity');
+          first('payment_instructions');
+          first('venue_id');
+          first('start_date');
+          first('end_date');
+          const catErr = response.errors?.category_id;
+          if (Array.isArray(catErr) && catErr[0]) fieldErrors.category = catErr[0];
+          else if (typeof catErr === 'string') fieldErrors.category = catErr;
+        }
+
+        if (Object.keys(fieldErrors).length) setErrors(fieldErrors);
+        setSaveState('error');
+        return;
+      }
+
+      setSaveState('success');
+      await new Promise((r) => setTimeout(r, 600));
+      router.push('/manage/events');
+    } catch {
+      setSaveState('error');
+    }
   }
 
   return (

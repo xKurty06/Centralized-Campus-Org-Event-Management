@@ -104,6 +104,23 @@ const NAV: NavItem[] = [
                 <path d="M12 7v5l4 2" />
             </svg>
         ),
+    },
+    {
+        href: '/admin/organizations/create',
+        label: 'Create Organization',
+        icon: (
+            <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+        ),
     }
 ];
 function IconDashboard() {
@@ -143,6 +160,7 @@ const NAV_ITEMS = {
     events: { href: '/admin/events', label: 'Events', icon: <IconEvents /> },
     audit: { href: '/admin/audit', label: 'Audit Logs', icon: <IconAudit /> },
     settings: { href: '/admin/settings', label: 'Settings', icon: <IconSettings /> },
+    create_org: { href: '/admin/organizations/create', label: 'Create Organization', icon: <IconOrg /> },
 };
 
 const NAV_GROUPS = [
@@ -159,6 +177,12 @@ const NAV_GROUPS = [
         items: [
             NAV_ITEMS.users,
             NAV_ITEMS.audit,
+        ]
+    },
+    {
+        title: 'Operations',
+        items: [
+            NAV_ITEMS.create_org,
         ]
     }
 ];
@@ -179,7 +203,16 @@ function Sidebar({
 
     function isActive(href: string, end?: boolean) {
         if (end) return pathname === href;
-        return pathname.startsWith(href);
+        if (pathname === href) return true;
+
+        if (pathname.startsWith(href + "/")) {
+            const hasExactMatchElsewhere = NAV_GROUPS.some((group) =>
+                group.items.some((item) => item.href === pathname)
+            );
+            return !hasExactMatchElsewhere;
+        }
+
+        return false;
     }
 
     return (
@@ -344,7 +377,7 @@ function Sidebar({
                         {/* Category Header */}
                         {!collapsed && (
                             <p className="px-3 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-widest"
-                        style={{ color: 'var(--color-text-muted)' }}>
+                                style={{ color: 'var(--color-text-muted)' }}>
                                 {group.title}
                             </p>
                         )}
