@@ -422,10 +422,7 @@ export default function MyEventsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar
-        role="student"
-        user={{ name: 'Juan dela Cruz', schoolId: '202100142', department: 'BSCS 2-2' }}
-      />
+      <Navbar/>
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
 

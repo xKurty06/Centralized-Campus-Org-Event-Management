@@ -1,6 +1,7 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { LoaderCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import AdminShell from '@/components/AdminShell';
 
@@ -116,6 +117,13 @@ function ActivityIcon({ type }: { type: ActivityRow['type'] }) {
   };
   const { bg, icon } = map[type];
   return <div className={`w-7 h-7 rounded-full ${bg} flex items-center justify-center flex-shrink-0`}>{icon}</div>;
+}
+
+function IconRefresh({ spinning = false }: { spinning?: boolean }) {
+  if (spinning) {
+    return <LoaderCircle className="w-4 h-4" style={{ animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />;
+  }
+  return <RefreshCw className="w-4 h-4" aria-hidden="true" />;
 }
 
 export default function AdminDashboardPage() {
@@ -299,7 +307,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
             {(['week', 'month', 'all'] as const).map((p) => (
-              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 ${_period === p ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}>
+              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 ${_period === p ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-primary)] hover:text-[var(--color-primary-light)]'}`}>
                 {p === 'all' ? 'All Time' : `This ${p.charAt(0).toUpperCase() + p.slice(1)}`}
               </button>
             ))}
@@ -328,7 +336,7 @@ export default function AdminDashboardPage() {
             <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
               <h2 className="text-[15px] font-semibold text-[var(--color-text)]">Recent Events</h2>
               <div className="flex items-center gap-2">
-                <button onClick={refreshEvents} disabled={refreshingEvents} className="btn btn-outline btn-sm">{refreshingEvents ? 'Refreshing...' : 'Refresh'}</button>
+                <button onClick={refreshEvents} disabled={refreshingEvents} className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Refresh recent events" title="Refresh recent events"><IconRefresh spinning={refreshingEvents} /></button>
                 <Link href="/admin/events" className="text-[12px] font-medium text-[var(--color-primary)] no-underline hover:underline">View all</Link>
               </div>
             </div>
@@ -355,7 +363,7 @@ export default function AdminDashboardPage() {
           <div className="card overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
               <h2 className="text-[15px] font-semibold text-[var(--color-text)]">Recent Admin Activity</h2>
-              <button onClick={refreshActivity} disabled={refreshingActivity} className="btn btn-outline btn-sm">{refreshingActivity ? 'Refreshing...' : 'Refresh'}</button>
+              <button onClick={refreshActivity} disabled={refreshingActivity} className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Refresh admin activity" title="Refresh admin activity"><IconRefresh spinning={refreshingActivity} /></button>
             </div>
             <div className="divide-y divide-[var(--color-border)]">
               {activity.map((item) => (
@@ -375,7 +383,7 @@ export default function AdminDashboardPage() {
           <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
             <h2 className="text-[15px] font-semibold text-[var(--color-text)]">Organizations Overview</h2>
             <div className="flex items-center gap-2">
-              <button onClick={refreshOrgs} disabled={refreshingOrgs} className="btn btn-outline btn-sm">{refreshingOrgs ? 'Refreshing...' : 'Refresh'}</button>
+              <button onClick={refreshOrgs} disabled={refreshingOrgs} className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Refresh organizations overview" title="Refresh organizations overview"><IconRefresh spinning={refreshingOrgs} /></button>
               <Link href="/admin/organizations" className="text-[12px] font-medium text-[var(--color-primary)] no-underline hover:underline">Manage all -&gt;</Link>
             </div>
           </div>
@@ -403,3 +411,4 @@ export default function AdminDashboardPage() {
     </AdminShell>
   );
 }
+

@@ -96,6 +96,14 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
   const [sessionUser, setSessionUser] = useState<NavbarProps['user']>(user);
 
   useEffect(() => {
+    // If parent already provides authenticated identity, keep it as source of truth.
+    if (role !== 'guest' || user) {
+      setSessionRole(role);
+      setSessionUser(user);
+      return;
+    }
+
+    // Fallback: resolve from browser storage only when props are guest/empty.
     const nextSession = resolveSessionFromStorage();
     setSessionRole(nextSession.role);
     setSessionUser(nextSession.user);

@@ -365,10 +365,7 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar
-        role="student"
-        user={{ name: 'Zean Kurt Balboobs', schoolId: '20246769', department: 'BSCS 2-2' }}
-      />
+      <Navbar/>
 
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
 
