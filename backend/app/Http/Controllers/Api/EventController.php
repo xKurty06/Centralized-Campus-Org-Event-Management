@@ -11,6 +11,7 @@ use App\Http\Resources\PaymentProofResource;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class EventController extends Controller
@@ -19,22 +20,31 @@ class EventController extends Controller
     {
         try {
             $perPage = (int) $req->query('per_page', 15);
-            $query = DB::table('events');
+            $query = DB::table('events as e')
+                ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')
+                ->leftJoin('venues as v', 'e.venue_id', '=', 'v.id')
+                ->leftJoin('organizations as o', 'e.host_org_id', '=', 'o.id')
+                ->select(
+                    'e.*',
+                    'ec.name as category_name',
+                    'v.name as venue_name',
+                    'o.name as organization_name'
+                );
 
             if ($req->filled('org_id')) {
-                $query->where('host_org_id', $req->org_id);
+                $query->where('e.host_org_id', $req->org_id);
             }
             if ($req->filled('category_id')) {
-                $query->where('category_id', $req->category_id);
+                $query->where('e.category_id', $req->category_id);
             }
             if ($req->filled('venue_id')) {
-                $query->where('venue_id', $req->venue_id);
+                $query->where('e.venue_id', $req->venue_id);
             }
             if ($req->filled('audience_type')) {
-                $query->where('audience_type', $req->audience_type);
+                $query->where('e.audience_type', $req->audience_type);
             }
 
-            $events = $query->latest()->paginate($perPage);
+            $events = $query->latest('e.created_at')->paginate($perPage);
             return response()->json([
                 'success' => true,
                 'data' => EventResource::collection($events),
@@ -46,6 +56,11 @@ class EventController extends Controller
                 ]
             ], 200);
         } catch (\Exception $e) {
+            Log::error('EventController::index failed', [
+                'user_id' => $req->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -70,16 +85,26 @@ class EventController extends Controller
                 )
                 ->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
-            $eventRow = (object) array_merge((array) $event, ['is_member' => false]);
+            $eventRow = (object) array_merge((array) $event, ['is_member' => false, 'is_registered' => false]);
             if ($user) {
                 $eventRow->is_member = DB::table('org_members')
                     ->where('org_id', $event->host_org_id)
                     ->where('user_id', $user->id)
                     ->where('membership_status', 'Active')
                     ->exists();
+                $eventRow->is_registered = DB::table('registrations')
+                    ->where('event_id', $event->id)
+                    ->where('user_id', $user->id)
+                    ->exists();
             }
             return response()->json(['success' => true, 'data' => new EventResource($eventRow)], 200);
         } catch (\Exception $e) {
+            Log::error('EventController::show failed', [
+                'event_id' => $id,
+                'user_id' => request()->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -103,19 +128,21 @@ class EventController extends Controller
                     'e.start_date as event_start_date',
                     'e.end_date as event_end_date',
                     'e.is_paid as event_is_paid',
-                    'e.fee_amount as event_fee_amount',
+                    DB::raw('0 as event_fee_amount'),
                     'e.banner_url as event_banner_url',
                     'v.name as venue_name',
                     'ec.name as category_name',
                     'o.name as org_name',
-                    'pp.status as proof_status'
+                    'pp.status as proof_status',
+                    'pp.image_url as proof_image_url',
+                    'pp.uploaded_at as proof_uploaded_at'
                 )
                 ->latest('r.created_at')
                 ->paginate($perPage);
 
             return response()->json([
                 'success' => true,
-                'data' => RegistrationResource::collection($regs),
+                'data' => RegistrationResource::collection($regs->items()),
                 'meta' => [
                     'total' => $regs->total(),
                     'per_page' => $regs->perPage(),
@@ -124,6 +151,11 @@ class EventController extends Controller
                 ]
             ], 200);
         } catch (\Exception $e) {
+            Log::error('EventController::myEvents failed', [
+                'user_id' => optional($req->user())->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -150,6 +182,11 @@ class EventController extends Controller
             return response()->json(['success' => true, 'message' => 'Registration successful.'], 201);
         } catch (\Exception $e) {
             $msg = $e->getMessage();
+            Log::warning('EventController::register failed', [
+                'event_id' => $id,
+                'user_id' => $req->user()?->id,
+                'message' => $msg,
+            ]);
             return response()->json(['success' => false, 'error' => $msg ?: 'Registration failed.'], 400);
         }
     }
@@ -174,6 +211,12 @@ class EventController extends Controller
             }
             return response()->json(['success' => true, 'data' => new PaymentProofResource($data)], 201);
         } catch (\Exception $e) {
+            Log::error('EventController::paymentUpload failed', [
+                'event_id' => $id,
+                'user_id' => $req->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -205,6 +248,11 @@ class EventController extends Controller
                 ]
             ], 200);
         } catch (\Exception $e) {
+            Log::error('EventController::organizations failed', [
+                'user_id' => $req->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -227,6 +275,12 @@ class EventController extends Controller
             if (!$org) return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
             return response()->json(['success' => true, 'data' => new \App\Http\Resources\OrganizationResource($org)], 200);
         } catch (\Exception $e) {
+            Log::error('EventController::organization failed', [
+                'org_id' => $id,
+                'user_id' => request()->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }

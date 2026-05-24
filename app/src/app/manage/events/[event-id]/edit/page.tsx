@@ -253,15 +253,14 @@ function BannerUpload({
   onChange,
 }: {
   currentUrl: string;
-  onChange: (url: string) => void;
+  onChange: (file: File) => void;
 }) {
   const [dragging, setDragging] = useState(false);
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/"))
-      onChange(URL.createObjectURL(file));
+    if (file && file.type.startsWith("image/")) onChange(file);
   };
   return (
     <div
@@ -273,33 +272,40 @@ function BannerUpload({
       onDrop={onDrop}
       className={`relative w-full h-44 rounded-xl border-2 border-dashed transition-all overflow-hidden ${dragging ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
     >
-      {currentUrl ? (
-        <img
-          src={currentUrl}
-          alt="Banner"
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <label className="flex flex-col items-center justify-center h-full cursor-pointer gap-2">
-          <div className="text-center">
-            <p className="text-[13px] font-medium text-gray-600">
-              Drop banner image here
-            </p>
-            <p className="text-[12px] text-gray-400 mt-0.5">
-              or click to browse
-            </p>
+      <label className="relative h-full w-full cursor-pointer">
+        {currentUrl ? (
+          <>
+            <img
+              src={currentUrl}
+              alt="Banner"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-black/30 text-white text-[12px] font-medium py-2 text-center">
+              Click to replace banner
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-2">
+            <div className="text-center">
+              <p className="text-[13px] font-medium text-gray-600">
+                Drop banner image here
+              </p>
+              <p className="text-[12px] text-gray-400 mt-0.5">
+                or click to browse
+              </p>
+            </div>
           </div>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onChange(URL.createObjectURL(f));
-            }}
-          />
-        </label>
-      )}
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onChange(f);
+          }}
+        />
+      </label>
     </div>
   );
 }
@@ -322,6 +328,7 @@ export default function EditEventPage() {
   
   const [initialForm, setInitialForm] = useState<EventForm | null>(null);
   const [form, setForm] = useState<EventForm | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -379,6 +386,7 @@ export default function EditEventPage() {
 
       setForm(loadedData);
       setInitialForm(loadedData);
+      setBannerFile(null);
       setLoading(false);
     })();
   }, [eventId]);
@@ -396,6 +404,7 @@ export default function EditEventPage() {
   const handleDiscard = () => {
     if (initialForm) {
       setForm(initialForm);
+      setBannerFile(null);
       setIsDirty(false);
       setErrors({});
       setSaved(false);
@@ -425,21 +434,34 @@ export default function EditEventPage() {
       setErrors({ form: "Session missing. Please sign in again." });
       return;
     }
-    if (form.banner_url.startsWith("blob:")) {
-      setErrors({
-        form: "Banner upload is preview-only right now. Please use a hosted image URL.",
-      });
-      return;
-    }
     setSaving(true);
-    const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
+
+    let body: BodyInit;
+    let headers: Record<string, string> = {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    if (bannerFile) {
+      const formData = new FormData();
+      formData.append("banner_file", bannerFile);
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("start_date", form.start_date);
+      formData.append("end_date", form.end_date);
+      formData.append("capacity", String(Number(form.capacity || 1)));
+      formData.append("audience_type", form.audience_type);
+      formData.append("is_paid", form.is_paid ? "1" : "0");
+      formData.append("payment_instructions", form.payment_instructions);
+      formData.append("status", form.status);
+      formData.append("venue_id", String(Number(form.venue_id)));
+      formData.append("category_id", String(Number(form.category_id)));
+      if (form.banner_url && !form.banner_url.startsWith("blob:")) {
+        formData.append("banner_url", form.banner_url);
+      }
+      body = formData;
+    } else {
+      body = JSON.stringify({
         title: form.title,
         description: form.description,
         start_date: form.start_date,
@@ -452,7 +474,14 @@ export default function EditEventPage() {
         venue_id: Number(form.venue_id),
         category_id: Number(form.category_id),
         banner_url: form.banner_url || null,
-      }),
+      });
+      headers["Content-Type"] = "application/json";
+    }
+
+    const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
+      method: "PUT",
+      headers,
+      body,
     }).catch(() => null);
     const payload = (await res?.json().catch(() => null)) as any;
     if (!res || !res.ok || !payload?.success) {
@@ -469,10 +498,15 @@ export default function EditEventPage() {
       setSaving(false);
       return;
     }
+
+    const savedBannerUrl = String(payload?.data?.banner_url ?? form.banner_url ?? "");
+    const nextForm = { ...form, banner_url: savedBannerUrl };
     setSaving(false);
     setSaved(true);
     setIsDirty(false);
-    setInitialForm(form); 
+    setBannerFile(null);
+    setForm(nextForm);
+    setInitialForm(nextForm);
   };
 
   if (loading)
@@ -595,7 +629,10 @@ export default function EditEventPage() {
           >
             <BannerUpload
               currentUrl={form.banner_url}
-              onChange={(u) => update("banner_url", u)}
+              onChange={(file) => {
+                setBannerFile(file);
+                update("banner_url", URL.createObjectURL(file));
+              }}
             />
           </SectionCard>
           <SectionCard title="Basic Information" subtitle="Core event details.">

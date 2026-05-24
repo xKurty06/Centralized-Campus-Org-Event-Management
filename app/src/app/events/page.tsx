@@ -15,6 +15,7 @@ type EventCategory =
   | "Other";
 type AudienceType = "Public" | "Org_Members_Only";
 type EventType = "Free" | "Paid";
+type EventStatus = "Open" | "Upcoming" | "Ended";
 
 interface CampusEvent {
   id: string;
@@ -28,13 +29,47 @@ interface CampusEvent {
   time: string;
   venue: string;
   type: EventType;
+  status: EventStatus;
   fee?: number;
   capacity: number;
   registered: number;
+  banner_url?: string | null;
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+
+// Derive backend origin to resolve relative storage URLs (e.g. /storage/...)
+let API_ORIGIN = "";
+try {
+  API_ORIGIN = new URL(API_BASE_URL).origin;
+} catch (e) {
+  API_ORIGIN = '';
+}
+
+function normalizeBannerUrl(raw?: string | null) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+
+  // 1. If it's already an absolute URL, return it directly
+  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("//")) {
+    return s;
+  }
+
+  // 2. Safely extract the backend origin (e.g., "http://localhost:8000")
+  let backendOrigin = "http://localhost:8000"; // Safe default
+  try {
+    // This strips out "/api/v1" and leaves just the base domain/port
+    backendOrigin = new URL(API_BASE_URL).origin;
+  } catch (e) {
+    console.warn("Invalid API_BASE_URL format, using default origin.");
+  }
+
+  // 3. Ensure the path starts with a slash, then combine
+  const path = s.startsWith("/") ? s : `/${s}`;
+  return `${backendOrigin}${path}`;
+}
+
 const CATEGORIES: (EventCategory | "")[] = [
   "",
   "Workshop",
@@ -54,6 +89,34 @@ function formatDate(iso: string) {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function getEventStatus(startDate: string, endDate: string): EventStatus {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (now < start) return "Upcoming";
+  if (now > end) return "Ended";
+  return "Open";
+}
+
+function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
+  const value = String(raw ?? "").trim().toLowerCase();
+  if (value === "open") return "Open";
+  if (value === "upcoming") return "Upcoming";
+  if (value === "ended") return "Ended";
+  return getEventStatus(startDate, endDate);
+}
+
+function getStatusBadgeColor(status: EventStatus): string {
+  switch (status) {
+    case "Open":
+      return "bg-green-100 text-green-700";
+    case "Upcoming":
+      return "bg-blue-100 text-blue-700";
+    case "Ended":
+      return "bg-gray-100 text-gray-600";
+  }
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
@@ -86,6 +149,7 @@ interface DropdownOption {
   value: string;
   label: string;
 }
+
 function FilterDropdown({
   icon,
   placeholder,
@@ -193,36 +257,50 @@ function EventCard({
       className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col"
     >
       <div
-        className={`h-36 ${BANNER_COLORS[event.id] ?? "bg-gray-100"} relative flex items-center justify-center`}
+        className={`h-36 relative flex items-center justify-center overflow-hidden ${event.banner_url ? "bg-gray-100" : BANNER_COLORS[event.id] ?? "bg-gray-100"}`}
       >
-        <svg
-          className="w-10 h-10 text-gray-300"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <rect
-            x="3"
-            y="4"
-            width="18"
-            height="16"
-            rx="2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M8 2v4M16 2v4M3 10h18"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
+        {event.banner_url ? (
+          <>
+            <img
+              src={event.banner_url}
+              alt={event.title}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+            <svg
+              className="w-10 h-10 text-gray-300"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="16"
+                rx="2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M8 2v4M16 2v4M3 10h18"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </>
+        )}
         <div className="absolute top-3 right-3">
           {event.type === "Free" ? (
-            <span className="text-[11px] font-semibold bg-green-700 text-white px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-semibold bg-green-700 text-white px-2.5 py-0.5 rounded-full">
               Free
             </span>
           ) : (
-            <span className="text-[11px] font-semibold bg-amber-500 text-white px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-semibold bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
               PHP {event.fee ?? 0}
             </span>
           )}
@@ -236,14 +314,17 @@ function EventCard({
         )}
       </div>
       <div className="p-4 flex flex-col gap-2 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <span
             className={`self-start text-[11px] font-semibold px-2.5 py-0.5 rounded-md ${CATEGORY_COLORS[event.category]}`}
           >
             {event.category}
           </span>
+          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeColor(event.status)}`}>
+            {event.status}
+          </span>
           {isOrgMembersOnly && (
-            <span className="text-[11px] font-semibold badge badge-green px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-semibold badge badge-green px-2.5 py-0.5 rounded-full">
               Exclusive
             </span>
           )}
@@ -293,6 +374,7 @@ export default function EventsPage() {
       data?: any[];
       error?: string;
     } | null;
+
     if (!res || !res.ok || !payload?.success || !Array.isArray(payload.data)) {
       setError(payload?.error ?? "Unable to load events.");
       setEvents([]);
@@ -302,31 +384,52 @@ export default function EventsPage() {
     }
 
     setEvents(
-      payload.data.map((e) => ({
-        id: String(e.id ?? ""),
-        title: e.title ?? "Untitled Event",
-        category: (e.category_name ?? "Other") as EventCategory,
-        organization: e.organization_name ?? "Organization",
-        orgCategory: (e.organization_category ?? "Non-Academic") as
-          | "Academic"
-          | "Non-Academic"
-          | "Religious",
-        audience_type: (e.audience_type ?? "Public") as AudienceType,
-        is_member: Boolean(e.is_member ?? false),
-        date: e.start_date ?? new Date().toISOString(),
-        time: e.start_date
-          ? new Date(e.start_date).toLocaleTimeString("en-PH", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          })
-          : "-",
-        venue: e.venue_name ?? "TBA",
-        type: Boolean(e.is_paid) ? "Paid" : "Free",
-        fee: Number(e.fee_amount ?? 0),
-        capacity: Number(e.capacity ?? 0),
-        registered: Number(e.total_registered ?? 0),
-      })),
+      payload.data.map((e) => {
+        const category = String(e.category_name ?? "Other");
+        const normalizedCategory = [
+          "Workshop",
+          "Seminar",
+          "Competition",
+          "Training",
+          "Outreach",
+          "Cultural",
+          "Activity",
+          "Other",
+        ].includes(category)
+          ? (category as EventCategory)
+          : "Other";
+        const startDate = String(e.start_date ?? new Date().toISOString());
+        const endDate = String(e.end_date ?? startDate);
+
+        return {
+          id: String(e.id ?? ""),
+          title: e.title ?? "Untitled Event",
+          category: normalizedCategory,
+          organization: e.organization_name ?? "Organization",
+          orgCategory: (e.organization_category ?? "Non-Academic") as
+            | "Academic"
+            | "Non-Academic"
+            | "Religious",
+          audience_type: (e.audience_type ?? "Public") as AudienceType,
+          is_member: Boolean(e.is_member ?? false),
+          date: startDate,
+          time: startDate
+            ? new Date(startDate).toLocaleTimeString("en-PH", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+            : "-",
+          venue: e.venue_name ?? "TBA",
+          type: Boolean(e.is_paid) ? "Paid" : "Free",
+          status: normalizeEventStatus(e.status, startDate, endDate),
+          fee: Number(e.fee_amount ?? 0),
+          capacity: Number(e.capacity ?? 0),
+          registered: Number(e.total_registered ?? 0),
+          // Mapping updated to use normalizeBannerUrl
+          banner_url: normalizeBannerUrl(e.banner_url),
+        };
+      }),
     );
 
     setError("");
@@ -367,6 +470,7 @@ export default function EventsPage() {
   const activeFilters = [category, organization, venue, typeFilter].filter(
     Boolean,
   ).length;
+
   const clearAll = () => {
     setSearch("");
     setCategory("");
@@ -555,7 +659,7 @@ export default function EventsPage() {
         </div>
         {!!error && <div className="text-sm text-red-600">{error}</div>}
         {loading ? (
-          <div className="text-sm text-gray-500">Loading events...</div>
+          <div className="text-sm text-gray-500 text-center">Loading events...</div>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filtered.map((event) => (
@@ -601,6 +705,7 @@ function IconClock() {
     </svg>
   );
 }
+
 function IconPin() {
   return (
     <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="none">
@@ -613,6 +718,7 @@ function IconPin() {
     </svg>
   );
 }
+
 function IconOrg() {
   return (
     <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="none">

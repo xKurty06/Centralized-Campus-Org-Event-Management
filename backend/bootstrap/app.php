@@ -12,7 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->redirectGuestsTo(function ($request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return null;
+            }
+            return '/login';
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function ($request, $exception): bool {
@@ -21,6 +26,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         \Illuminate\Auth\Middleware\Authenticate::redirectUsing(function ($request) {
             // API-first app: never attempt a web login redirect for unauthenticated requests.
-            return ($request->is('api/*') || $request->expectsJson()) ? null : route('login');
+            return ($request->is('api/*') || $request->expectsJson()) ? null : '/login';
         });
     })->create();

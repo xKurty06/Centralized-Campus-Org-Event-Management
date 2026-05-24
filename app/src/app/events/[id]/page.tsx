@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ type EventType = 'Free' | 'Paid';
 type RegistrationStatus = 'none' | 'registered' | 'pending';
 type PaymentMethod = 'online' | 'onsite';
 type AudienceType = 'Public' | 'Org_Members_Only';
+type EventStatus = string;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 interface CampusEvent {
@@ -32,10 +33,14 @@ interface CampusEvent {
   host_org_id: string;
   audience_type: AudienceType;
   is_member: boolean;
+  is_registered: boolean;
   orgCategory: 'Academic' | 'Non-Academic' | 'Religious';
   date: string;
   time: string;
   endTime: string;
+  startDate: string;
+  endDate: string;
+  status: EventStatus;
   venue: string;
   type: EventType;
   fee?: number;
@@ -45,93 +50,8 @@ interface CampusEvent {
   paymentInstructions?: string;
   adviser: string;
   bannerColor: string;
+  banner_url?: string | null;
 }
-
-/* ----------------------------------------------------------------
-   Mock data — replace with API fetch using params.id
-   ---------------------------------------------------------------- */
-const MOCK_EVENTS: Record<string, CampusEvent & { is_member: boolean }> = {
-  '1': {
-    id: '1',
-    title: 'Web Development Summit 2025',
-    category: 'Workshop',
-    organization: 'Computer Science Student Organization',
-    orgId: 'csso',
-    host_org_id: 'CSSO',
-    audience_type: 'Org_Members_Only',
-    is_member: false,
-    orgCategory: 'Academic',
-    date: '2025-03-12',
-    time: '8:00 AM',
-    endTime: '5:00 PM',
-    venue: 'Main Hall, CvSU Indang Campus',
-    type: 'Free',
-    capacity: 150,
-    registered: 42,
-    adviser: 'Prof. Maria Santos',
-    bannerColor: 'bg-blue-100',
-    description: `Join us for the Web Development Summit 2025 — a full-day workshop covering modern web technologies, frameworks, and industry best practices. This event is open to all CvSU students who want to level up their web development skills.
-
-Topics covered include:
-• HTML, CSS, and Tailwind fundamentals
-• React and Next.js development
-• RESTful API integration
-• Deployment and DevOps basics
-
-Participants will work on hands-on projects and receive a certificate of participation upon completion. Bring your laptop and be ready to code!`,
-  },
-  '2': {
-    id: '2',
-    title: 'Leadership & Governance Talk',
-    category: 'Seminar',
-    organization: 'University Student Council',
-    orgId: 'usc',
-    host_org_id: 'USC',
-    audience_type: 'Org_Members_Only',
-    is_member: true,
-    orgCategory: 'Non-Academic',
-    date: '2025-03-15',
-    time: '1:00 PM',
-    endTime: '4:00 PM',
-    venue: 'AVR Building B, CvSU Indang Campus',
-    type: 'Paid',
-    fee: 50,
-    capacity: 80,
-    registered: 67,
-    adviser: 'Dr. Jose Reyes',
-    bannerColor: 'bg-purple-100',
-    paymentInstructions:
-      'Pay via GCash: 09XX-XXX-XXXX (USC Treasurer). Use your School ID as reference. Upload screenshot after registration.',
-    description: `The Leadership & Governance Talk is a seminar designed to equip student leaders with the skills and knowledge needed for effective governance and organizational management.
-
-Speakers include current and former student government officials, faculty advisers, and community leaders who will share their experiences and insights.
-
-Attendees will receive a certificate of participation. The ₱50 registration fee covers the seminar kit and snacks.`,
-  },
-  '3': {
-    id: '3',
-    title: 'Art Exhibition Opening',
-    category: 'Cultural',
-    organization: 'Fine Arts Club',
-    orgId: 'facs',
-    host_org_id: 'FACS',
-    audience_type: 'Org_Members_Only',
-    is_member: false,
-    orgCategory: 'Non-Academic',
-    date: '2025-03-20',
-    time: '6:00 PM',
-    endTime: '9:00 PM',
-    venue: 'Gallery, CvSU Indang Campus',
-    type: 'Free',
-    capacity: 100,
-    registered: 75,
-    adviser: 'Prof. Ana Martinez',
-    bannerColor: 'bg-pink-100',
-    description: `Join us for the opening of our annual art exhibition! This event showcases the talent of our student artists and provides a platform for creative expression.
-
-Come and enjoy a night of art, music, and cultural exchange. Light refreshments will be provided.`,
-  }
-};
 
 /* ----------------------------------------------------------------
    Helpers
@@ -143,6 +63,62 @@ function formatDate(iso: string) {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+function getEventStatus(startDate: string, endDate: string): EventStatus {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (now < start) return 'Upcoming';
+  if (now > end) return 'Ended';
+  return 'Open';
+}
+
+function getStatusBadgeColor(status: EventStatus): string {
+  switch (status.toLowerCase()) {
+    case 'open':
+      return 'bg-green-100 text-green-700';
+    case 'upcoming':
+      return 'bg-blue-100 text-blue-700';
+    case 'ended':
+    case 'completed':
+      return 'bg-gray-100 text-gray-600';
+    case 'cancelled':
+    case 'canceled':
+      return 'bg-red-100 text-red-700';
+    case 'archived':
+      return 'bg-zinc-100 text-zinc-700';
+    case 'closed':
+      return 'bg-amber-100 text-amber-700';
+    case 'draft':
+      return 'bg-slate-100 text-slate-700';
+    default:
+      return 'bg-neutral-100 text-neutral-700';
+  }
+}
+
+function normalizeBannerUrl(raw?: string | null) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('//')) return s;
+  try {
+    const origin = new URL(API_BASE_URL).origin;
+    const path = s.startsWith('/') ? s : `/${s}`;
+    return `${origin}${path}`;
+  } catch {
+    return s;
+  }
+}
+
+function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
+  const value = String(raw ?? '').trim();
+  if (!value) return getEventStatus(startDate, endDate);
+  return value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
@@ -259,12 +235,18 @@ export default function EventDetailPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const [isMember, setIsMember] = useState<boolean | null>(null);
-  const [checkingMembership, setCheckingMembership] = useState(false);
-
-  const isLoggedIn = true;
+  const [currentUserName, setCurrentUserName] = useState('Student');
+  const checkingMembership = false;
   const isOrgMembersOnly = currentEvent?.audience_type === 'Org_Members_Only';
   const accessBlocked = Boolean(isOrgMembersOnly && isMember === false);
   const accessPending = Boolean(isOrgMembersOnly && isMember === null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const name = window.localStorage.getItem('user_name') ?? window.sessionStorage.getItem('user_name');
+      if (name) setCurrentUserName(name);
+    }
+  }, []);
 
   useEffect(() => {
     if (!eventId) return;
@@ -287,6 +269,18 @@ export default function EventDetailPage() {
         return;
       }
       const e = payload.data;
+      let isRegistered = Boolean(e.is_registered);
+      if (token) {
+        const regRes = await fetch(`${API_BASE_URL}/my-events?per_page=300`, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+        const regPayload = await regRes?.json().catch(() => null) as any;
+        if (regRes?.ok && regPayload?.success && Array.isArray(regPayload?.data)) {
+          isRegistered = regPayload.data.some((r: any) => String(r.event_id ?? '') === String(eventId));
+        }
+      }
+      const startDate = String(e.start_date ?? new Date().toISOString());
+      const endDate = String(e.end_date ?? startDate);
       setCurrentEvent({
         id: String(e.id ?? ''),
         title: String(e.title ?? 'Untitled Event'),
@@ -296,10 +290,14 @@ export default function EventDetailPage() {
         host_org_id: String(e.host_org_id ?? ''),
         audience_type: (e.audience_type ?? 'Public') as AudienceType,
         is_member: Boolean(e.is_member),
+        is_registered: isRegistered,
         orgCategory: (e.organization_category ?? 'Non-Academic') as 'Academic' | 'Non-Academic' | 'Religious',
-        date: String(e.start_date ?? new Date().toISOString()),
-        time: new Date(e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        endTime: new Date(e.end_date ?? e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        date: startDate,
+        time: new Date(startDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        endTime: new Date(endDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        startDate,
+        endDate,
+        status: normalizeEventStatus(e.status, startDate, endDate),
         venue: String(e.venue_name ?? 'TBA'),
         type: Boolean(e.is_paid) ? 'Paid' : 'Free',
         fee: Number(e.fee_amount ?? 0),
@@ -309,6 +307,7 @@ export default function EventDetailPage() {
         paymentInstructions: String(e.payment_instructions ?? ''),
         adviser: 'TBA',
         bannerColor: 'bg-green-100',
+        banner_url: normalizeBannerUrl(e.banner_url),
       });
       setError('');
       setLoading(false);
@@ -344,7 +343,7 @@ export default function EventDetailPage() {
           </div>
           <p className="text-[18px] font-semibold text-gray-700">{error || 'Event not found'}</p>
           <Link href="/events" className="text-[14px] font-semibold text-green-700 hover:underline no-underline">
-            ← Back to Events
+            ? Back to Events
           </Link>
         </div>
       </div>
@@ -352,12 +351,17 @@ export default function EventDetailPage() {
   }
 
   const event = currentEvent;
+  const alreadyRegistered = Boolean(event.is_registered || status === 'registered');
 
   const spots = event.capacity - event.registered;
   const isFull = spots <= 0;
   const fillPct = Math.min((event.registered / event.capacity) * 100, 100);
 
   async function handleRegister() {
+    if (alreadyRegistered) {
+      return;
+    }
+
     if (event.type === 'Paid') {
       setShowPaymentModal(true);
       return;
@@ -407,7 +411,7 @@ export default function EventDetailPage() {
       return;
     }
     if (paymentMethod === 'online') {
-      router.push(`/events/${event.id}/payment-upload?registration=reg_mock_001`);
+      router.push(`/events/${event.id}/payment-upload`);
     } else {
       router.push(`/events/${event.id}/registration-success?method=onsite`);
     }
@@ -435,10 +439,17 @@ export default function EventDetailPage() {
         <div
           className={`w-full h-56 lg:h-64 rounded-2xl ${event.bannerColor} flex items-center justify-center mb-8 relative overflow-hidden`}
         >
-          <svg className="w-14 h-14 text-gray-300" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          {event.banner_url ? (
+            <>
+              <img src={event.banner_url} alt={event.title} className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+            </>
+          ) : (
+            <svg className="w-14 h-14 text-gray-300" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          )}
           <div className="absolute bottom-4 left-5 flex items-center gap-2">
             <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${CATEGORY_COLORS[event.category]}`}>
               {event.category}
@@ -447,9 +458,12 @@ export default function EventDetailPage() {
               <span className="text-[12px] font-semibold bg-green-700 text-white px-3 py-1 rounded-full">Free</span>
             ) : (
               <span className="text-[12px] font-semibold bg-amber-500 text-white px-3 py-1 rounded-full">
-                ₱{event.fee}
+                ?{event.fee}
               </span>
             )}
+            <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(event.status)}`}>
+              {event.status}
+            </span>
             {event.audience_type === 'Org_Members_Only' && (
               <span className="text-[12px] font-semibold badge badge-green px-3 py-1 rounded-full">
                 Exclusive
@@ -496,7 +510,7 @@ export default function EventDetailPage() {
                 {event.registered} / {event.capacity} registered
               </DetailItem>
               <DetailItem icon={<IconTag />} label="Entry">
-                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">₱{event.fee}</span>}
+                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">?{event.fee}</span>}
               </DetailItem>
               <DetailItem icon={<IconAdviser />} label="Adviser">
                 {event.adviser}
@@ -599,7 +613,7 @@ export default function EventDetailPage() {
                   {event.type === 'Free' ? (
                     <span className="text-[15px] font-bold text-green-700">Free</span>
                   ) : (
-                    <span className="text-[15px] font-bold text-amber-600">₱{event.fee}</span>
+                    <span className="text-[15px] font-bold text-amber-600">?{event.fee}</span>
                   )}
                 </div>
 
@@ -612,7 +626,7 @@ export default function EventDetailPage() {
                       <span className="text-[10px] font-bold text-green-700">JD</span>
                     </div>
                     <div className="flex flex-col leading-tight">
-                      <span className="text-[12px] font-semibold text-gray-800">Juan dela Cruz</span>
+                      <span className="text-[12px] font-semibold text-gray-800">{currentUserName}</span>
                       <span className="text-[11px] text-gray-400">202105142 · BSCS 2-2</span>
                     </div>
                   </div>
@@ -635,7 +649,7 @@ export default function EventDetailPage() {
                   ) : (
                     <button
                       onClick={handleRegister}
-                      disabled={isFull || isRegistering || checkingMembership || accessPending}
+                      disabled={alreadyRegistered || isFull || isRegistering || checkingMembership || accessPending || event.status !== 'Open'}
                       className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[14px] font-semibold py-3 rounded-xl transition-colors cursor-pointer"
                     >
                       {checkingMembership || accessPending ? (
@@ -654,6 +668,12 @@ export default function EventDetailPage() {
                           </svg>
                           Registering...
                         </>
+                      ) : alreadyRegistered ? (
+                        'Already Registered'
+                      ) : event.status === 'Upcoming' ? (
+                        'Coming Soon'
+                      ) : event.status === 'Ended' ? (
+                        'Event Ended'
                       ) : isFull ? (
                         'Event is Full'
                       ) : (
@@ -724,7 +744,7 @@ export default function EventDetailPage() {
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="text-[16px] font-bold text-gray-900">Choose payment method</h3>
-                <p className="text-[12px] text-gray-400 mt-0.5">How would you like to pay the ₱{event.fee} fee?</p>
+                <p className="text-[12px] text-gray-400 mt-0.5">How would you like to pay the ?{event.fee} fee?</p>
               </div>
               <button
                 onClick={() => setShowPaymentModal(false)}
@@ -885,3 +905,4 @@ function IconAdviser() {
     </svg>
   );
 }
+

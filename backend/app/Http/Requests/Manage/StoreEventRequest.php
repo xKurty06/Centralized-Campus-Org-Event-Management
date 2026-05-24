@@ -19,6 +19,7 @@ class StoreEventRequest extends FormRequest
             'category_id' => 'required|integer|exists:event_categories,id',
             'title' => 'required|string|max:255',
             'banner_url' => 'nullable|url|max:1000',
+            'banner_file' => 'nullable|image|max:5120',
             'description' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',

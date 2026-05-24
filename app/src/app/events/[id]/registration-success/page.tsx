@@ -1,23 +1,10 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 
-/* ----------------------------------------------------------------
-   Mock — replace with API fetch
-   ---------------------------------------------------------------- */
-const MOCK_EVENT = {
-  id: '1',
-  title: 'Web Development Summit 2025',
-  date: '2025-03-12',
-  time: '8:00 AM',
-  endTime: '5:00 PM',
-  venue: 'Main Hall, CvSU Indang Campus',
-  type: 'Paid' as const,
-  fee: 150,
-  organization: 'Computer Science Society',
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 /* ----------------------------------------------------------------
    Helpers
@@ -34,8 +21,44 @@ function formatDate(iso: string) {
 function SuccessContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  
-  const event = MOCK_EVENT; // Replace with real API implementation using params.id
+  const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const [event, setEvent] = useState({
+    id: String(eventId ?? ''),
+    title: 'Event',
+    date: new Date().toISOString(),
+    time: '-',
+    endTime: '-',
+    venue: 'TBA',
+    type: 'Free' as 'Free' | 'Paid',
+    fee: 0,
+    organization: 'Organization',
+  });
+
+  useEffect(() => {
+    if (!eventId) return;
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success || !payload?.data) return;
+      const e = payload.data;
+      const startDate = String(e.start_date ?? new Date().toISOString());
+      const endDate = String(e.end_date ?? startDate);
+      setEvent({
+        id: String(e.id ?? eventId),
+        title: String(e.title ?? 'Event'),
+        date: startDate,
+        time: new Date(startDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        endTime: new Date(endDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        venue: String(e.venue_name ?? 'TBA'),
+        type: Boolean(e.is_paid) ? 'Paid' : 'Free',
+        fee: Number(e.fee_amount ?? 0),
+        organization: String(e.organization_name ?? 'Organization'),
+      });
+    })();
+  }, [eventId]);
 
   // 1. Capture query options flexibly to account for case variations or alternative keys
   const rawMethod = searchParams.get('method') || searchParams.get('paymentMode') || searchParams.get('type') || '';

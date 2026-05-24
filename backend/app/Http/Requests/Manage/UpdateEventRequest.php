@@ -18,6 +18,7 @@ class UpdateEventRequest extends FormRequest
             'category_id' => 'nullable|integer|exists:event_categories,id',
             'title' => 'nullable|string|max:255',
             'banner_url' => 'nullable|url|max:1000',
+            'banner_file' => 'nullable|image|max:5120',
             'description' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',

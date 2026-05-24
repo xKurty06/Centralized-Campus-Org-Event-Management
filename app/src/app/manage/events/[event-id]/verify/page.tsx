@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import ManageShell from '@/components/ManageShell';
+import { useParams } from 'next/navigation';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 /* ────────────────────────────────────────────────────────────────
    TYPES
@@ -65,98 +68,17 @@ interface EventInfo {
 /* ────────────────────────────────────────────────────────────────
    PLACEHOLDER DATA
 ──────────────────────────────────────────────────────────────── */
-const PLACEHOLDER_EVENT: EventInfo = {
-  id: 'evt-001',
-  title: 'Leadership Summit 2025',
-  venue: 'SMT Hall',
-  startDate: '2025-07-15T08:00:00',
-  isPaid: true,
-  capacity: 150,
-  checkedIn: 47,
-  totalRegistered: 112,
-  confirmedPaid: 89,
+const EMPTY_EVENT: EventInfo = {
+  id: '',
+  title: 'Event',
+  venue: 'TBA',
+  startDate: new Date().toISOString(),
+  isPaid: false,
+  capacity: 0,
+  checkedIn: 0,
+  totalRegistered: 0,
+  confirmedPaid: 0,
 };
-
-const PLACEHOLDER_RESULTS: Record<string, Registration> = {
-  '202405123': {
-    id: 'reg-001',
-    student: {
-      id: 'usr-001',
-      schoolId: '202405123',
-      firstName: 'Maria',
-      lastName: 'Santos',
-      department: 'College of Engineering and Technology',
-      yearLevel: 3,
-      is_member: true,
-    },
-    paymentStatus: 'Paid',
-    paymentSelection: 'Online',
-    attendanceStatus: 'Not_Arrived',
-    checkInAt: null,
-    regDate: '2025-07-01T10:23:00',
-  },
-  '20220200456': {
-    id: 'reg-002',
-    student: {
-      id: 'usr-002',
-      schoolId: '20220200456',
-      firstName: 'Juan',
-      lastName: 'Dela Cruz',
-      department: 'College of Arts and Sciences',
-      yearLevel: 4,
-      is_member: false,
-    },
-    paymentStatus: 'Pending',
-    paymentSelection: 'On-site',
-    attendanceStatus: 'Not_Arrived',
-    checkInAt: null,
-    regDate: '2025-07-02T14:05:00',
-  },
-  '20240100789': {
-    id: 'reg-003',
-    student: {
-      id: 'usr-003',
-      schoolId: '20240100789',
-      firstName: 'Ana',
-      lastName: 'Reyes',
-      department: 'College of Business and Accountancy',
-      yearLevel: 2,
-      is_member: true,
-    },
-    paymentStatus: 'Paid',
-    paymentSelection: 'On-site',
-    attendanceStatus: 'Checked_In',
-    checkInAt: '2025-07-15T08:12:44',
-    regDate: '2025-07-03T09:00:00',
-  },
-};
-
-const PLACEHOLDER_QUEUE: QueuedAction[] = [
-  {
-    id: 'q-001',
-    regId: 'reg-010',
-    actionType: 'Check_In',
-    deviceTimestamp: '2025-07-15T08:14:02',
-    syncStatus: 'Pending',
-    studentName: 'Carlo Mendoza',
-  },
-  {
-    id: 'q-002',
-    regId: 'reg-011',
-    actionType: 'Verify_Payment',
-    deviceTimestamp: '2025-07-15T08:15:30',
-    syncStatus: 'Pending',
-    studentName: 'Liza Bautista',
-  },
-];
-
-const PLACEHOLDER_RECENT: RecentActivity[] = [
-  { id: 'r-1', studentName: 'Ana Reyes', schoolId: '202401789', action: 'Check_In', timestamp: '08:12' },
-  { id: 'r-2', studentName: 'Pedro Villar', schoolId: '20210300301', action: 'Verify_Payment', timestamp: '08:10' },
-  { id: 'r-3', studentName: 'Grace Torres', schoolId: '20230200204', action: 'Check_In', timestamp: '08:08' },
-  { id: 'r-4', studentName: 'Mark Ramos', schoolId: '20220100155', action: 'Check_In', timestamp: '08:05' },
-  { id: 'r-5', studentName: 'Nina Castillo', schoolId: '20240200612', action: 'Verify_Payment', timestamp: '08:02' },
-];
 
 /* ────────────────────────────────────────────────────────────────
    HELPERS
@@ -562,6 +484,8 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
    MAIN PAGE
 ──────────────────────────────────────────────────────────────── */
 export default function EntrancePanelPage() {
+  const params = useParams();
+  const eventId = Array.isArray(params['event-id']) ? params['event-id'][0] : params['event-id'];
   /* — State — */
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -570,8 +494,9 @@ export default function EntrancePanelPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [queue, setQueue] = useState<QueuedAction[]>(PLACEHOLDER_QUEUE);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>(PLACEHOLDER_RECENT);
+  const [queue, setQueue] = useState<QueuedAction[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [event, setEvent] = useState<EventInfo>(EMPTY_EVENT);
   const [currentTime, setCurrentTime] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -599,6 +524,33 @@ export default function EntrancePanelPage() {
   /* — Auto-focus input on mount — */
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  useEffect(() => {
+    if (!eventId) return;
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success || !payload?.data) {
+        setToast({ msg: payload?.error ?? 'Unable to load event.', type: 'error' });
+        return;
+      }
+      const e = payload.data;
+      setEvent({
+        id: String(e.id ?? eventId),
+        title: String(e.title ?? 'Event'),
+        venue: String(e.venue_name ?? 'TBA'),
+        startDate: String(e.start_date ?? new Date().toISOString()),
+        isPaid: Boolean(e.is_paid),
+        capacity: Number(e.capacity ?? 0),
+        checkedIn: Number(e.total_checked_in ?? 0),
+        totalRegistered: Number(e.total_registered ?? 0),
+        confirmedPaid: Number(e.total_paid ?? 0),
+      });
+    })();
+  }, [eventId]);
+
   /* — Toast auto-dismiss — */
   useEffect(() => {
     if (!toast) return;
@@ -609,11 +561,40 @@ export default function EntrancePanelPage() {
   /* — Search — */
   const handleSearch = useCallback(() => {
     const q = searchInput.trim();
-    if (!q) return;
+    if (!q || !eventId) return;
     setSearchQuery(q);
-    const result = PLACEHOLDER_RESULTS[q];
-    setRegistration(result ?? 'not_found');
-  }, [searchInput]);
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ query: q }),
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success || !payload?.data) {
+        setRegistration('not_found');
+        return;
+      }
+      const r = payload.data;
+      setRegistration({
+        id: String(r.id ?? ''),
+        student: {
+          id: String(r.user_id ?? ''),
+          schoolId: String(r.school_id ?? q),
+          firstName: String(r.first_name ?? ''),
+          lastName: String(r.last_name ?? ''),
+          department: String(r.dept_code ?? 'N/A'),
+          yearLevel: Number(r.year_level ?? 0),
+          is_member: false,
+        },
+        paymentStatus: (r.payment_status ?? 'Pending') as PaymentStatus,
+        paymentSelection: (r.payment_selection ?? 'N/A') as 'Online' | 'On-site' | 'N/A',
+        attendanceStatus: (r.attendance_status ?? 'Not_Arrived') as AttendanceStatus,
+        checkInAt: r.check_in_at ?? null,
+        regDate: String(r.reg_date ?? new Date().toISOString()),
+      });
+    })();
+  }, [searchInput, eventId]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleSearch();
@@ -630,9 +611,14 @@ export default function EntrancePanelPage() {
   const handleCheckIn = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     setActionLoading(true);
-
-    /* Placeholder: simulate API call (replace with real fetch) */
-    setTimeout(() => {
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/checkin/${registration.id}`, {
+        method: 'PUT',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success) throw new Error(payload?.error ?? 'Check-in failed.');
       const newActivity: RecentActivity = {
         id: Date.now().toString(),
         studentName: `${registration.student.firstName} ${registration.student.lastName}`,
@@ -649,6 +635,7 @@ export default function EntrancePanelPage() {
       setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
       setToast({ msg: `${registration.student.firstName} ${registration.student.lastName} checked in successfully.`, type: 'success' });
       setActionLoading(false);
+      setEvent((prev) => ({ ...prev, checkedIn: prev.checkedIn + 1 }));
 
       /* If offline, queue the action */
       if (!isOnline) {
@@ -664,16 +651,24 @@ export default function EntrancePanelPage() {
           ...prev,
         ]);
       }
-    }, 800);
-  }, [registration, isOnline]);
+    })().catch((e) => {
+      setActionLoading(false);
+      setToast({ msg: e?.message ?? 'Check-in failed.', type: 'error' });
+    });
+  }, [registration, isOnline, eventId]);
 
   /* — Confirm Payment & Check In — */
   const handleConfirmPayment = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     setActionLoading(true);
-
-    /* Placeholder: simulate API call (replace with real fetch) */
-    setTimeout(() => {
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/confirm-payment/${registration.id}`, {
+        method: 'PUT',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success) throw new Error(payload?.error ?? 'Confirm payment failed.');
       const newActivity: RecentActivity = {
         id: Date.now().toString(),
         studentName: `${registration.student.firstName} ${registration.student.lastName}`,
@@ -691,6 +686,7 @@ export default function EntrancePanelPage() {
       setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
       setToast({ msg: `Payment confirmed and ${registration.student.firstName} ${registration.student.lastName} checked in.`, type: 'success' });
       setActionLoading(false);
+      setEvent((prev) => ({ ...prev, confirmedPaid: prev.confirmedPaid + 1, checkedIn: prev.checkedIn + 1 }));
 
       if (!isOnline) {
         setQueue((prev) => [
@@ -705,22 +701,40 @@ export default function EntrancePanelPage() {
           ...prev,
         ]);
       }
-    }, 900);
-  }, [registration, isOnline]);
+    })().catch((e) => {
+      setActionLoading(false);
+      setToast({ msg: e?.message ?? 'Confirm payment failed.', type: 'error' });
+    });
+  }, [registration, isOnline, eventId]);
 
   /* — Sync queue — */
   const handleSync = () => {
     setIsSyncing(true);
-    /* Placeholder: replace with real sync logic */
-    setTimeout(() => {
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const pending = queue.filter((q) => q.syncStatus === 'Pending');
+      if (!pending.length) {
+        setIsSyncing(false);
+        return;
+      }
+      const items = pending.map((q) => ({ id: q.id, reg_id: q.regId, action_type: q.actionType, device_timestamp: q.deviceTimestamp }));
+      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ items }),
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success) throw new Error(payload?.error ?? 'Sync failed.');
       setQueue((prev) => prev.map((q) => ({ ...q, syncStatus: 'Synced' as SyncStatus })));
-      setIsSyncing(false);
       setToast({ msg: 'Offline actions synced successfully.', type: 'success' });
-    }, 1500);
+      setIsSyncing(false);
+    })().catch((e) => {
+      setIsSyncing(false);
+      setToast({ msg: e?.message ?? 'Sync failed.', type: 'error' });
+    });
   };
 
   /* — Derived — */
-  const event = PLACEHOLDER_EVENT;
   const checkinPct = Math.round((event.checkedIn / event.totalRegistered) * 100) || 0;
 
   /* ── Render ── */
@@ -730,7 +744,7 @@ export default function EntrancePanelPage() {
         <div className="flex flex-col gap-6 animate-fade-in">
 
           {/* ── Page Header ── */}
-          <div className="flex flex-col gap-3 mb-8">
+          <div className="flex flex-col gap-3">
             {/* Responsive Breadcrumbs Navigation Trail */}
             <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
               <Link
@@ -788,7 +802,7 @@ export default function EntrancePanelPage() {
 
 
           {/* ── Stats Row ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatPill label="Checked In" value={event.checkedIn} color="text-green-600" />
             <StatPill label="Registered" value={event.totalRegistered} color="text-[var(--color-primary)]" />
             <StatPill label="Paid" value={event.confirmedPaid} color="text-blue-600" />
@@ -796,8 +810,8 @@ export default function EntrancePanelPage() {
           </div>
 
           {/* Progress bar */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
+          <div className="">
+            <div className="flex items-center justify-between">
               <span className="text-[12px] font-semibold text-[var(--color-text-secondary)]">Check-in Progress</span>
               <span className="text-[12px] font-bold text-green-600">{checkinPct}%</span>
             </div>
@@ -913,7 +927,7 @@ export default function EntrancePanelPage() {
 
               {/* Link to full masterlist */}
               <Link
-                href={`/manage/participants/${event.id}`}
+                href={`/manage/events/${event.id}/participants`}
                 className="flex items-center justify-center gap-2 text-[13px] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] bg-[var(--color-primary-muted)] rounded-xl px-4 py-3 transition-colors no-underline"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">

@@ -145,13 +145,14 @@ function MethodBadge({ method }: { method: PaymentSelection }) {
     const map: Record<PaymentSelection, string> = {
         Online: "bg-purple-50 text-purple-700 border-purple-200",
         "On-site": "bg-gray-100 text-gray-600 border-gray-200",
-        "N/A": "bg-gray-50 text-gray-400 border-gray-100",
+        "N/A": "bg-emerald-50 text-emerald-700 border-emerald-200",
     };
+    const label = method === "N/A" ? "Free" : method;
     return (
         <span
             className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${map[method]}`}
         >
-            {method}
+            {label}
         </span>
     );
 }
@@ -200,7 +201,11 @@ export default function ParticipantsPage() {
             return;
         }
 
-        const rows = Array.isArray(payload?.data) ? payload.data : [];
+        const rows = Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.data?.data)
+              ? payload.data.data
+              : [];
         const mappedRegs: Registrant[] = rows.map((r: any) => ({
             id: String(r.id ?? ""),
             user_id: String(r.user_id ?? ""),
@@ -231,7 +236,7 @@ export default function ParticipantsPage() {
                     "Unknown",
                 school_id: String(r.school_id ?? ""),
                 department: "N/A",
-                image_url: String(r.image_url ?? ""),
+                image_url: String(r.proof_image_url ?? r.image_url ?? ""),
                 uploaded_at: String(
                     r.updated_at ?? r.created_at ?? new Date().toISOString(),
                 ),
@@ -280,7 +285,11 @@ export default function ParticipantsPage() {
             return;
         }
 
-        const rows = Array.isArray(payload?.data) ? payload.data : [];
+        const rows = Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.data?.data)
+              ? payload.data.data
+              : [];
         const mappedRegs: Registrant[] = rows.map((r: any) => ({
             id: String(r.id ?? ""),
             user_id: String(r.user_id ?? ""),
@@ -311,7 +320,7 @@ export default function ParticipantsPage() {
                     "Unknown",
                 school_id: String(r.school_id ?? ""),
                 department: "N/A",
-                image_url: String(r.image_url ?? ""),
+                image_url: String(r.proof_image_url ?? r.image_url ?? ""),
                 uploaded_at: String(
                     r.updated_at ?? r.created_at ?? new Date().toISOString(),
                 ),
@@ -591,6 +600,15 @@ export default function ParticipantsPage() {
                             </div>
                         </div>
                         {activeTab === "proof" && (
+                            <section className="bg-white border border-[var(--color-border)] rounded-2xl p-4 sm:p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-semibold text-[var(--color-text)]">
+                                        Proof Review Queue
+                                    </h2>
+                                    <span className="text-xs font-medium text-[var(--color-text-muted)]">
+                                        {activeProofs.length} participant{activeProofs.length === 1 ? "" : "s"}
+                                    </span>
+                                </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {activeProofs.map((p) => (
                                     <div
@@ -633,8 +651,18 @@ export default function ParticipantsPage() {
                                     </div>
                                 ))}
                             </div>
+                            </section>
                         )}
                         {activeTab === "unpaid" && (
+                            <section className="bg-white border border-[var(--color-border)] rounded-2xl p-4 sm:p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-semibold text-[var(--color-text)]">
+                                        Pending / Unpaid Participants
+                                    </h2>
+                                    <span className="text-xs font-medium text-[var(--color-text-muted)]">
+                                        {filteredUnpaid.length} participant{filteredUnpaid.length === 1 ? "" : "s"}
+                                    </span>
+                                </div>
                             <div className="space-y-2">
                                 {filteredUnpaid.map((r) => (
                                     <div
@@ -659,8 +687,18 @@ export default function ParticipantsPage() {
                                     </div>
                                 ))}
                             </div>
+                            </section>
                         )}
                         {activeTab === "all" && (
+                            <section className="bg-white border border-[var(--color-border)] rounded-2xl p-4 sm:p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-semibold text-[var(--color-text)]">
+                                        All Participants
+                                    </h2>
+                                    <span className="text-xs font-medium text-[var(--color-text-muted)]">
+                                        {filteredRegistrants.length} participant{filteredRegistrants.length === 1 ? "" : "s"}
+                                    </span>
+                                </div>
                             <div className="space-y-2">
                                 {filteredRegistrants.map((r) => (
                                     <div
@@ -678,12 +716,15 @@ export default function ParticipantsPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <MethodBadge method={r.payment_selection} />
-                                            <PaymentBadge status={r.payment_status} />
+                                            {r.payment_selection !== "N/A" && (
+                                                <PaymentBadge status={r.payment_status} />
+                                            )}
                                             <AttendanceBadge status={r.attendance_status} />
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                            </section>
                         )}
                     </>
                 )}

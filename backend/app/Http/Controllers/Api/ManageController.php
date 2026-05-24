@@ -16,6 +16,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ManageController extends Controller
@@ -115,6 +116,11 @@ class ManageController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
+            Log::error('ManageController::dashboard failed', [
+                'user_id' => $req->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -171,17 +177,25 @@ class ManageController extends Controller
             }
 
             $id      = (string) Str::uuid();
+            $bannerUrl = $req->input('banner_url');
+            if ($req->hasFile('banner_file')) {
+                $file = $req->file('banner_file');
+                $path = $file->storePublicly('event_banners', 'public');
+                $bannerUrl = Storage::url($path);
+            }
+
             $payload = array_merge(
                 $req->only([
-                    'venue_id', 'category_id', 'title', 'banner_url', 'description',
+                    'venue_id', 'category_id', 'title', 'description',
                     'start_date', 'end_date', 'capacity', 'audience_type',
                     'is_paid', 'payment_instructions', 'status',
                 ]),
                 [
-                    'id'          => $id,
-                    'host_org_id' => $orgRow->org_id,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
+                    'id'           => $id,
+                    'host_org_id'  => $orgRow->org_id,
+                    'banner_url'   => $bannerUrl,
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ]
             );
 
@@ -224,11 +238,19 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
 
+            $bannerUrl = $req->input('banner_url');
+            if ($req->hasFile('banner_file')) {
+                $file = $req->file('banner_file');
+                $path = $file->storePublicly('event_banners', 'public');
+                $bannerUrl = Storage::url($path);
+            }
+
             $data = $req->only([
-                'venue_id', 'category_id', 'title', 'banner_url', 'description',
+                'venue_id', 'category_id', 'title', 'description',
                 'start_date', 'end_date', 'capacity', 'audience_type',
                 'is_paid', 'payment_instructions', 'status',
             ]);
+            $data['banner_url'] = $bannerUrl;
 
             DB::table('events')
                 ->where('id', $id)
@@ -338,7 +360,8 @@ class ManageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => RegistrationResource::collection($res),
+                // Return a flat array to keep frontend consumers stable.
+                'data'    => RegistrationResource::collection(collect($res->items())),
                 'event'   => $eventMeta ? new EventResource($eventMeta) : null,
                 'meta'    => [
                     'total'        => $res->total(),
@@ -348,6 +371,12 @@ class ManageController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
+            Log::error('ManageController::participants failed', [
+                'event_id' => $event_id,
+                'user_id' => $req->user()?->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -427,6 +456,13 @@ class ManageController extends Controller
 
             return response()->json(['success' => true, 'data' => new RegistrationResource($reg)]);
         } catch (\Exception $e) {
+            Log::error('ManageController::verifySearch failed', [
+                'event_id' => $event_id,
+                'user_id' => $req->user()?->id,
+                'query' => $req->input('query'),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }

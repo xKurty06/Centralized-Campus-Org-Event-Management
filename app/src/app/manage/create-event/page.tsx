@@ -212,29 +212,31 @@ export default function CreateEventPage() {
       }
 
       const categoryId = EVENT_CATEGORIES.findIndex((c) => c === form.category) + 1;
-      const payload = {
-        venue_id: Number(form.venue_id),
-        category_id: categoryId,
-        title: form.title.trim(),
-        banner_url: null,
-        description: form.description.trim(),
-        start_date: `${form.start_date} ${form.start_time}:00`,
-        end_date: `${form.end_date} ${form.end_time}:00`,
-        capacity: Number(form.capacity),
-        audience_type: form.audience_type,
-        is_paid: form.is_paid,
-        payment_instructions: form.is_paid ? form.payment_instructions.trim() : null,
-        status: 'Upcoming',
-      };
+      const payload = new FormData();
+      payload.append('venue_id', String(form.venue_id));
+      payload.append('category_id', String(categoryId));
+      payload.append('title', form.title.trim());
+      payload.append('description', form.description.trim());
+      payload.append('start_date', `${form.start_date} ${form.start_time}:00`);
+      payload.append('end_date', `${form.end_date} ${form.end_time}:00`);
+      payload.append('capacity', String(Number(form.capacity)));
+      payload.append('audience_type', form.audience_type);
+      payload.append('is_paid', form.is_paid ? '1' : '0');
+      payload.append('status', 'Upcoming');
+      if (form.is_paid) {
+        payload.append('payment_instructions', form.payment_instructions.trim());
+      }
+      if (form.banner_file) {
+        payload.append('banner_file', form.banner_file);
+      }
 
       const res = await fetch(`${API_BASE_URL}/manage/events`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           Accept: 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       const response = await res.json().catch(() => null) as
@@ -380,8 +382,7 @@ export default function CreateEventPage() {
 
                 <Field label="Capacity" required hint="Registration closes automatically when this limit is reached." error={errors.capacity}>
                   <div className="relative">
-                    <input type="number" value={form.capacity} onChange={(e) => update('capacity', e.target.value)}
-                      min={1} max={10000} placeholder="e.g. 150" className={ic(!!errors.capacity)} />
+                    <input type="number" value={form.capacity} onChange={(e) => update('capacity', e.target.value)}                        onWheel={(e) => e.currentTarget.blur()}                      min={1} max={10000} placeholder="e.g. 150" className={ic(!!errors.capacity)} />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-gray-400 pointer-events-none">slots</span>
                   </div>
                 </Field>

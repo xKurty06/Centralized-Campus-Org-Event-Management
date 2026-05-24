@@ -7,6 +7,19 @@ use Illuminate\Support\Carbon;
 
 class RegistrationResource extends JsonResource
 {
+    private function get(string $key): mixed
+    {
+        if (is_array($this->resource)) {
+            return $this->resource[$key] ?? null;
+        }
+
+        if (is_object($this->resource) && property_exists($this->resource, $key)) {
+            return $this->resource->{$key};
+        }
+
+        return null;
+    }
+
     private function normalizeDate($value): ?string
     {
         if (!$value) return null;
@@ -37,10 +50,20 @@ class RegistrationResource extends JsonResource
             'last_name' => $this->last_name ?? null,
             'proof_status' => $this->proof_status ?? null,
             'proof_image_url' => $this->proof_image_url ?? null,
-            'proof_uploaded_at' => $this->proof_uploaded_at ? (string) $this->proof_uploaded_at : null,
+            'proof_uploaded_at' => $this->get('proof_uploaded_at') ? (string) $this->get('proof_uploaded_at') : null,
             'dept_code' => $this->dept_code ?? null,
             'year_level' => isset($this->year_level) ? (int) $this->year_level : null,
             'full_name' => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
+            'event_title' => $this->get('event_title'),
+            'event_status' => $this->get('event_status'),
+            'event_start_date' => $this->get('event_start_date') ? (string) $this->get('event_start_date') : null,
+            'event_end_date' => $this->get('event_end_date') ? (string) $this->get('event_end_date') : null,
+            'event_is_paid' => $this->get('event_is_paid') !== null ? (bool) $this->get('event_is_paid') : null,
+            'event_fee_amount' => $this->get('event_fee_amount') !== null ? (float) $this->get('event_fee_amount') : null,
+            'event_banner_url' => $this->get('event_banner_url'),
+            'venue_name' => $this->get('venue_name'),
+            'category_name' => $this->get('category_name'),
+            'org_name' => $this->get('org_name'),
         ];
     }
 }
