@@ -461,6 +461,10 @@ export default function EditEventPage() {
       }
       body = formData;
     } else {
+      const normalizedBannerUrl =
+        form.banner_url && !form.banner_url.startsWith("blob:")
+          ? form.banner_url
+          : null;
       body = JSON.stringify({
         title: form.title,
         description: form.description,
@@ -473,7 +477,7 @@ export default function EditEventPage() {
         status: form.status,
         venue_id: Number(form.venue_id),
         category_id: Number(form.category_id),
-        banner_url: form.banner_url || null,
+        banner_url: normalizedBannerUrl,
       });
       headers["Content-Type"] = "application/json";
     }
@@ -486,6 +490,10 @@ export default function EditEventPage() {
     const payload = (await res?.json().catch(() => null)) as any;
     if (!res || !res.ok || !payload?.success) {
       const apiErrors: Record<string, string> = {};
+      if (payload?.errors && typeof payload.errors === "object")
+        Object.entries(payload.errors).forEach(([k, val]) => {
+          if (Array.isArray(val) && val[0]) apiErrors[k] = String(val[0]);
+        });
       if (payload?.details && typeof payload.details === "object")
         Object.entries(payload.details).forEach(([k, val]) => {
           if (Array.isArray(val) && val[0]) apiErrors[k] = String(val[0]);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
@@ -16,7 +17,8 @@ class ProfileController extends Controller
     {
         try {
             $user = $req->user();
-            return response()->json(['success' => true, 'data' => new UserResource($user)], 200);
+            $payload = app(AuthController::class)->authUserPayload($user);
+            return response()->json(['success' => true, 'data' => $payload], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }

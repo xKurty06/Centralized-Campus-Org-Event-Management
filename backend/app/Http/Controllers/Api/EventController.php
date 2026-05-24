@@ -44,6 +44,9 @@ class EventController extends Controller
             if ($req->filled('audience_type')) {
                 $query->where('e.audience_type', $req->audience_type);
             }
+            if ($req->filled('adviser')) {
+                $query->where('e.adviser', $req->adviser);
+            }
 
             $events = $query->latest('e.created_at')->paginate($perPage);
             return response()->json([
@@ -82,17 +85,15 @@ class EventController extends Controller
                     'ec.name as category_name',
                     'o.name as organization_name',
                     'oc.name as organization_category',
-                    DB::raw("(select count(*) from registrations r where r.event_id = e.id) as total_registered")
+                    'o.adviser as adviser',
+                    DB::raw("(select count(*) from registrations r where r.event_id = e.id) as total_registered"),
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active') as org_members_count")
                 )
                 ->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
             $eventRow = (object) array_merge((array) $event, ['is_member' => false, 'is_registered' => false]);
             if ($user) {
-                $eventRow->is_member = DB::table('org_members')
-                    ->where('org_id', $event->host_org_id)
-                    ->where('user_id', $user->id)
-                    ->where('membership_status', 'Active')
-                    ->exists();
+                $eventRow->is_member = $this->resolveEventMembership($user->id, $event->host_org_id);
                 $eventRow->is_registered = DB::table('registrations')
                     ->where('event_id', $event->id)
                     ->where('user_id', $user->id)
@@ -168,11 +169,7 @@ class EventController extends Controller
             $event = DB::table('events')->where('id', $id)->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
             if ($event->audience_type === 'Org_Members_Only') {
-                $isMember = DB::table('org_members')
-                    ->where('org_id', $event->host_org_id)
-                    ->where('user_id', $user->id)
-                    ->where('membership_status', 'Active')
-                    ->exists();
+                $isMember = $this->resolveEventMembership($user->id, $event->host_org_id);
                 if (!$isMember) {
                     return response()->json(['success' => false, 'error' => 'Only active organization members can register for this event.'], 403);
                 }
@@ -190,6 +187,20 @@ class EventController extends Controller
             ]);
             return response()->json(['success' => false, 'error' => $msg ?: 'Registration failed.'], 400);
         }
+    }
+
+    private function resolveEventMembership($userId, $orgId)
+    {
+        return DB::table('org_members')
+            ->where('org_id', $orgId)
+            ->where('user_id', $userId)
+            ->whereRaw("LOWER(TRIM(membership_status)) = 'active'")
+            ->exists()
+            || DB::table('org_officers')
+                ->where('org_id', $orgId)
+                ->where('user_id', $userId)
+                ->where('is_active', 1)
+                ->exists();
     }
 
     public function paymentUpload(PaymentUploadRequest $req, $id)
@@ -234,7 +245,7 @@ class EventController extends Controller
                     'o.code_name',
                     'o.founded_date',
                     'c.name as category_name',
-                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and m.membership_status = 'Active') as members_count"),
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active') as members_count"),
                     DB::raw("(select count(*) from events e where e.host_org_id = o.id and year(e.start_date) = year(curdate())) as events_this_year")
                 )
                 ->latest('o.created_at')
@@ -270,7 +281,7 @@ class EventController extends Controller
                     'o.code_name',
                     'o.founded_date',
                     'c.name as category_name',
-                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and m.membership_status = 'Active') as members_count"),
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active') as members_count"),
                     DB::raw("(select count(*) from events e where e.host_org_id = o.id and year(e.start_date) = year(curdate())) as events_this_year")
                 )
                 ->first();

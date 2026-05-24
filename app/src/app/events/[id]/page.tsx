@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -21,8 +21,60 @@ type EventType = 'Free' | 'Paid';
 type RegistrationStatus = 'none' | 'registered' | 'pending';
 type PaymentMethod = 'online' | 'onsite';
 type AudienceType = 'Public' | 'Org_Members_Only';
-type EventStatus = string;
+type EventStatus = 'Open' | 'Upcoming' | 'Ended';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+
+let API_ORIGIN = "";
+try {
+  API_ORIGIN = new URL(API_BASE_URL).origin;
+} catch (e) {
+  API_ORIGIN = '';
+}
+
+function normalizeBannerUrl(raw?: string | null) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+
+  // 1. If it's already an absolute URL, return it directly
+  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("//")) {
+    return s;
+  }
+
+  // 2. Safely extract the backend origin (e.g., "http://localhost:8000")
+  let backendOrigin = "http://localhost:8000"; // Safe default
+  try {
+    // This strips out "/api/v1" and leaves just the base domain/port
+    backendOrigin = new URL(API_BASE_URL).origin;
+  } catch (e) {
+    console.warn("Invalid API_BASE_URL format, using default origin.");
+  }
+
+  // 3. Ensure the path starts with a slash, then combine
+  const path = s.startsWith("/") ? s : `/${s}`;
+  return `${backendOrigin}${path}`;
+}
+
+function getEventStatus(startDate: string, endDate: string): EventStatus {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (now < start) return 'Upcoming';
+  if (now > end) return 'Ended';
+  return 'Open';
+}
+
+function getStatusBadgeColor(status: EventStatus): string {
+  switch (status) {
+    case 'Open':
+      return 'bg-green-100 text-green-700';
+    case 'Upcoming':
+      return 'bg-blue-100 text-blue-700';
+    case 'Ended':
+      return 'bg-gray-100 text-gray-600';
+  }
+}
 
 interface CampusEvent {
   id: string;
@@ -33,7 +85,6 @@ interface CampusEvent {
   host_org_id: string;
   audience_type: AudienceType;
   is_member: boolean;
-  is_registered: boolean;
   orgCategory: 'Academic' | 'Non-Academic' | 'Religious';
   date: string;
   time: string;
@@ -49,15 +100,9 @@ interface CampusEvent {
   description: string;
   paymentInstructions?: string;
   adviser: string;
+  orgMembersCount: number;
   bannerColor: string;
   banner_url?: string | null;
-}
-
-interface UserRegistrationMeta {
-  payment_status?: 'Pending' | 'Paid';
-  attendance_status?: 'Not_Arrived' | 'Checked_In';
-  payment_selection?: 'Online' | 'On-site' | 'N/A';
-  proof_status?: 'Pending_Review' | 'Approved' | 'Rejected' | null;
 }
 
 /* ----------------------------------------------------------------
@@ -70,62 +115,6 @@ function formatDate(iso: string) {
     day: 'numeric',
     year: 'numeric',
   });
-}
-
-function getEventStatus(startDate: string, endDate: string): EventStatus {
-  const now = new Date();
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  if (now < start) return 'Upcoming';
-  if (now > end) return 'Ended';
-  return 'Open';
-}
-
-function getStatusBadgeColor(status: EventStatus): string {
-  switch (status.toLowerCase()) {
-    case 'open':
-      return 'bg-green-100 text-green-700';
-    case 'upcoming':
-      return 'bg-blue-100 text-blue-700';
-    case 'ended':
-    case 'completed':
-      return 'bg-gray-100 text-gray-600';
-    case 'cancelled':
-    case 'canceled':
-      return 'bg-red-100 text-red-700';
-    case 'archived':
-      return 'bg-zinc-100 text-zinc-700';
-    case 'closed':
-      return 'bg-amber-100 text-amber-700';
-    case 'draft':
-      return 'bg-slate-100 text-slate-700';
-    default:
-      return 'bg-neutral-100 text-neutral-700';
-  }
-}
-
-function normalizeBannerUrl(raw?: string | null) {
-  if (!raw) return null;
-  const s = String(raw).trim();
-  if (!s) return null;
-  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('//')) return s;
-  try {
-    const origin = new URL(API_BASE_URL).origin;
-    const path = s.startsWith('/') ? s : `/${s}`;
-    return `${origin}${path}`;
-  } catch {
-    return s;
-  }
-}
-
-function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
-  const value = String(raw ?? '').trim();
-  if (!value) return getEventStatus(startDate, endDate);
-  return value
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
@@ -240,21 +229,14 @@ export default function EventDetailPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [userRegMeta, setUserRegMeta] = useState<UserRegistrationMeta | null>(null);
 
   const [isMember, setIsMember] = useState<boolean | null>(null);
-  const [currentUserName, setCurrentUserName] = useState('Student');
-  const checkingMembership = false;
+  const [checkingMembership, setCheckingMembership] = useState(false);
+
+  const isLoggedIn = true;
   const isOrgMembersOnly = currentEvent?.audience_type === 'Org_Members_Only';
   const accessBlocked = Boolean(isOrgMembersOnly && isMember === false);
   const accessPending = Boolean(isOrgMembersOnly && isMember === null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const name = window.localStorage.getItem('user_name') ?? window.sessionStorage.getItem('user_name');
-      if (name) setCurrentUserName(name);
-    }
-  }, []);
 
   useEffect(() => {
     if (!eventId) return;
@@ -277,27 +259,6 @@ export default function EventDetailPage() {
         return;
       }
       const e = payload.data;
-      let isRegistered = Boolean(e.is_registered);
-      if (token) {
-        const regRes = await fetch(`${API_BASE_URL}/my-events?per_page=300`, {
-          headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-        }).catch(() => null);
-        const regPayload = await regRes?.json().catch(() => null) as any;
-        if (regRes?.ok && regPayload?.success && Array.isArray(regPayload?.data)) {
-          const found = regPayload.data.find((r: any) => String(r.event_id ?? '') === String(eventId));
-          isRegistered = Boolean(found);
-          if (found) {
-            setUserRegMeta({
-              payment_status: found.payment_status,
-              attendance_status: found.attendance_status,
-              payment_selection: found.payment_selection,
-              proof_status: found.proof_status ?? null,
-            });
-          } else {
-            setUserRegMeta(null);
-          }
-        }
-      }
       const startDate = String(e.start_date ?? new Date().toISOString());
       const endDate = String(e.end_date ?? startDate);
       setCurrentEvent({
@@ -309,14 +270,13 @@ export default function EventDetailPage() {
         host_org_id: String(e.host_org_id ?? ''),
         audience_type: (e.audience_type ?? 'Public') as AudienceType,
         is_member: Boolean(e.is_member),
-        is_registered: isRegistered,
         orgCategory: (e.organization_category ?? 'Non-Academic') as 'Academic' | 'Non-Academic' | 'Religious',
-        date: startDate,
-        time: new Date(startDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        endTime: new Date(endDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        startDate,
-        endDate,
-        status: normalizeEventStatus(e.status, startDate, endDate),
+        date: String(e.start_date ?? new Date().toISOString()),
+        time: new Date(e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        endTime: new Date(e.end_date ?? e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        startDate: startDate,
+        endDate: endDate,
+        status: getEventStatus(startDate, endDate),
         venue: String(e.venue_name ?? 'TBA'),
         type: Boolean(e.is_paid) ? 'Paid' : 'Free',
         fee: Number(e.fee_amount ?? 0),
@@ -324,7 +284,8 @@ export default function EventDetailPage() {
         registered: Number(e.total_registered ?? 0),
         description: String(e.description ?? ''),
         paymentInstructions: String(e.payment_instructions ?? ''),
-        adviser: 'TBA',
+        adviser: String(e.adviser ?? 'TBA'),
+        orgMembersCount: Number(e.org_members_count ?? 0),
         bannerColor: 'bg-green-100',
         banner_url: normalizeBannerUrl(e.banner_url),
       });
@@ -344,7 +305,7 @@ export default function EventDetailPage() {
     setIsMember(currentEvent.is_member);
   }, [currentEvent, isOrgMembersOnly]);
 
-  if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500">Loading event...</div>;
+  if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500 text-center">Loading event...</div>;
 
   if (!currentEvent) {
     return (
@@ -362,7 +323,7 @@ export default function EventDetailPage() {
           </div>
           <p className="text-[18px] font-semibold text-gray-700">{error || 'Event not found'}</p>
           <Link href="/events" className="text-[14px] font-semibold text-green-700 hover:underline no-underline">
-            ? Back to Events
+            ← Back to Events
           </Link>
         </div>
       </div>
@@ -370,23 +331,12 @@ export default function EventDetailPage() {
   }
 
   const event = currentEvent;
-  const alreadyRegistered = Boolean(event.is_registered || status === 'registered');
-  const isCheckedIn = userRegMeta?.attendance_status === 'Checked_In';
-  const isPaidPending = event.type === 'Paid' && userRegMeta?.payment_status === 'Pending';
-  const isOnlinePendingProof = isPaidPending && userRegMeta?.payment_selection === 'Online' && !userRegMeta?.proof_status;
-  const isOnlineUnderReview = isPaidPending && userRegMeta?.payment_selection === 'Online' && userRegMeta?.proof_status === 'Pending_Review';
-  const isOnlineRejected = isPaidPending && userRegMeta?.payment_selection === 'Online' && userRegMeta?.proof_status === 'Rejected';
-  const isOnsitePending = isPaidPending && userRegMeta?.payment_selection === 'On-site';
 
   const spots = event.capacity - event.registered;
   const isFull = spots <= 0;
   const fillPct = Math.min((event.registered / event.capacity) * 100, 100);
 
   async function handleRegister() {
-    if (alreadyRegistered) {
-      return;
-    }
-
     if (event.type === 'Paid') {
       setShowPaymentModal(true);
       return;
@@ -436,7 +386,7 @@ export default function EventDetailPage() {
       return;
     }
     if (paymentMethod === 'online') {
-      router.push(`/events/${event.id}/payment-upload`);
+      router.push(`/events/${event.id}/payment-upload?registration=reg_mock_001`);
     } else {
       router.push(`/events/${event.id}/registration-success?method=onsite`);
     }
@@ -464,26 +414,24 @@ export default function EventDetailPage() {
         <div
           className={`w-full h-56 lg:h-64 rounded-2xl ${event.bannerColor} flex items-center justify-center mb-8 relative overflow-hidden`}
         >
-          {event.banner_url ? (
-            <>
-              <img src={event.banner_url} alt={event.title} className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-            </>
-          ) : (
-            <svg className="w-14 h-14 text-gray-300" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          )}
+          <img
+            src={event.banner_url ?? undefined}
+            alt={`${event.title} banner`}
+            className="absolute inset-0 w-full h-full object-cover opacity-80"
+          />
+          <svg className="w-14 h-14 text-gray-300" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
           <div className="absolute bottom-4 left-5 flex items-center gap-2">
             <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${CATEGORY_COLORS[event.category]}`}>
               {event.category}
             </span>
             {event.type === 'Free' ? (
-              <span className="text-[12px] font-semibold bg-green-700 text-white px-3 py-1 rounded-full">Free</span>
+              <span className="text-[12px] font-medium bg-green-700 text-white px-3 py-1 rounded-full">Free</span>
             ) : (
-              <span className="text-[12px] font-semibold bg-amber-500 text-white px-3 py-1 rounded-full">
-                ₱{event.fee}
+              <span className="text-[12px] font-medium bg-amber-500 text-white px-3 py-1 rounded-full">
+                ₱ {event.fee}
               </span>
             )}
             <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(event.status)}`}>
@@ -526,7 +474,7 @@ export default function EventDetailPage() {
                 {formatDate(event.date)}
               </DetailItem>
               <DetailItem icon={<IconClock />} label="Time">
-                {event.time} – {event.endTime}
+                {event.time} - {event.endTime}
               </DetailItem>
               <DetailItem icon={<IconPin />} label="Venue">
                 {event.venue}
@@ -535,7 +483,7 @@ export default function EventDetailPage() {
                 {event.registered} / {event.capacity} registered
               </DetailItem>
               <DetailItem icon={<IconTag />} label="Entry">
-                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">₱{event.fee}</span>}
+                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">PHP {event.fee}</span>}
               </DetailItem>
               <DetailItem icon={<IconAdviser />} label="Adviser">
                 {event.adviser}
@@ -593,6 +541,7 @@ export default function EventDetailPage() {
                     <p className="text-[14px] font-semibold text-gray-800">{event.organization}</p>
                     <p className="text-[12px] text-gray-400">{event.orgCategory} Organization</p>
                     <p className="text-[12px] text-gray-400">Adviser: {event.adviser}</p>
+                    <p className="text-[12px] text-gray-400">Members: {event.orgMembersCount}</p>
                   </div>
                 </div>
                 <Link
@@ -636,9 +585,9 @@ export default function EventDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-gray-500">Entry fee</span>
                   {event.type === 'Free' ? (
-                    <span className="text-[15px] font-bold text-green-700">Free</span>
+                    <span className="text-[12px] font-semibold text-green-700">Free</span>
                   ) : (
-                    <span className="text-[15px] font-medium text-amber-600">₱{event.fee}</span>
+                    <span className="text-[12px] font-semibold text-amber-600">₱ {event.fee}</span>
                   )}
                 </div>
 
@@ -651,7 +600,7 @@ export default function EventDetailPage() {
                       <span className="text-[10px] font-bold text-green-700">JD</span>
                     </div>
                     <div className="flex flex-col leading-tight">
-                      <span className="text-[12px] font-semibold text-gray-800">{currentUserName}</span>
+                      <span className="text-[12px] font-semibold text-gray-800">Juan dela Cruz</span>
                       <span className="text-[11px] text-gray-400">202105142 · BSCS 2-2</span>
                     </div>
                   </div>
@@ -665,16 +614,32 @@ export default function EventDetailPage() {
                         disabled
                         className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
                       >
-                        Exclusive to {event.host_org_id} members
+                        Exclusive to {event.organization} members
                       </button>
                       <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-[12px] text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                         This event is exclusive to active members of {event.organization}.
                       </div>
                     </div>
+                  ) : event.status === 'Upcoming' ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 bg-blue-100 text-blue-600 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
+                    >
+                      Coming Soon
+                    </button>
+                  ) : event.status === 'Ended' ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
+                    >
+                      Event Ended
+                    </button>
                   ) : (
                     <button
                       onClick={handleRegister}
-                      disabled={alreadyRegistered || isFull || isRegistering || checkingMembership || accessPending || event.status !== 'Open'}
+                      disabled={isFull || isRegistering || checkingMembership || accessPending}
                       className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[14px] font-semibold py-3 rounded-xl transition-colors cursor-pointer"
                     >
                       {checkingMembership || accessPending ? (
@@ -693,22 +658,6 @@ export default function EventDetailPage() {
                           </svg>
                           Registering...
                         </>
-                      ) : isCheckedIn ? (
-                        'Already Checked In'
-                      ) : isOnlineRejected ? (
-                        'Payment Rejected'
-                      ) : isOnlinePendingProof ? (
-                        'Upload Payment Proof'
-                      ) : isOnlineUnderReview ? (
-                        'Payment Under Review'
-                      ) : isOnsitePending ? (
-                        'Pending On-site Payment'
-                      ) : alreadyRegistered ? (
-                        'Already Registered'
-                      ) : event.status === 'Upcoming' ? (
-                        'Coming Soon'
-                      ) : event.status === 'Ended' ? (
-                        'Event Ended'
                       ) : isFull ? (
                         'Event is Full'
                       ) : (
@@ -727,6 +676,7 @@ export default function EventDetailPage() {
                       )}
                     </button>
                   ))}
+
 
                 {status === 'registered' && (
                   <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
@@ -868,7 +818,7 @@ export default function EventDetailPage() {
    ---------------------------------------------------------------- */
 function IconCalendar() {
   return (
-    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+    <svg className="w-4 h-4 mt-1" viewBox="0 0 20 20" fill="none">
       <path
         d="M6 2v2M14 2v2M3 8h14M5 4h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"
         stroke="currentColor"
@@ -940,4 +890,3 @@ function IconAdviser() {
     </svg>
   );
 }
-

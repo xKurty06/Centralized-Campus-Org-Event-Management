@@ -58,7 +58,7 @@ function StatCard({ value, label, color = 'text-gray-900', bg = 'bg-white border
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [memberships] = useState<OrgMembership[]>([]);
+  const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [activity] = useState<ActivitySummary>(EMPTY_ACTIVITY);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,6 +83,17 @@ export default function ProfilePage() {
           global_role: u.global_role === 'Overseer' ? 'Overseer' : u.global_role === 'Officer' ? 'Officer' : 'User',
           is_active: Boolean(u.is_active ?? true),
         });
+        if (Array.isArray(u.memberships)) {
+          setMemberships(u.memberships.map((m: any) => ({
+            org_id: String(m.org_id ?? ''),
+            org_name: m.org_name ?? 'Unknown Organization',
+            org_category: m.org_category === 'Academic' || m.org_category === 'Non-Academic' || m.org_category === 'Religious' ? m.org_category : 'Non-Academic',
+            org_status: m.org_status === 'Suspended' ? 'Suspended' : 'Active',
+            org_color: String(m.org_color ?? 'bg-gray-100 text-gray-700'),
+            position: String(m.position ?? 'Member'),
+            is_active: Boolean(m.is_active ?? false),
+          })));
+        }
       } catch (error: any) {
         if (error?.name === 'AbortError') return;
         if (error?.message === 'unauthorized') {

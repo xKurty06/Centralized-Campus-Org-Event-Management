@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    private function resolveEffectiveRole(User $user): string
+    protected function resolveEffectiveRole(User $user): string
     {
         if ($user->global_role === 'Overseer') {
             return 'Overseer';
@@ -33,7 +33,7 @@ class AuthController extends Controller
         return $hasActiveOfficerRole ? 'Officer' : 'User';
     }
 
-    private function authUserPayload(User $user): array
+    public function authUserPayload(User $user): array
     {
         $academic = DB::table('users as u')
             ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
@@ -73,7 +73,58 @@ class AuthController extends Controller
                 'code' => $academic->course_code ?? null,
                 'name' => $academic->course_name ?? null,
             ],
+            'memberships' => $this->resolveOrgMemberships($user),
         ];
+    }
+
+    private function resolveOrgMemberships(User $user): array
+    {
+        $rows = DB::table('org_members as m')
+            ->join('organizations as o', 'm.org_id', '=', 'o.id')
+            ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+            ->leftJoin('org_officers as oo', function ($join) use ($user) {
+                $join->on('oo.org_id', '=', 'm.org_id')
+                    ->where('oo.user_id', $user->id)
+                    ->where('oo.is_active', 1);
+            })
+            ->where('m.user_id', $user->id)
+            ->select(
+                'm.org_id',
+                'o.name as org_name',
+                'c.name as org_category',
+                'o.accreditation_status',
+                'm.membership_status',
+                'oo.position'
+            )
+            ->orderByDesc('m.created_at')
+            ->get();
+
+        return $rows->map(function ($row) {
+            $category = trim((string) ($row->org_category ?? 'Non-Academic'));
+            if (!in_array($category, ['Academic', 'Non-Academic', 'Religious'], true)) {
+                $category = 'Non-Academic';
+            }
+
+            return [
+                'org_id' => $row->org_id,
+                'org_name' => $row->org_name,
+                'org_category' => $category,
+                'org_status' => strtolower(trim((string) ($row->accreditation_status ?? 'Active'))) === 'suspended' ? 'Suspended' : 'Active',
+                'org_color' => $this->resolveOrgColor($category),
+                'position' => trim((string) ($row->position ?? 'Member')) ?: 'Member',
+                'is_active' => strtolower(trim((string) ($row->membership_status ?? 'Active'))) === 'active',
+            ];
+        })->toArray();
+    }
+
+    private function resolveOrgColor(string $category): string
+    {
+        return match ($category) {
+            'Academic' => 'bg-blue-100 text-blue-700',
+            'Non-Academic' => 'bg-orange-100 text-orange-700',
+            'Religious' => 'bg-purple-100 text-purple-700',
+            default => 'bg-gray-100 text-gray-700',
+        };
     }
 
     public function register(RegisterRequest $req)
