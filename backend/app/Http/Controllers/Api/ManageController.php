@@ -193,6 +193,20 @@ class ManageController extends Controller
         }
     }
 
+    public function event(Request $req, string $id)
+    {
+        try {
+            $eventAccess = $this->resolveOfficerEvent($req, $id);
+            if (!$eventAccess) {
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+            $row = $this->buildEventRow($eventAccess->event);
+            return response()->json(['success' => true, 'data' => new EventResource($row)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
     public function updateEvent(UpdateEventRequest $req, string $id)
     {
         try {

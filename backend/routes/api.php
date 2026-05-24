@@ -53,6 +53,7 @@ foreach (['', 'v1'] as $versionPrefix) {
             Route::post('/members', [ManageController::class, 'addMember']);
             Route::patch('/members/{id}', [ManageController::class, 'updateMember']);
             Route::post('/events', [ManageController::class, 'createEvent']);
+            Route::get('/events/{id}', [ManageController::class, 'event']);
             Route::put('/events/{id}', [ManageController::class, 'updateEvent']);
             Route::delete('/events/{id}', [ManageController::class, 'deleteEvent']);
             Route::get('/participants/{event_id}', [ManageController::class, 'participants']);
