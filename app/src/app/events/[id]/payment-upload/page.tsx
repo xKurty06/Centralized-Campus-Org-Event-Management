@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 
 /* ----------------------------------------------------------------
    Types
@@ -84,8 +83,6 @@ export default function PaymentUploadPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202105142', department: 'BSCS 2-2' }} />
-
       <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-10 flex flex-col gap-6">
 
         {/* ── Page header ── */}

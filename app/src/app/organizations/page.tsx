@@ -3,7 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 
 /* ----------------------------------------------------------------
    Types
@@ -274,8 +273,6 @@ export default function OrganizationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar/>
-
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>

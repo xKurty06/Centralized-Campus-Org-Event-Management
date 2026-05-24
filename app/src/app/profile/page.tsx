@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -105,10 +104,9 @@ export default function ProfilePage() {
   const yearLabel = useMemo(() => getYearLabel(user?.year_level ?? 0), [user]);
   const isOfficer = useMemo(() => user?.global_role === 'Officer' || memberships.some((m) => m.is_active && m.position !== 'Member'), [user, memberships]);
 
-  if (isLoading || !user) return <div className="min-h-screen bg-gray-50"><Navbar /><main className="w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8"><p className="text-[14px] text-gray-500">Loading profile...</p></main></div>;
+  if (isLoading || !user) return <div className="min-h-screen bg-gray-50"><main className="w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8"><p className="text-[14px] text-gray-500">Loading profile...</p></main></div>;
 
   return <div className="min-h-screen bg-gray-50 flex flex-col">
-    <Navbar role={isOfficer ? 'officer' : user.global_role === 'Overseer' ? 'admin' : 'student'} user={{ name: fullName, schoolId: user.school_id, department: `${departmentCode} ${user.year_level ? yearLabel : ''}`.trim() }} />
     <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
       <div><h1 className="text-[26px] font-bold text-gray-900 tracking-tight">My Profile</h1><p className="text-[14px] text-gray-500 mt-1">Your verified campus identity. This information is pulled from institutional records and cannot be edited here.</p></div>
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden"><div className="relative h-28" style={{ background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary-light) 100%)' }} /><div className="px-6 pb-6"><div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 -mt-11 mb-4"><div className="relative z-10 w-[84px] h-[84px] rounded-2xl border-4 border-white shadow-md flex items-center justify-center flex-shrink-0" style={{ background: 'var(--color-primary-muted)' }}><span className="text-[26px] font-bold" style={{ color: 'var(--color-primary)' }}>{initials}</span></div><div className="flex flex-wrap items-center gap-2 pb-1"><span className={`flex items-center gap-1.5 text-[11px] font-semibold border px-3 py-1 rounded-full ${user.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-500 border-red-200'}`}>{user.is_active ? 'Active' : 'Deactivated'}</span><span className="text-[11px] font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{user.global_role === 'Overseer' ? 'Overseer' : user.global_role === 'Officer' ? 'Officer' : 'Student'}</span></div></div><h2 className="text-[22px] font-bold text-gray-900 leading-tight">{fullName}</h2><p className="text-[13px] text-gray-400 mt-1">{departmentName}</p><p className="text-[13px] text-gray-400 mt-0.5">{user.course?.name ?? 'Course unavailable'} ({user.course?.code ?? 'N/A'} {user.year_level ?? '-'}-{user.section ?? '-'})</p></div></div>

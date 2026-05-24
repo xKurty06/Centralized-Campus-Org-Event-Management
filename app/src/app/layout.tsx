@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Link from "next/dist/client/link";
+import Link from "next/link"; // Fixed this import path
 import RouteAccessGuard from "@/components/RouteAccessGuard";
+import RootShell from "@/components/RootShell";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
   description:
     "The official Cavite State University platform for student organizations, campus events, and participant management.",
 };
+
 function BrandLogo({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
@@ -35,8 +37,10 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-poppins)] bg-gray-50 text-gray-900">
         <RouteAccessGuard />
-        {children}
-        <footer className="border-t border-gray-200 bg-white mt-8">
+
+        <RootShell>{children}</RootShell>
+
+        <footer className="border-t border-gray-200 bg-white mt-auto">
           <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
             <Link href="/" className="text-xs font-medium text-[var(--color-text-muted)] hover:text-green-500 transition-colors">
               &copy; Cavite State University · SALIKOP

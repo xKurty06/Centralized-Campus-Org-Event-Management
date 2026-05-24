@@ -3,7 +3,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 
 /* ----------------------------------------------------------------
    Types
@@ -280,14 +279,6 @@ export default function EventDetailPage() {
   if (!currentEvent) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Navbar
-          role="student"
-          user={{
-            name: 'Juan dela Cruz',
-            schoolId: '202105142',
-            department: 'BSCS 2-2',
-          }}
-        />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
             <svg className="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="none">
@@ -343,15 +334,6 @@ export default function EventDetailPage() {
   }
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar
-        role="student"
-        user={{
-          name: 'Juan dela Cruz',
-          schoolId: '202105142',
-          department: 'BSCS 2-2',
-        }}
-      />
-
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-3">
         <Link
           href="/events"

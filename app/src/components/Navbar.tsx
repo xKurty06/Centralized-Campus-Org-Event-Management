@@ -98,15 +98,25 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
   useEffect(() => {
     // If parent already provides authenticated identity, keep it as source of truth.
     if (role !== 'guest' || user) {
-      setSessionRole(role);
-      setSessionUser(user);
+      setSessionRole((prev) => (prev !== role ? role : prev));
+      setSessionUser((prev) => (prev?.schoolId === user?.schoolId ? prev : user));
       return;
     }
 
     // Fallback: resolve from browser storage only when props are guest/empty.
     const nextSession = resolveSessionFromStorage();
-    setSessionRole(nextSession.role);
-    setSessionUser(nextSession.user);
+
+    // 1. Only update role if it actually changed
+    setSessionRole((prev) => (prev !== nextSession.role ? nextSession.role : prev));
+
+    // 2. Only update user if the unique ID changed to prevent object-reference re-renders
+    setSessionUser((prevUser) => {
+      if (!prevUser && !nextSession.user) return prevUser;
+      if (!prevUser || !nextSession.user) return nextSession.user;
+      if (prevUser.schoolId === nextSession.user.schoolId) return prevUser;
+
+      return nextSession.user;
+    });
   }, [pathname, role, user]);
 
   const links = useMemo(() => NAV_LINKS[sessionRole], [sessionRole]);

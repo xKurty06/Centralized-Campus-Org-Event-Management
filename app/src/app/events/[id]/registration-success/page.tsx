@@ -3,7 +3,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 
 /* ----------------------------------------------------------------
    Mock — replace with API fetch
@@ -195,13 +194,11 @@ function SuccessContent() {
 }
 
 /* ----------------------------------------------------------------
-   Page Wrapper (Includes Navbar, Footer, and Suspense)
+   Page Wrapper (Includes Footer and Suspense)
    ---------------------------------------------------------------- */
 export default function RegistrationSuccessPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar role="student" user={{ name: 'Juan dela Cruz', schoolId: '202105142', department: 'BSCS 2-2' }} />
-      
       <Suspense fallback={
         <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex items-center justify-center">
           <div className="animate-pulse w-8 h-8 rounded-full border-4 border-green-200 border-t-green-700" />
