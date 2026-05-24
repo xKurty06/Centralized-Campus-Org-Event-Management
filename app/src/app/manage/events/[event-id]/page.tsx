@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -50,7 +50,7 @@ export default function EventDashboardPage() {
       const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
         headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
       }).catch(() => null);
-      const payload = await res?.json().catch(() => null) as { success?: boolean; data?: any; error?: string } | null;
+      const payload = (await res?.json().catch(() => null)) as { success?: boolean; data?: any; error?: string } | null;
       if (!res || !res.ok || !payload?.success || !payload.data) {
         setError(payload?.error ?? 'Unable to load event.');
         setLoading(false);
@@ -95,7 +95,7 @@ export default function EventDashboardPage() {
             <div className="card"><div className="card-body flex flex-col gap-2">
               <h1 className="text-[22px] font-bold text-gray-900">{event.title}</h1>
               <p className="text-sm text-gray-500">{event.description}</p>
-              <p className="text-xs text-gray-500">{fmtDate(event.start_date)} • {event.venue_name} • {event.status}</p>
+              <p className="text-xs text-gray-500">{fmtDate(event.start_date)} - {event.venue_name} - {event.status}</p>
             </div></div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <Stat label="Registered" value={`${event.total_registered}/${event.capacity}`} />

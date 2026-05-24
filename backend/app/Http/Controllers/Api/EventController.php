@@ -53,6 +53,7 @@ class EventController extends Controller
     public function show($id)
     {
         try {
+            $user = request()->user();
             $event = DB::table('events as e')
                 ->leftJoin('venues as v', 'e.venue_id', '=', 'v.id')
                 ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')
@@ -69,7 +70,16 @@ class EventController extends Controller
                 )
                 ->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
-            return response()->json(['success' => true, 'data' => new EventResource($event)], 200);
+            $data = (new EventResource($event))->toArray(request());
+            $data['is_member'] = false;
+            if ($user) {
+                $data['is_member'] = DB::table('org_members')
+                    ->where('org_id', $event->host_org_id)
+                    ->where('user_id', $user->id)
+                    ->where('membership_status', 'Active')
+                    ->exists();
+            }
+            return response()->json(['success' => true, 'data' => $data], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
@@ -123,6 +133,18 @@ class EventController extends Controller
     {
         try {
             $user = $req->user();
+            $event = DB::table('events')->where('id', $id)->first();
+            if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            if ($event->audience_type === 'Org_Members_Only') {
+                $isMember = DB::table('org_members')
+                    ->where('org_id', $event->host_org_id)
+                    ->where('user_id', $user->id)
+                    ->where('membership_status', 'Active')
+                    ->exists();
+                if (!$isMember) {
+                    return response()->json(['success' => false, 'error' => 'Only active organization members can register for this event.'], 403);
+                }
+            }
             $payment_selection = $req->input('payment_selection', 'N/A');
             $service = new RegistrationService();
             $service->register($id, $user->id, $payment_selection);

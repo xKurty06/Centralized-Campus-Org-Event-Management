@@ -21,6 +21,7 @@ type EventType = 'Free' | 'Paid';
 type RegistrationStatus = 'none' | 'registered' | 'pending';
 type PaymentMethod = 'online' | 'onsite';
 type AudienceType = 'Public' | 'Org_Members_Only';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 interface CampusEvent {
   id: string;
@@ -30,7 +31,7 @@ interface CampusEvent {
   orgId: string;
   host_org_id: string;
   audience_type: AudienceType;
-  is_member: boolean; // For mock purposes only. Replace with actual membership check.
+  is_member: boolean;
   orgCategory: 'Academic' | 'Non-Academic' | 'Religious';
   date: string;
   time: string;
@@ -248,7 +249,9 @@ export default function EventDetailPage() {
   const router = useRouter();
 
   const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const currentEvent: CampusEvent | null = eventId ? (MOCK_EVENTS[eventId] ?? null) : null;
+  const [currentEvent, setCurrentEvent] = useState<CampusEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [status, setStatus] = useState<RegistrationStatus>('none');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
@@ -264,6 +267,55 @@ export default function EventDetailPage() {
   const accessPending = Boolean(isOrgMembersOnly && isMember === null);
 
   useEffect(() => {
+    if (!eventId) return;
+    (async () => {
+      setLoading(true);
+      const token = typeof window !== 'undefined'
+        ? (window.localStorage.getItem("auth_token") ?? window.sessionStorage.getItem("auth_token"))
+        : null;
+      const res = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res || !res.ok || !payload?.success || !payload?.data) {
+        setError(payload?.error ?? 'Unable to load event.');
+        setCurrentEvent(null);
+        setLoading(false);
+        return;
+      }
+      const e = payload.data;
+      setCurrentEvent({
+        id: String(e.id ?? ''),
+        title: String(e.title ?? 'Untitled Event'),
+        category: (e.category_name ?? 'Other') as EventCategory,
+        organization: String(e.organization_name ?? 'Organization'),
+        orgId: String(e.host_org_id ?? ''),
+        host_org_id: String(e.host_org_id ?? ''),
+        audience_type: (e.audience_type ?? 'Public') as AudienceType,
+        is_member: Boolean(e.is_member),
+        orgCategory: (e.organization_category ?? 'Non-Academic') as 'Academic' | 'Non-Academic' | 'Religious',
+        date: String(e.start_date ?? new Date().toISOString()),
+        time: new Date(e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        endTime: new Date(e.end_date ?? e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        venue: String(e.venue_name ?? 'TBA'),
+        type: Boolean(e.is_paid) ? 'Paid' : 'Free',
+        fee: Number(e.fee_amount ?? 0),
+        capacity: Number(e.capacity ?? 0),
+        registered: Number(e.total_registered ?? 0),
+        description: String(e.description ?? ''),
+        paymentInstructions: String(e.payment_instructions ?? ''),
+        adviser: 'TBA',
+        bannerColor: 'bg-green-100',
+      });
+      setError('');
+      setLoading(false);
+    })();
+  }, [eventId]);
+
+  useEffect(() => {
     if (!currentEvent) return;
 
     if (!isOrgMembersOnly) {
@@ -271,10 +323,10 @@ export default function EventDetailPage() {
       return;
     }
 
-    // Temporary mock value until backend integration is ready.
-    // Change to false if you want to preview the blocked state.
     setIsMember(currentEvent.is_member);
   }, [currentEvent, isOrgMembersOnly]);
+
+  if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500">Loading event...</div>;
 
   if (!currentEvent) {
     return (
@@ -290,7 +342,7 @@ export default function EventDetailPage() {
               />
             </svg>
           </div>
-          <p className="text-[18px] font-semibold text-gray-700">Event not found</p>
+          <p className="text-[18px] font-semibold text-gray-700">{error || 'Event not found'}</p>
           <Link href="/events" className="text-[14px] font-semibold text-green-700 hover:underline no-underline">
             ← Back to Events
           </Link>
@@ -311,8 +363,24 @@ export default function EventDetailPage() {
       return;
     }
 
+    const token = window.localStorage.getItem("auth_token") ?? window.sessionStorage.getItem("auth_token");
+    if (!token) {
+      alert('Please log in first.');
+      return;
+    }
     setIsRegistering(true);
-    await new Promise((r) => setTimeout(r, 900));
+    const paymentSelection = event.type === 'Paid' ? 'On-site' : 'N/A';
+    const res = await fetch(`${API_BASE_URL}/events/${event.id}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ payment_selection: paymentSelection }),
+    }).catch(() => null);
+    const payload = await res?.json().catch(() => null) as any;
+    if (!res || !res.ok || !payload?.success) {
+      setIsRegistering(false);
+      alert(payload?.error ?? 'Registration failed.');
+      return;
+    }
     setIsRegistering(false);
     setStatus('registered');
     router.push(`/events/${event.id}/registration-success`);
@@ -323,8 +391,21 @@ export default function EventDetailPage() {
 
     setShowPaymentModal(false);
     setIsRegistering(false);
-
-
+    const token = window.localStorage.getItem("auth_token") ?? window.sessionStorage.getItem("auth_token");
+    if (!token) {
+      alert('Please log in first.');
+      return;
+    }
+    const res = await fetch(`${API_BASE_URL}/events/${event.id}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ payment_selection: paymentMethod === 'online' ? 'Online' : 'On-site' }),
+    }).catch(() => null);
+    const payload = await res?.json().catch(() => null) as any;
+    if (!res || !res.ok || !payload?.success) {
+      alert(payload?.error ?? 'Registration failed.');
+      return;
+    }
     if (paymentMethod === 'online') {
       router.push(`/events/${event.id}/payment-upload?registration=reg_mock_001`);
     } else {
