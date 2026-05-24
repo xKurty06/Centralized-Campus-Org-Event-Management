@@ -26,6 +26,7 @@ class StoreEventRequest extends FormRequest
             'capacity' => 'required|integer|min:1',
             'audience_type' => 'required|in:Open,CvSU_Only,Org_Members_Only',
             'is_paid' => 'required|boolean',
+            'price' => 'nullable|numeric|min:0',
             'payment_instructions' => 'nullable|string',
             'status' => 'required|in:Upcoming,Open,Full,Closed,Completed,Cancelled',
         ];
@@ -51,11 +52,19 @@ class StoreEventRequest extends FormRequest
         $isPaid = filter_var($this->input('is_paid'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         if ($isPaid === null) $isPaid = false;
 
+        $price = $this->input('price');
+        if (is_numeric($price)) {
+            $price = (float) $price;
+        } else {
+            $price = null;
+        }
+
         $this->merge([
             'venue_id' => is_numeric($venueId) ? (int) $venueId : $venueId,
             'category_id' => is_numeric($categoryId) ? (int) $categoryId : $categoryId,
             'status' => $status,
             'is_paid' => $isPaid,
+            'price' => $price,
         ]);
     }
 }

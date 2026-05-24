@@ -7,9 +7,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8
 
 function isPublicPath(pathname: string): boolean {
   if (pathname === '/') return true;
+  if (pathname === '/signup') return true;
   if (pathname === '/events' || pathname.startsWith('/events/')) return true;
   if (pathname === '/organizations' || pathname.startsWith('/organizations/')) return true;
-  if (pathname === '/forgot-password' || pathname === '/reset-password') return true;
+  if (pathname === '/forgot-password' || pathname === '/reset-password' || pathname === '/change-password') return true;
   if (pathname === '/privacy-policy' || pathname === '/support') return true;
   return false;
 }

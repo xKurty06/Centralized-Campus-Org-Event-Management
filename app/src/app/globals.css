@@ -339,7 +339,7 @@
   }
   .topbar {
     @apply fixed top-0 left-0 right-0 flex items-center px-6;
-    z-index: 300;
+    z-index: 30;
     height: var(--topbar-height);
     background-color: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
@@ -348,7 +348,7 @@
   .sidebar {
     @apply fixed bottom-0 left-0 flex flex-col;
     top: 0;
-    z-index: 200;
+    z-index: 20;
     width: var(--sidebar-width);
     padding-top: var(--topbar-height);
     background-color: var(--color-surface);

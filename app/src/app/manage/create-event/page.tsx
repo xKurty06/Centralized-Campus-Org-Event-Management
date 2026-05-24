@@ -224,6 +224,7 @@ export default function CreateEventPage() {
       payload.append('is_paid', form.is_paid ? '1' : '0');
       payload.append('status', 'Upcoming');
       if (form.is_paid) {
+        payload.append('price', String(Number(form.price)));
         payload.append('payment_instructions', form.payment_instructions.trim());
       }
       if (form.banner_file) {
@@ -255,6 +256,7 @@ export default function CreateEventPage() {
           first('description');
           first('capacity');
           first('payment_instructions');
+          first('price');
           first('venue_id');
           first('start_date');
           first('end_date');
@@ -498,6 +500,7 @@ export default function CreateEventPage() {
                           <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-gray-500 font-medium">₱</span>
                             <input type="number" value={form.price} onChange={(e) => update('price', e.target.value)}
+                              onWheel={(e) => e.currentTarget.blur()}
                               min={1} placeholder="e.g. 150" className={`${ic(!!errors.price)} pl-8`} />
                           </div>
                         </Field>

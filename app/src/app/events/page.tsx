@@ -300,8 +300,8 @@ function EventCard({
               Free
             </span>
           ) : (
-            <span className="text-[11px] font-semibold bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
-              PHP {event.fee ?? 0}
+            <span className="text-[11px] font-medium bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
+              ₱ {event.fee ?? 0}
             </span>
           )}
         </div>

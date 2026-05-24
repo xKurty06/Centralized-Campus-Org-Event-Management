@@ -12,6 +12,7 @@ use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class EventController extends Controller
@@ -197,16 +198,17 @@ class EventController extends Controller
             $user = $req->user();
             $file = $req->file('image');
             if (!$file) return response()->json(['success' => false, 'error' => 'No file uploaded.'], 400);
-            $path = $file->store('payment_proofs');
+            $path = $file->storePublicly('payment_proofs', 'public');
+            $publicUrl = Storage::url($path);
             $reg = DB::table('registrations')->where('event_id', $id)->where('user_id', $user->id)->first();
             if (!$reg) return response()->json(['success' => false, 'error' => 'Registration not found.'], 404);
             $proof = DB::table('payment_proofs')->where('reg_id', $reg->id)->first();
             if ($proof) {
-                DB::table('payment_proofs')->where('id', $proof->id)->update(['image_url' => $path, 'uploaded_at' => now(), 'status' => 'Pending_Review', 'updated_at' => now()]);
+                DB::table('payment_proofs')->where('id', $proof->id)->update(['image_url' => $publicUrl, 'uploaded_at' => now(), 'status' => 'Pending_Review', 'updated_at' => now()]);
                 $data = DB::table('payment_proofs')->where('id', $proof->id)->first();
             } else {
                 $proofId = (string) Str::uuid();
-                DB::table('payment_proofs')->insert(['id' => $proofId, 'reg_id' => $reg->id, 'image_url' => $path, 'uploaded_at' => now(), 'status' => 'Pending_Review', 'created_at' => now(), 'updated_at' => now()]);
+                DB::table('payment_proofs')->insert(['id' => $proofId, 'reg_id' => $reg->id, 'image_url' => $publicUrl, 'uploaded_at' => now(), 'status' => 'Pending_Review', 'created_at' => now(), 'updated_at' => now()]);
                 $data = DB::table('payment_proofs')->where('id', $proofId)->first();
             }
             return response()->json(['success' => true, 'data' => new PaymentProofResource($data)], 201);

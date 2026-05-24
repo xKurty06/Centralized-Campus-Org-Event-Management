@@ -53,6 +53,13 @@ interface CampusEvent {
   banner_url?: string | null;
 }
 
+interface UserRegistrationMeta {
+  payment_status?: 'Pending' | 'Paid';
+  attendance_status?: 'Not_Arrived' | 'Checked_In';
+  payment_selection?: 'Online' | 'On-site' | 'N/A';
+  proof_status?: 'Pending_Review' | 'Approved' | 'Rejected' | null;
+}
+
 /* ----------------------------------------------------------------
    Helpers
    ---------------------------------------------------------------- */
@@ -233,6 +240,7 @@ export default function EventDetailPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [userRegMeta, setUserRegMeta] = useState<UserRegistrationMeta | null>(null);
 
   const [isMember, setIsMember] = useState<boolean | null>(null);
   const [currentUserName, setCurrentUserName] = useState('Student');
@@ -276,7 +284,18 @@ export default function EventDetailPage() {
         }).catch(() => null);
         const regPayload = await regRes?.json().catch(() => null) as any;
         if (regRes?.ok && regPayload?.success && Array.isArray(regPayload?.data)) {
-          isRegistered = regPayload.data.some((r: any) => String(r.event_id ?? '') === String(eventId));
+          const found = regPayload.data.find((r: any) => String(r.event_id ?? '') === String(eventId));
+          isRegistered = Boolean(found);
+          if (found) {
+            setUserRegMeta({
+              payment_status: found.payment_status,
+              attendance_status: found.attendance_status,
+              payment_selection: found.payment_selection,
+              proof_status: found.proof_status ?? null,
+            });
+          } else {
+            setUserRegMeta(null);
+          }
         }
       }
       const startDate = String(e.start_date ?? new Date().toISOString());
@@ -352,6 +371,12 @@ export default function EventDetailPage() {
 
   const event = currentEvent;
   const alreadyRegistered = Boolean(event.is_registered || status === 'registered');
+  const isCheckedIn = userRegMeta?.attendance_status === 'Checked_In';
+  const isPaidPending = event.type === 'Paid' && userRegMeta?.payment_status === 'Pending';
+  const isOnlinePendingProof = isPaidPending && userRegMeta?.payment_selection === 'Online' && !userRegMeta?.proof_status;
+  const isOnlineUnderReview = isPaidPending && userRegMeta?.payment_selection === 'Online' && userRegMeta?.proof_status === 'Pending_Review';
+  const isOnlineRejected = isPaidPending && userRegMeta?.payment_selection === 'Online' && userRegMeta?.proof_status === 'Rejected';
+  const isOnsitePending = isPaidPending && userRegMeta?.payment_selection === 'On-site';
 
   const spots = event.capacity - event.registered;
   const isFull = spots <= 0;
@@ -373,7 +398,7 @@ export default function EventDetailPage() {
       return;
     }
     setIsRegistering(true);
-    const paymentSelection = event.type === 'Paid' ? 'On-site' : 'N/A';
+    const paymentSelection = 'N/A';
     const res = await fetch(`${API_BASE_URL}/events/${event.id}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
@@ -458,7 +483,7 @@ export default function EventDetailPage() {
               <span className="text-[12px] font-semibold bg-green-700 text-white px-3 py-1 rounded-full">Free</span>
             ) : (
               <span className="text-[12px] font-semibold bg-amber-500 text-white px-3 py-1 rounded-full">
-                ?{event.fee}
+                ₱{event.fee}
               </span>
             )}
             <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(event.status)}`}>
@@ -510,7 +535,7 @@ export default function EventDetailPage() {
                 {event.registered} / {event.capacity} registered
               </DetailItem>
               <DetailItem icon={<IconTag />} label="Entry">
-                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">?{event.fee}</span>}
+                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">₱{event.fee}</span>}
               </DetailItem>
               <DetailItem icon={<IconAdviser />} label="Adviser">
                 {event.adviser}
@@ -613,7 +638,7 @@ export default function EventDetailPage() {
                   {event.type === 'Free' ? (
                     <span className="text-[15px] font-bold text-green-700">Free</span>
                   ) : (
-                    <span className="text-[15px] font-bold text-amber-600">?{event.fee}</span>
+                    <span className="text-[15px] font-medium text-amber-600">₱{event.fee}</span>
                   )}
                 </div>
 
@@ -668,6 +693,16 @@ export default function EventDetailPage() {
                           </svg>
                           Registering...
                         </>
+                      ) : isCheckedIn ? (
+                        'Already Checked In'
+                      ) : isOnlineRejected ? (
+                        'Payment Rejected'
+                      ) : isOnlinePendingProof ? (
+                        'Upload Payment Proof'
+                      ) : isOnlineUnderReview ? (
+                        'Payment Under Review'
+                      ) : isOnsitePending ? (
+                        'Pending On-site Payment'
                       ) : alreadyRegistered ? (
                         'Already Registered'
                       ) : event.status === 'Upcoming' ? (
@@ -744,7 +779,7 @@ export default function EventDetailPage() {
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="text-[16px] font-bold text-gray-900">Choose payment method</h3>
-                <p className="text-[12px] text-gray-400 mt-0.5">How would you like to pay the ?{event.fee} fee?</p>
+                <p className="text-[12px] text-gray-400 mt-0.5">How would you like to pay the ₱{event.fee} fee?</p>
               </div>
               <button
                 onClick={() => setShowPaymentModal(false)}

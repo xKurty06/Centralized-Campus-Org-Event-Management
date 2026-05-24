@@ -50,6 +50,19 @@ interface EventMeta {
 
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+function normalizeAssetUrl(raw?: string | null) {
+    if (!raw) return "";
+    const s = String(raw).trim();
+    if (!s) return "";
+    if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("//")) return s;
+    try {
+        const origin = new URL(API_BASE_URL).origin;
+        const path = s.startsWith("/") ? s : `/${s}`;
+        return `${origin}${path}`;
+    } catch {
+        return s;
+    }
+}
 function fmt(iso: string) {
     return new Date(iso).toLocaleDateString("en-PH", {
         month: "short",
@@ -172,6 +185,7 @@ export default function ParticipantsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [refreshing, setRefreshing] = useState(false);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     async function loadParticipants() {
         setLoading(true);
@@ -236,7 +250,7 @@ export default function ParticipantsPage() {
                     "Unknown",
                 school_id: String(r.school_id ?? ""),
                 department: "N/A",
-                image_url: String(r.proof_image_url ?? r.image_url ?? ""),
+                image_url: normalizeAssetUrl(r.proof_image_url ?? r.image_url ?? ""),
                 uploaded_at: String(
                     r.updated_at ?? r.created_at ?? new Date().toISOString(),
                 ),
@@ -320,7 +334,7 @@ export default function ParticipantsPage() {
                     "Unknown",
                 school_id: String(r.school_id ?? ""),
                 department: "N/A",
-                image_url: String(r.proof_image_url ?? r.image_url ?? ""),
+                image_url: normalizeAssetUrl(r.proof_image_url ?? r.image_url ?? ""),
                 uploaded_at: String(
                     r.updated_at ?? r.created_at ?? new Date().toISOString(),
                 ),
@@ -628,6 +642,32 @@ export default function ParticipantsPage() {
                                                 </div>
                                             </div>
                                         </div>
+                                        <div className="px-3 pt-3">
+                                            {p.image_url ? (
+                                                <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                                    <img
+                                                        src={p.image_url}
+                                                        alt={`Payment proof of ${p.full_name}`}
+                                                        className="w-full h-44 object-cover"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPreviewImageUrl(p.image_url)}
+                                                        className="absolute top-2 right-2 w-7 h-7 rounded-md bg-white/90 border border-gray-200 text-gray-700 hover:bg-white flex items-center justify-center"
+                                                        aria-label="Maximize proof image"
+                                                        title="Maximize"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+                                                            <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="h-44 rounded-xl border border-dashed border-gray-200 bg-gray-50 text-xs text-gray-400 flex items-center justify-center">
+                                                    No proof image
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="p-3 bg-white flex flex-col gap-2">
                                             <div className="grid grid-cols-2 gap-2 mt-1">
                                                 <button
@@ -729,6 +769,31 @@ export default function ParticipantsPage() {
                     </>
                 )}
             </div>
+            {previewImageUrl && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"
+                    onClick={() => setPreviewImageUrl(null)}
+                >
+                    <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={() => setPreviewImageUrl(null)}
+                            className="absolute -top-10 right-0 w-8 h-8 rounded-full bg-white text-gray-700 flex items-center justify-center"
+                            aria-label="Close preview"
+                            title="Close"
+                        >
+                            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                        <img
+                            src={previewImageUrl}
+                            alt="Payment proof preview"
+                            className="w-full max-h-[85vh] object-contain rounded-xl bg-black"
+                        />
+                    </div>
+                </div>
+            )}
         </ManageShell>
     );
 }

@@ -17,6 +17,8 @@ class UpdateOrgProfileRequest extends FormRequest
             'name' => 'nullable|string|max:200',
             'description' => 'nullable|string',
             'logo_url' => 'nullable|url|max:1000',
+            'logo_file' => 'nullable|image|max:5120',
+            'remove_logo' => 'nullable|boolean',
             'adviser' => 'nullable|string|max:150',
         ];
     }

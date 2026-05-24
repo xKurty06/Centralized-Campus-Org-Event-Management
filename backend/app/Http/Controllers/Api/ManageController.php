@@ -156,6 +156,12 @@ class ManageController extends Controller
             }
 
             $data = $req->only(['name', 'description', 'logo_url', 'adviser']);
+            if ($req->hasFile('logo_file')) {
+                $path = $req->file('logo_file')->storePublicly('organization_logos', 'public');
+                $data['logo_url'] = Storage::url($path);
+            } elseif ($req->boolean('remove_logo')) {
+                $data['logo_url'] = null;
+            }
             DB::table('organizations')
                 ->where('id', $orgRow->org_id)
                 ->update(array_merge($data, ['updated_at' => now()]));
@@ -184,6 +190,13 @@ class ManageController extends Controller
                 $bannerUrl = Storage::url($path);
             }
 
+            $feeAmount = $req->input('price');
+            if (is_numeric($feeAmount)) {
+                $feeAmount = (float) $feeAmount;
+            } else {
+                $feeAmount = $req->input('is_paid') ? 0.0 : null;
+            }
+
             $payload = array_merge(
                 $req->only([
                     'venue_id', 'category_id', 'title', 'description',
@@ -194,6 +207,7 @@ class ManageController extends Controller
                     'id'           => $id,
                     'host_org_id'  => $orgRow->org_id,
                     'banner_url'   => $bannerUrl,
+                    'fee_amount'   => $feeAmount,
                     'created_at'   => now(),
                     'updated_at'   => now(),
                 ]
@@ -251,6 +265,12 @@ class ManageController extends Controller
                 'is_paid', 'payment_instructions', 'status',
             ]);
             $data['banner_url'] = $bannerUrl;
+
+            if ($req->filled('price')) {
+                $data['fee_amount'] = (float) $req->input('price');
+            } elseif ($req->has('is_paid') && !$req->boolean('is_paid')) {
+                $data['fee_amount'] = 0.0;
+            }
 
             DB::table('events')
                 ->where('id', $id)
@@ -441,13 +461,30 @@ class ManageController extends Controller
 
             $reg = DB::table('registrations as r')
                 ->join('users as u', 'r.user_id', '=', 'u.id')
+                ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
+                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
+                ->leftJoin('org_members as om', function ($join) use ($eventAccess) {
+                    $join->on('om.user_id', '=', 'u.id')
+                        ->where('om.org_id', '=', $eventAccess->event->host_org_id)
+                        ->whereRaw("LOWER(TRIM(om.membership_status)) = 'active'");
+                })
                 ->where('r.event_id', $event_id)
                 ->where(function ($q) use ($query) {
                     $q->where('u.school_id', $query)
                       ->orWhere('u.first_name', 'like', "%$query%")
                       ->orWhere('u.last_name', 'like', "%$query%");
                 })
-                ->select('r.*', 'u.school_id', 'u.first_name', 'u.last_name')
+                ->select(
+                    'r.*',
+                    'u.school_id',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.year_level',
+                    'u.section',
+                    'c.course_code',
+                    'd.code as dept_code',
+                    DB::raw('CASE WHEN om.id IS NULL THEN 0 ELSE 1 END as member_status')
+                )
                 ->first();
 
             if (!$reg) {

@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -48,14 +49,19 @@ class AdminController extends Controller
         try {
             $data = $req->validated();
             $id = (string) \Illuminate\Support\Str::uuid();
+            $logoUrl = $data['logo_url'] ?? null;
+            if ($req->hasFile('logo_file')) {
+                $path = $req->file('logo_file')->storePublicly('organization_logos', 'public');
+                $logoUrl = Storage::url($path);
+            }
 
-            DB::transaction(function () use ($req, $data, $id) {
+            DB::transaction(function () use ($req, $data, $id, $logoUrl) {
                 DB::table('organizations')->insert([
                     'id' => $id,
                     'name' => $data['name'],
                     'code_name' => $data['code_name'],
                     'description' => $data['description'] ?? null,
-                    'logo_url' => $data['logo_url'] ?? null,
+                    'logo_url' => $logoUrl,
                     'adviser' => $data['adviser'] ?? null,
                     'founded_date' => $data['founded_date'] ?? null,
                     'category_id' => $data['category_id'],
@@ -311,6 +317,10 @@ class AdminController extends Controller
             Gate::authorize('update', \App\Models\Organization::findOrFail($id));
 
             $data = $req->only(['name', 'description', 'logo_url', 'adviser', 'category_id']);
+            if ($req->hasFile('logo_file')) {
+                $path = $req->file('logo_file')->storePublicly('organization_logos', 'public');
+                $data['logo_url'] = Storage::url($path);
+            }
 
             DB::table('organizations')
                 ->where('id', $id)

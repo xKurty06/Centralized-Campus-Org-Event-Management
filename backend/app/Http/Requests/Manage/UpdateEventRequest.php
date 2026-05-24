@@ -25,6 +25,7 @@ class UpdateEventRequest extends FormRequest
             'capacity' => 'nullable|integer|min:1',
             'audience_type' => 'nullable|in:Open,CvSU_Only,Org_Members_Only',
             'is_paid' => 'nullable|boolean',
+            'price' => 'nullable|numeric|min:0',
             'payment_instructions' => 'nullable|string',
             'status' => 'nullable|in:Upcoming,Open,Full,Closed,Completed,Cancelled',
         ];

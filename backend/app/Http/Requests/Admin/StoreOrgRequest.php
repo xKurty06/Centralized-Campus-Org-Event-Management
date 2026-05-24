@@ -18,6 +18,7 @@ class StoreOrgRequest extends FormRequest
             'code_name' => 'required|string|max:50|unique:organizations,code_name',
             'description' => 'nullable|string',
             'logo_url' => 'nullable|url|max:1000',
+            'logo_file' => 'nullable|image|max:5120',
             'adviser' => 'nullable|string|max:150',
             'founded_date' => 'nullable|date',
             'category_id' => 'required|integer|exists:org_categories,id',

@@ -142,7 +142,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+    <nav className="sticky top-0 z-30 w-full bg-white border-b border-gray-200 shadow-sm">
 
       {/* ── Main bar ── */}
       <div className="mx-auto max-w-[1280px] px-6 lg:px-12 h-[64px] grid grid-cols-[1fr_auto_1fr] items-center gap-6 relative">
@@ -207,8 +207,8 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
 
               {profileOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 top-[calc(100%+8px)] w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="fixed inset-0 z-20" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-40 overflow-hidden">
                     <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
                       <p className="text-[13px] font-semibold text-gray-800 truncate">{sessionUser.name}</p>
                       <p className="text-[11px] text-gray-400 truncate">{sessionUser.schoolId}</p>

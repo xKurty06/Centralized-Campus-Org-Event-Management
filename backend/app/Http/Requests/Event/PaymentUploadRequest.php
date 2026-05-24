@@ -14,7 +14,17 @@ class PaymentUploadRequest extends FormRequest
     public function rules()
     {
         return [
-            'image' => 'required|image|max:10240',
+            'image' => 'required|file|mimes:jpg,jpeg,png,webp,heic,heif|max:5120',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'image.required' => 'Please upload a payment screenshot.',
+            'image.file' => 'Uploaded payment proof is invalid.',
+            'image.mimes' => 'Only JPG, JPEG, PNG, WEBP, HEIC, and HEIF images are allowed.',
+            'image.max' => 'Image must be 5MB or smaller.',
         ];
     }
 }

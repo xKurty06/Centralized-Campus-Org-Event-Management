@@ -20,6 +20,8 @@ interface Student {
   schoolId: string;
   firstName: string;
   lastName: string;
+  courseCode: string;
+  section: number;
   department: string;
   yearLevel: number;
   avatarUrl?: string;
@@ -84,7 +86,42 @@ const EMPTY_EVENT: EventInfo = {
    HELPERS
 ──────────────────────────────────────────────────────────────── */
 function getInitials(first: string, last: string) {
-  return `${first[0]}${last[0]}`.toUpperCase();
+  return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+}
+
+/* Shared avatar — shows profile pic if available, initials fallback */
+function StudentAvatar({
+  student,
+  size = 'md',
+  borderColor = 'border-gray-300',
+  fallbackBg  = 'bg-gray-200',
+  fallbackText = 'text-gray-700',
+}: {
+  student: Student;
+  size?: 'md' | 'lg';
+  borderColor?: string;
+  fallbackBg?: string;
+  fallbackText?: string;
+}) {
+  const [imgError, setImgError] = useState(false);
+  const dim = size === 'lg' ? 'w-16 h-16 text-xl' : 'w-14 h-14 text-lg';
+
+  return (
+    <div className={`${dim} rounded-full border-2 ${borderColor} flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+      {student.avatarUrl && !imgError ? (
+        <img
+          src={student.avatarUrl}
+          alt={`${student.firstName} ${student.lastName}`}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span className={`font-bold ${fallbackText} ${fallbackBg} w-full h-full flex items-center justify-center`}>
+          {getInitials(student.firstName, student.lastName)}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function formatTime(iso: string) {
@@ -193,40 +230,35 @@ function GreenCard({
       {/* Body */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-green-200 border-2 border-green-300 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-green-700">
-              {getInitials(student.firstName, student.lastName)}
-            </span>
-          </div>
-
+          <StudentAvatar
+            student={student}
+            borderColor="border-green-300"
+            fallbackBg="bg-green-200"
+            fallbackText="text-green-700"
+          />
           <div className="flex-1 min-w-0">
             <p className="text-[18px] font-bold text-gray-900 leading-tight">
               {student.firstName} {student.lastName}
             </p>
-
             <div className="mt-1">
               {student.is_member ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Member
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Member
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                  Non-Member
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />Non-Member
                 </span>
               )}
             </div>
-
             <p className="text-[13px] text-gray-500 mt-1">
               <span className="font-mono font-semibold text-gray-700">{student.schoolId}</span>
-              {' · '}Year {student.yearLevel}
+              {' · '}{student.courseCode} {student.yearLevel}-{student.section}
             </p>
             <p className="text-[12px] text-gray-500 mt-0.5 truncate">{student.department}</p>
           </div>
         </div>
 
-        {/* Meta row */}
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="badge badge-green">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
@@ -234,10 +266,9 @@ function GreenCard({
             </svg>
             {reg.paymentSelection === 'N/A' ? 'Free Event' : reg.paymentSelection + ' Payment'}
           </span>
-          <span className="badge badge-gray">Reg: {formatDate(reg.regDate)}</span>
+          <span className="badge badge-gray">Registered: {formatDate(reg.regDate)}</span>
         </div>
 
-        {/* Action */}
         <div className="mt-5">
           {alreadyIn ? (
             <div className="flex items-center gap-2 text-[13px] font-semibold text-green-700 bg-green-100 rounded-xl px-4 py-3">
@@ -280,12 +311,16 @@ function GreenCard({
 /* — Result Card: Red (Pending Payment) — */
 function RedCard({
   reg,
-  onConfirmPayment,
+  onConfirmPaymentOnly,
+  onConfirmPaymentAndCheckIn,
   loading,
+  loadingAction,
 }: {
   reg: Registration;
-  onConfirmPayment: () => void;
+  onConfirmPaymentOnly: () => void;
+  onConfirmPaymentAndCheckIn: () => void;
   loading: boolean;
+  loadingAction: 'payment_only' | 'payment_checkin' | null;
 }) {
   const { student } = reg;
 
@@ -307,40 +342,35 @@ function RedCard({
       {/* Body */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-red-200 border-2 border-red-300 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-red-700">
-              {getInitials(student.firstName, student.lastName)}
-            </span>
-          </div>
-
+          <StudentAvatar
+            student={student}
+            borderColor="border-red-300"
+            fallbackBg="bg-red-200"
+            fallbackText="text-red-700"
+          />
           <div className="flex-1 min-w-0">
             <p className="text-[18px] font-bold text-gray-900 leading-tight">
               {student.firstName} {student.lastName}
             </p>
-
             <div className="mt-1">
               {student.is_member ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Member
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Member
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                  Non-Member
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />Non-Member
                 </span>
               )}
             </div>
-
             <p className="text-[13px] text-gray-500 mt-1">
               <span className="font-mono font-semibold text-gray-700">{student.schoolId}</span>
-              {' · '}Year {student.yearLevel}
+              {' · '}{student.courseCode} {student.yearLevel}-{student.section}
             </p>
             <p className="text-[12px] text-gray-500 mt-0.5 truncate">{student.department}</p>
           </div>
         </div>
 
-        {/* Meta row */}
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="badge badge-red">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
@@ -348,7 +378,7 @@ function RedCard({
             </svg>
             {reg.paymentSelection} Payment
           </span>
-          <span className="badge badge-gray">Reg: {formatDate(reg.regDate)}</span>
+          <span className="badge badge-gray">Registered: {formatDate(reg.regDate)}</span>
         </div>
 
         {/* Warning note */}
@@ -356,34 +386,71 @@ function RedCard({
           <svg className="w-4 h-4 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Collect cash payment before allowing entry. Use the button below to confirm receipt.
+          Collect cash payment before allowing entry. Choose an action below.
         </div>
 
-        {/* Action */}
-        <div className="mt-5">
+        {/* ── Two action buttons ── */}
+        <div className="mt-5 flex flex-col gap-2.5">
+
+          {/* Primary: Confirm payment AND check in */}
           <button
-            onClick={onConfirmPayment}
+            onClick={onConfirmPaymentAndCheckIn}
             disabled={loading}
             className="btn btn-lg btn-full"
             style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
           >
-            {loading ? (
+            {loadingAction === 'payment_checkin' ? (
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Confirming…
+                Confirming & checking in…
               </span>
             ) : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                   <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Confirm Cash Payment & Check In
+                Confirm Payment &amp; Check In
               </>
             )}
           </button>
+
+          {/* Secondary: Confirm payment only */}
+          <button
+            onClick={onConfirmPaymentOnly}
+            disabled={loading}
+            className="btn btn-lg btn-full"
+            style={{
+              backgroundColor: 'transparent',
+              color: 'var(--color-error)',
+              border: '1.5px solid var(--color-error)',
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            {loadingAction === 'payment_only' ? (
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Confirming payment…
+              </span>
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 12l2 2 4-4M3 10h18M3 6h18M3 14h18M3 18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Confirm Payment Only
+              </>
+            )}
+          </button>
+
+          {/* Hint */}
+          <p className="text-center text-[11px] text-gray-400 mt-0.5">
+            Use <span className="font-semibold text-gray-500">Confirm Only</span> if the student will enter later.
+          </p>
         </div>
       </div>
     </div>
@@ -405,7 +472,6 @@ function OfflineQueuePanel({
 
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-amber-100 border-b border-amber-200">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4 text-amber-700" viewBox="0 0 24 24" fill="none">
@@ -423,8 +489,6 @@ function OfflineQueuePanel({
           {isSyncing ? 'Syncing…' : 'Sync Now'}
         </button>
       </div>
-
-      {/* Items */}
       <div className="divide-y divide-amber-100">
         {queue.map((item) => (
           <div key={item.id} className="flex items-center justify-between px-4 py-2.5">
@@ -455,20 +519,17 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
       <div className="divide-y divide-[var(--color-border)]">
         {activities.map((a) => (
           <div key={a.id} className="flex items-center gap-3 px-5 py-3">
-            {/* Icon */}
             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-[11px] font-bold
               ${a.action === 'Check_In' ? 'bg-green-500' : 'bg-blue-500'}`}
             >
               {a.action === 'Check_In' ? '✓' : '₱'}
             </div>
-            {/* Info */}
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-[var(--color-text)] truncate">{a.studentName}</p>
               <p className="text-[11px] text-[var(--color-text-muted)]">
                 {a.action === 'Check_In' ? 'Checked in' : 'Payment confirmed'} · <span className="font-mono">{a.schoolId}</span>
               </p>
             </div>
-            {/* Time */}
             <span className="text-[11px] font-mono text-[var(--color-text-muted)] flex-shrink-0">{a.timestamp}</span>
           </div>
         ))}
@@ -484,20 +545,22 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
    MAIN PAGE
 ──────────────────────────────────────────────────────────────── */
 export default function EntrancePanelPage() {
-  const params = useParams();
+  const params  = useParams();
   const eventId = Array.isArray(params['event-id']) ? params['event-id'][0] : params['event-id'];
-  /* — State — */
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [registration, setRegistration] = useState<Registration | null | 'not_found'>(null);
-  const [isOnline, setIsOnline] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [queue, setQueue] = useState<QueuedAction[]>([]);
+
+  const [searchInput,    setSearchInput]    = useState('');
+  const [searchQuery,    setSearchQuery]    = useState('');
+  const [registration,   setRegistration]   = useState<Registration | null | 'not_found'>(null);
+  const [isOnline,       setIsOnline]       = useState(true);
+  const [isSyncing,      setIsSyncing]      = useState(false);
+  const [actionLoading,  setActionLoading]  = useState(false);
+  // Tracks which specific button is in-flight so each spinner is independent
+  const [loadingAction,  setLoadingAction]  = useState<'payment_only' | 'payment_checkin' | null>(null);
+  const [toast,          setToast]          = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [queue,          setQueue]          = useState<QueuedAction[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [event, setEvent] = useState<EventInfo>(EMPTY_EVENT);
-  const [currentTime, setCurrentTime] = useState('');
+  const [event,          setEvent]          = useState<EventInfo>(EMPTY_EVENT);
+  const [currentTime,    setCurrentTime]    = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -509,21 +572,19 @@ export default function EntrancePanelPage() {
     return () => clearInterval(id);
   }, []);
 
-  /* — Online/Offline listener — */
+  /* — Online/Offline — */
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    const up   = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener('online',  up);
+    window.addEventListener('offline', down);
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down); };
   }, []);
 
-  /* — Auto-focus input on mount — */
+  /* — Auto-focus — */
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  /* — Load event info — */
   useEffect(() => {
     if (!eventId) return;
     (async () => {
@@ -532,21 +593,21 @@ export default function EntrancePanelPage() {
         headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
-      if (!res || !res.ok || !payload?.success || !payload?.data) {
+      if (!res?.ok || !payload?.success || !payload?.data) {
         setToast({ msg: payload?.error ?? 'Unable to load event.', type: 'error' });
         return;
       }
       const e = payload.data;
       setEvent({
-        id: String(e.id ?? eventId),
-        title: String(e.title ?? 'Event'),
-        venue: String(e.venue_name ?? 'TBA'),
-        startDate: String(e.start_date ?? new Date().toISOString()),
-        isPaid: Boolean(e.is_paid),
-        capacity: Number(e.capacity ?? 0),
-        checkedIn: Number(e.total_checked_in ?? 0),
+        id:              String(e.id ?? eventId),
+        title:           String(e.title ?? 'Event'),
+        venue:           String(e.venue_name ?? 'TBA'),
+        startDate:       String(e.start_date ?? new Date().toISOString()),
+        isPaid:          Boolean(e.is_paid),
+        capacity:        Number(e.capacity ?? 0),
+        checkedIn:       Number(e.total_checked_in ?? 0),
         totalRegistered: Number(e.total_registered ?? 0),
-        confirmedPaid: Number(e.total_paid ?? 0),
+        confirmedPaid:   Number(e.total_paid ?? 0),
       });
     })();
   }, [eventId]);
@@ -571,7 +632,7 @@ export default function EntrancePanelPage() {
         body: JSON.stringify({ query: q }),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
-      if (!res || !res.ok || !payload?.success || !payload?.data) {
+      if (!res?.ok || !payload?.success || !payload?.data) {
         setRegistration('not_found');
         return;
       }
@@ -579,19 +640,24 @@ export default function EntrancePanelPage() {
       setRegistration({
         id: String(r.id ?? ''),
         student: {
-          id: String(r.user_id ?? ''),
-          schoolId: String(r.school_id ?? q),
-          firstName: String(r.first_name ?? ''),
-          lastName: String(r.last_name ?? ''),
+          id:         String(r.user_id ?? ''),
+          schoolId:   String(r.school_id ?? q),
+          firstName:  String(r.first_name ?? ''),
+          lastName:   String(r.last_name ?? ''),
+          courseCode: String(r.course_code ?? 'N/A'),
+          section:    Number(r.section ?? 0),
           department: String(r.dept_code ?? 'N/A'),
-          yearLevel: Number(r.year_level ?? 0),
-          is_member: false,
+          yearLevel:  Number(r.year_level ?? 0),
+          avatarUrl:  r.avatar_url ?? r.profile_photo_url ?? r.photo_url ?? undefined,
+          is_member:
+            String(r.member_status ?? '0') === '1' ||
+            String(r.member_status ?? '').toLowerCase() === 'active',
         },
-        paymentStatus: (r.payment_status ?? 'Pending') as PaymentStatus,
+        paymentStatus:    (r.payment_status ?? 'Pending') as PaymentStatus,
         paymentSelection: (r.payment_selection ?? 'N/A') as 'Online' | 'On-site' | 'N/A',
         attendanceStatus: (r.attendance_status ?? 'Not_Arrived') as AttendanceStatus,
-        checkInAt: r.check_in_at ?? null,
-        regDate: String(r.reg_date ?? new Date().toISOString()),
+        checkInAt:  r.check_in_at ?? null,
+        regDate:    String(r.reg_date ?? new Date().toISOString()),
       });
     })();
   }, [searchInput, eventId]);
@@ -604,10 +670,11 @@ export default function EntrancePanelPage() {
     setSearchInput('');
     setSearchQuery('');
     setRegistration(null);
+    setLoadingAction(null);
     inputRef.current?.focus();
   };
 
-  /* — Check In — */
+  /* — Check In (green card — payment already confirmed) — */
   const handleCheckIn = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     setActionLoading(true);
@@ -618,123 +685,133 @@ export default function EntrancePanelPage() {
         headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
-      if (!res || !res.ok || !payload?.success) throw new Error(payload?.error ?? 'Check-in failed.');
+      if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Check-in failed.');
+
       const newActivity: RecentActivity = {
-        id: Date.now().toString(),
+        id:          Date.now().toString(),
         studentName: `${registration.student.firstName} ${registration.student.lastName}`,
-        schoolId: registration.student.schoolId,
-        action: 'Check_In',
-        timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+        schoolId:    registration.student.schoolId,
+        action:      'Check_In',
+        timestamp:   new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
       };
-
-      setRegistration({
-        ...registration,
-        attendanceStatus: 'Checked_In',
-        checkInAt: new Date().toISOString(),
-      });
+      setRegistration({ ...registration, attendanceStatus: 'Checked_In', checkInAt: new Date().toISOString() });
       setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
-      setToast({ msg: `${registration.student.firstName} ${registration.student.lastName} checked in successfully.`, type: 'success' });
-      setActionLoading(false);
       setEvent((prev) => ({ ...prev, checkedIn: prev.checkedIn + 1 }));
+      setToast({ msg: `${registration.student.firstName} ${registration.student.lastName} checked in successfully.`, type: 'success' });
 
-      /* If offline, queue the action */
       if (!isOnline) {
-        setQueue((prev) => [
-          {
-            id: Date.now().toString(),
-            regId: registration.id,
-            actionType: 'Check_In',
-            deviceTimestamp: new Date().toISOString(),
-            syncStatus: 'Pending',
-            studentName: `${registration.student.firstName} ${registration.student.lastName}`,
-          },
-          ...prev,
-        ]);
+        setQueue((prev) => [{
+          id: Date.now().toString(), regId: registration.id, actionType: 'Check_In',
+          deviceTimestamp: new Date().toISOString(), syncStatus: 'Pending',
+          studentName: `${registration.student.firstName} ${registration.student.lastName}`,
+        }, ...prev]);
       }
     })().catch((e) => {
-      setActionLoading(false);
       setToast({ msg: e?.message ?? 'Check-in failed.', type: 'error' });
-    });
+    }).finally(() => setActionLoading(false));
   }, [registration, isOnline, eventId]);
 
-  /* — Confirm Payment & Check In — */
-  const handleConfirmPayment = useCallback(() => {
+  /* — Confirm Payment ONLY (no check-in) — */
+  const handleConfirmPaymentOnly = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     setActionLoading(true);
+    setLoadingAction('payment_only');
     (async () => {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
-      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/confirm-payment/${registration.id}`, {
+      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/confirm-payment/${registration.id}?checkin=false`, {
         method: 'PUT',
         headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
-      if (!res || !res.ok || !payload?.success) throw new Error(payload?.error ?? 'Confirm payment failed.');
-      const newActivity: RecentActivity = {
-        id: Date.now().toString(),
-        studentName: `${registration.student.firstName} ${registration.student.lastName}`,
-        schoolId: registration.student.schoolId,
-        action: 'Verify_Payment',
-        timestamp: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
-      };
+      if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Confirm payment failed.');
 
-      setRegistration({
-        ...registration,
-        paymentStatus: 'Paid',
-        attendanceStatus: 'Checked_In',
-        checkInAt: new Date().toISOString(),
-      });
+      const newActivity: RecentActivity = {
+        id:          Date.now().toString(),
+        studentName: `${registration.student.firstName} ${registration.student.lastName}`,
+        schoolId:    registration.student.schoolId,
+        action:      'Verify_Payment',
+        timestamp:   new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+      };
+      // Payment confirmed but attendance stays Not_Arrived — card flips to green
+      setRegistration({ ...registration, paymentStatus: 'Paid' });
       setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
-      setToast({ msg: `Payment confirmed and ${registration.student.firstName} ${registration.student.lastName} checked in.`, type: 'success' });
-      setActionLoading(false);
-      setEvent((prev) => ({ ...prev, confirmedPaid: prev.confirmedPaid + 1, checkedIn: prev.checkedIn + 1 }));
+      setEvent((prev) => ({ ...prev, confirmedPaid: prev.confirmedPaid + 1 }));
+      setToast({ msg: `Payment confirmed for ${registration.student.firstName} ${registration.student.lastName}. They can check in when ready.`, type: 'success' });
 
       if (!isOnline) {
-        setQueue((prev) => [
-          {
-            id: Date.now().toString(),
-            regId: registration.id,
-            actionType: 'Verify_Payment',
-            deviceTimestamp: new Date().toISOString(),
-            syncStatus: 'Pending',
-            studentName: `${registration.student.firstName} ${registration.student.lastName}`,
-          },
-          ...prev,
-        ]);
+        setQueue((prev) => [{
+          id: Date.now().toString(), regId: registration.id, actionType: 'Verify_Payment',
+          deviceTimestamp: new Date().toISOString(), syncStatus: 'Pending',
+          studentName: `${registration.student.firstName} ${registration.student.lastName}`,
+        }, ...prev]);
       }
     })().catch((e) => {
-      setActionLoading(false);
       setToast({ msg: e?.message ?? 'Confirm payment failed.', type: 'error' });
-    });
+    }).finally(() => { setActionLoading(false); setLoadingAction(null); });
+  }, [registration, isOnline, eventId]);
+
+  /* — Confirm Payment AND Check In — */
+  const handleConfirmPaymentAndCheckIn = useCallback(() => {
+    if (!registration || registration === 'not_found') return;
+    setActionLoading(true);
+    setLoadingAction('payment_checkin');
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/confirm-payment/${registration.id}?checkin=true`, {
+        method: 'PUT',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Confirm payment failed.');
+
+      const newActivity: RecentActivity = {
+        id:          Date.now().toString(),
+        studentName: `${registration.student.firstName} ${registration.student.lastName}`,
+        schoolId:    registration.student.schoolId,
+        action:      'Verify_Payment',
+        timestamp:   new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setRegistration({ ...registration, paymentStatus: 'Paid', attendanceStatus: 'Checked_In', checkInAt: new Date().toISOString() });
+      setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
+      setEvent((prev) => ({ ...prev, confirmedPaid: prev.confirmedPaid + 1, checkedIn: prev.checkedIn + 1 }));
+      setToast({ msg: `Payment confirmed and ${registration.student.firstName} ${registration.student.lastName} checked in.`, type: 'success' });
+
+      if (!isOnline) {
+        setQueue((prev) => [{
+          id: Date.now().toString(), regId: registration.id, actionType: 'Verify_Payment',
+          deviceTimestamp: new Date().toISOString(), syncStatus: 'Pending',
+          studentName: `${registration.student.firstName} ${registration.student.lastName}`,
+        }, ...prev]);
+      }
+    })().catch((e) => {
+      setToast({ msg: e?.message ?? 'Confirm payment failed.', type: 'error' });
+    }).finally(() => { setActionLoading(false); setLoadingAction(null); });
   }, [registration, isOnline, eventId]);
 
   /* — Sync queue — */
   const handleSync = () => {
     setIsSyncing(true);
     (async () => {
-      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      const token   = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
       const pending = queue.filter((q) => q.syncStatus === 'Pending');
-      if (!pending.length) {
-        setIsSyncing(false);
-        return;
-      }
-      const items = pending.map((q) => ({ id: q.id, reg_id: q.regId, action_type: q.actionType, device_timestamp: q.deviceTimestamp }));
+      if (!pending.length) { setIsSyncing(false); return; }
+      const items = pending.map((q) => ({
+        id: q.id, reg_id: q.regId, action_type: q.actionType, device_timestamp: q.deviceTimestamp,
+      }));
       const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ items }),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
-      if (!res || !res.ok || !payload?.success) throw new Error(payload?.error ?? 'Sync failed.');
+      if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Sync failed.');
       setQueue((prev) => prev.map((q) => ({ ...q, syncStatus: 'Synced' as SyncStatus })));
       setToast({ msg: 'Offline actions synced successfully.', type: 'success' });
-      setIsSyncing(false);
     })().catch((e) => {
-      setIsSyncing(false);
       setToast({ msg: e?.message ?? 'Sync failed.', type: 'error' });
-    });
+    }).finally(() => setIsSyncing(false));
   };
 
-  /* — Derived — */
   const checkinPct = Math.round((event.checkedIn / event.totalRegistered) * 100) || 0;
 
   /* ── Render ── */
@@ -743,83 +820,50 @@ export default function EntrancePanelPage() {
       <ManageShell>
         <div className="flex flex-col gap-6 animate-fade-in">
 
-          {/* ── Page Header ── */}
+          {/* ── Header ── */}
           <div className="flex flex-col gap-3">
-            {/* Responsive Breadcrumbs Navigation Trail */}
             <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
-              <Link
-                href="/manage/events"
-                className="hover:text-[var(--color-primary)] transition-colors no-underline"
-              >
-                Events
-              </Link>
-              <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
-                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <Link
-                href={`/manage/events/${event.id}`}
-                className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
-              >
-                {event.title}
-              </Link>
-              <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none">
-                <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <Link href="/manage/events" className="hover:text-[var(--color-primary)] transition-colors no-underline">Events</Link>
+              <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <Link href={`/manage/events/${event.id}`} className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs">{event.title}</Link>
+              <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               <span className="text-[var(--color-text)] font-semibold">Entrance Panel</span>
             </nav>
-
-            <div className="flex-1">
-              {/* Combined title and ConnectionBadge row */}
-              <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
-                {/* Group title and entrance badge on the left */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
-                  <span className="badge badge-green">Entrance Panel</span>
-                </div>
-
-                {/* Aligned ConnectionBadge on the right */}
-                <div className="flex-shrink-0">
-                  <ConnectionBadge isOnline={isOnline} />
-                </div>
+            <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
+                <span className="badge badge-green">Entrance Panel</span>
               </div>
-
-              <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-text-muted)]">
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                    <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5" />
-                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
-                  {event.venue}
-                </span>
-                <span>·</span>
-                <span>{formatDate(event.startDate)}</span>
-                <span>·</span>
-                {/* Live clock */}
-                <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
-              </div>
+              <div className="flex-shrink-0"><ConnectionBadge isOnline={isOnline} /></div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-text-muted)]">
+              <span className="flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5" /><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5" /></svg>
+                {event.venue}
+              </span>
+              <span>·</span>
+              <span>{formatDate(event.startDate)}</span>
+              <span>·</span>
+              <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
             </div>
           </div>
 
-
           {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatPill label="Checked In" value={event.checkedIn} color="text-green-600" />
-            <StatPill label="Registered" value={event.totalRegistered} color="text-[var(--color-primary)]" />
-            <StatPill label="Paid" value={event.confirmedPaid} color="text-blue-600" />
-            <StatPill label="Capacity" value={event.capacity} color="text-[var(--color-text-secondary)]" />
+            <StatPill label="Checked In"  value={event.checkedIn}       color="text-green-600" />
+            <StatPill label="Registered"  value={event.totalRegistered} color="text-[var(--color-primary)]" />
+            <StatPill label="Paid"        value={event.confirmedPaid}   color="text-blue-600" />
+            <StatPill label="Capacity"    value={event.capacity}        color="text-[var(--color-text-secondary)]" />
           </div>
 
           {/* Progress bar */}
-          <div className="">
-            <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[12px] font-semibold text-[var(--color-text-secondary)]">Check-in Progress</span>
               <span className="text-[12px] font-bold text-green-600">{checkinPct}%</span>
             </div>
             <div className="h-2.5 rounded-full bg-[var(--color-surface-2)] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-green-500 transition-all duration-500"
-                style={{ width: `${checkinPct}%` }}
-              />
+              <div className="h-full rounded-full bg-green-500 transition-all duration-500" style={{ width: `${checkinPct}%` }} />
             </div>
           </div>
 
@@ -829,7 +873,7 @@ export default function EntrancePanelPage() {
             {/* Left — Scanner + Result */}
             <div className="flex flex-col gap-5">
 
-              {/* Scan / Search Box */}
+              {/* Search box */}
               <div className="card card-body !p-5">
                 <label className="form-label mb-2 flex items-center gap-2">
                   <svg className="w-4 h-4 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none">
@@ -851,24 +895,13 @@ export default function EntrancePanelPage() {
                       spellCheck={false}
                     />
                     {searchInput && (
-                      <button
-                        onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-                        aria-label="Clear"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                          <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                      <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors" aria-label="Clear">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                       </button>
                     )}
                   </div>
-                  <button
-                    onClick={handleSearch}
-                    className="btn btn-primary px-6 flex-shrink-0"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
+                  <button onClick={handleSearch} className="btn btn-primary px-6 flex-shrink-0">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                     <span className="hidden sm:inline">Look Up</span>
                   </button>
                 </div>
@@ -881,36 +914,33 @@ export default function EntrancePanelPage() {
               {searchQuery && registration && registration !== 'not_found' && (
                 registration.paymentStatus === 'Paid'
                   ? <GreenCard reg={registration} onCheckIn={handleCheckIn} loading={actionLoading} />
-                  : <RedCard reg={registration} onConfirmPayment={handleConfirmPayment} loading={actionLoading} />
+                  : <RedCard
+                      reg={registration}
+                      onConfirmPaymentOnly={handleConfirmPaymentOnly}
+                      onConfirmPaymentAndCheckIn={handleConfirmPaymentAndCheckIn}
+                      loading={actionLoading}
+                      loadingAction={loadingAction}
+                    />
               )}
 
-              {/* Hint after result */}
               {registration && registration !== 'not_found' && (
-                <button
-                  onClick={handleClear}
-                  className="btn btn-ghost btn-full text-[var(--color-text-secondary)]"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                <button onClick={handleClear} className="btn btn-ghost btn-full text-[var(--color-text-secondary)]">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   Scan next student
                 </button>
               )}
             </div>
 
-            {/* Right — Queue + Recent Activity */}
+            {/* Right — Queue + Tips + Activity */}
             <div className="flex flex-col gap-5">
-
-              {/* Offline queue */}
               <OfflineQueuePanel queue={queue} onSync={handleSync} isSyncing={isSyncing} />
 
-              {/* Tips card */}
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                 <p className="text-[12px] font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">Quick Tips</p>
                 <ul className="flex flex-col gap-2.5">
                   {[
                     { icon: '🟢', text: 'Green card = payment confirmed. Tap Check In.' },
-                    { icon: '🔴', text: 'Red card = collect cash, then tap Confirm Payment.' },
+                    { icon: '🔴', text: 'Red card = collect cash. Confirm Payment & Check In for immediate entry, or Confirm Only if they enter later.' },
                     { icon: '📵', text: 'Works offline. Actions sync when connection returns.' },
                     { icon: '↩️', text: 'Press Enter to instantly look up a School ID.' },
                   ].map((tip, i) => (
@@ -922,17 +952,13 @@ export default function EntrancePanelPage() {
                 </ul>
               </div>
 
-              {/* Recent Activity */}
               <RecentActivityFeed activities={recentActivity} />
 
-              {/* Link to full masterlist */}
               <Link
                 href={`/manage/events/${event.id}/participants`}
                 className="flex items-center justify-center gap-2 text-[13px] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] bg-[var(--color-primary-muted)] rounded-xl px-4 py-3 transition-colors no-underline"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 View Full Masterlist
               </Link>
             </div>
