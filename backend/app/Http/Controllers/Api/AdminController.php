@@ -141,7 +141,11 @@ class AdminController extends Controller
     {
         try {
             $perPage = (int) $req->query('per_page', 15);
-            $orgs    = DB::table('organizations')->latest()->paginate($perPage);
+            $orgs    = DB::table('organizations as o')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->select('o.*', 'c.name as category_name')
+                ->latest('o.created_at')
+                ->paginate($perPage);
 
             return response()->json([
                 'success' => true,
@@ -161,12 +165,76 @@ class AdminController extends Controller
     public function organization(string $id)
     {
         try {
-            $org = DB::table('organizations')->where('id', $id)->first();
+            $org = DB::table('organizations as o')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->leftJoin('users as u', 'o.accredited_by', '=', 'u.id')
+                ->select(
+                    'o.*',
+                    'c.name as category_name',
+                    DB::raw("CONCAT(u.first_name, ' ', u.last_name) as accredited_by_name")
+                )
+                ->where('o.id', $id)
+                ->first();
             if (!$org) {
                 return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
             }
 
-            $officers = DB::table('org_officers')->where('org_id', $id)->get();
+            $officers = DB::table('org_officers as oo')
+                ->leftJoin('users as u', 'oo.user_id', '=', 'u.id')
+                ->select(
+                    'oo.id',
+                    'oo.org_id',
+                    'oo.user_id',
+                    'oo.position',
+                    'oo.is_active',
+                    'oo.created_at',
+                    'oo.updated_at',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.school_id',
+                    'u.email'
+                )
+                ->where('oo.org_id', $id)
+                ->orderByDesc('oo.is_active')
+                ->orderBy('u.last_name')
+                ->orderBy('u.first_name')
+                ->get();
+
+            $members = DB::table('org_members as om')
+                ->join('users as u', 'om.user_id', '=', 'u.id')
+                ->select(
+                    'om.id',
+                    'om.user_id',
+                    'om.org_id',
+                    'om.membership_status',
+                    'om.paid_membership_fee',
+                    'om.joined_at',
+                    'om.created_at',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.school_id',
+                    'u.email'
+                )
+                ->where('om.org_id', $id)
+                ->orderByDesc('om.joined_at')
+                ->get();
+
+            $memberGrowth = DB::table('org_members')
+                ->select(
+                    DB::raw("DATE_FORMAT(COALESCE(joined_at, created_at), '%Y-%m') as month_key"),
+                    DB::raw('COUNT(*) as joined_count')
+                )
+                ->where('org_id', $id)
+                ->groupBy('month_key')
+                ->orderBy('month_key')
+                ->limit(12)
+                ->get()
+                ->map(function ($row) {
+                    return [
+                        'month' => $row->month_key,
+                        'joined_count' => (int) $row->joined_count,
+                    ];
+                });
             $events   = DB::table('events')->where('host_org_id', $id)->get();
 
             return response()->json([
@@ -174,6 +242,8 @@ class AdminController extends Controller
                 'data'    => [
                     'org'      => new OrganizationResource($org),
                     'officers' => OrgOfficerResource::collection($officers),
+                    'members'  => $members,
+                    'member_growth' => $memberGrowth,
                     'events'   => EventResource::collection($events),
                 ],
             ]);
@@ -191,15 +261,39 @@ class AdminController extends Controller
 
             $status = $req->input('accreditation_status');
 
+            $previousOrg = DB::table('organizations')->where('id', $id)->first();
+            $reason = $req->input('reason');
+
             DB::table('organizations')->where('id', $id)->update([
                 'accreditation_status' => $status,
-                'is_accredited' => $status === 'Active' ? 1 : 0,
                 'accredited_by' => $req->user()->id,
                 'accredited_at' => now(),
                 'updated_at'    => now(),
             ]);
 
-            $org = DB::table('organizations')->where('id', $id)->first();
+            $org = DB::table('organizations as o')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->leftJoin('users as u', 'o.accredited_by', '=', 'u.id')
+                ->select(
+                    'o.*',
+                    'c.name as category_name',
+                    DB::raw("CONCAT(u.first_name, ' ', u.last_name) as accredited_by_name")
+                )
+                ->where('o.id', $id)
+                ->first();
+            $actionLabel = $status === 'Active' ? 'Restore Accreditation' : 'Suspend Organization';
+            $meta = json_encode([
+                'previous_status' => $previousOrg->accreditation_status ?? null,
+                'reason' => $reason,
+            ]);
+            $this->writeAudit(
+                $req,
+                'Accreditation',
+                $actionLabel,
+                $org->name ?? $previousOrg->name ?? 'Organization',
+                $id,
+                $meta,
+            );
 
             return response()->json(['success' => true, 'data' => new OrganizationResource($org)]);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
@@ -222,7 +316,16 @@ class AdminController extends Controller
                 ->where('id', $id)
                 ->update(array_merge($data, ['updated_at' => now()]));
 
-            $org = DB::table('organizations')->where('id', $id)->first();
+            $org = DB::table('organizations as o')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->leftJoin('users as u', 'o.accredited_by', '=', 'u.id')
+                ->select(
+                    'o.*',
+                    'c.name as category_name',
+                    DB::raw("CONCAT(u.first_name, ' ', u.last_name) as accredited_by_name")
+                )
+                ->where('o.id', $id)
+                ->first();
 
             return response()->json(['success' => true, 'data' => new OrganizationResource($org)]);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {

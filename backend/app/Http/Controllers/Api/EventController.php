@@ -130,7 +130,18 @@ class EventController extends Controller
     {
         try {
             $perPage = (int) $req->query('per_page', 15);
-            $orgs = DB::table('organizations')->latest()->paginate($perPage);
+            $orgs = DB::table('organizations as o')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->select(
+                    'o.*',
+                    'o.code_name',
+                    'o.founded_date',
+                    'c.name as category_name',
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and m.membership_status = 'Active') as members_count"),
+                    DB::raw("(select count(*) from events e where e.host_org_id = o.id and year(e.start_date) = year(curdate())) as events_this_year")
+                )
+                ->latest('o.created_at')
+                ->paginate($perPage);
             return response()->json([
                 'success' => true,
                 'data' => \App\Http\Resources\OrganizationResource::collection($orgs->items()),
@@ -149,7 +160,18 @@ class EventController extends Controller
     public function organization($id)
     {
         try {
-            $org = DB::table('organizations')->where('id', $id)->first();
+            $org = DB::table('organizations as o')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->where('o.id', $id)
+                ->select(
+                    'o.*',
+                    'o.code_name',
+                    'o.founded_date',
+                    'c.name as category_name',
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and m.membership_status = 'Active') as members_count"),
+                    DB::raw("(select count(*) from events e where e.host_org_id = o.id and year(e.start_date) = year(curdate())) as events_this_year")
+                )
+                ->first();
             if (!$org) return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
             return response()->json(['success' => true, 'data' => new \App\Http\Resources\OrganizationResource($org)], 200);
         } catch (\Exception $e) {

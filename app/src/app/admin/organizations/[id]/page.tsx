@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AdminShell from '@/components/AdminShell';
+import { IconRefresh } from '@/components/ui/IconRefresh';
 
 /* ----------------------------------------------------------------
    Types
@@ -70,26 +73,34 @@ const PLACEHOLDER_OFFICERS: Officer[] = [
     { id: 'off-5', userId: 'u-4', name: 'Ana Villanueva', schoolId: '202305134', email: 'a.villanueva@cvsu.edu.ph', position: 'Auditor', isActive: true, joinedAt: '2023-06-01' },
 ];
 
-const PLACEHOLDER_MEMBERS: Member[] = [
-    { id: 'mem-1', name: 'Ella Cruz', schoolId: '202205001', email: 'e.cruz@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-01-12' },
-    { id: 'mem-2', name: 'Mark Santos', schoolId: '202205002', email: 'm.santos@cvsu.edu.ph', status: 'Active', feeStatus: 'Partial', joinedAt: '2024-02-03' },
-    { id: 'mem-3', name: 'Jessa Flores', schoolId: '202305003', email: 'j.flores@cvsu.edu.ph', status: 'Pending', feeStatus: 'Unpaid', joinedAt: '2024-02-20' },
-    { id: 'mem-4', name: 'Kevin Diaz', schoolId: '202305004', email: 'k.diaz@cvsu.edu.ph', status: 'Inactive', feeStatus: 'Unpaid', joinedAt: '2023-12-05' },
-    { id: 'mem-5', name: 'Aira Lim', schoolId: '202205005', email: 'a.lim@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-6', name: 'Leo Garcia', schoolId: '202105006', email: 'l.garcia@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-8', name: 'Daniel Lee', schoolId: '202205008', email: 'd.lee@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-9', name: 'Grace Kim', schoolId: '202305009', email: 'g.kim@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' },
-    { id: 'mem-10', name: 'Jake Thompson', schoolId: '202205010', email: 'j.thompson@cvsu.edu.ph', status: 'Active', feeStatus: 'Paid', joinedAt: '2024-03-15' }
-];
-
 /* ----------------------------------------------------------------
    Page
    ---------------------------------------------------------------- */
 export default function AdminOrgDetailPage() {
+    const params = useParams<{ id: string }>();
+    const router = useRouter();
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+    const orgId = String(params?.id ?? '');
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
     // ── Org state
-    const [org, setOrg] = useState<OrgProfile>(PLACEHOLDER_ORG);
-    const [officers, setOfficers] = useState<Officer[]>(PLACEHOLDER_OFFICERS);
-    const [members] = useState<Member[]>(PLACEHOLDER_MEMBERS);
+    const [org, setOrg] = useState<OrgProfile>({
+        id: '',
+        name: '',
+        description: '',
+        logoUrl: '',
+        adviser: '',
+        foundedDate: '',
+        category: 'Non-Academic',
+        accreditationStatus: 'Suspended',
+        accreditedBy: '',
+        accreditedAt: new Date().toISOString(),
+    });
+    const [officers, setOfficers] = useState<Officer[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [memberGrowth, setMemberGrowth] = useState<Array<{ month: string; value: number }>>([]);
 
     // ── Edit profile modal
     const [showEditModal, setShowEditModal] = useState(false);
@@ -97,6 +108,8 @@ export default function AdminOrgDetailPage() {
 
     // ── Accreditation confirm modal
     const [showAccredModal, setShowAccredModal] = useState(false);
+    const [accreditationReason, setAccreditationReason] = useState('');
+    const [accreditationError, setAccreditationError] = useState('');
 
     // ── Add officer modal
     const [showAddOfficerModal, setShowAddOfficerModal] = useState(false);
@@ -124,37 +137,168 @@ export default function AdminOrgDetailPage() {
         inactive: members.filter((m) => m.status === 'Inactive').length,
     };
 
-    const memberGrowth = [
-        { month: 'Jan', value: 120 },
-        { month: 'Feb', value: 136 },
-        { month: 'Mar', value: 149 },
-        { month: 'Apr', value: 158 },
-        { month: 'May', value: 171 },
-        { month: 'Jun', value: 184 },
-        { month: 'Jul', value: 192 },
-    ];
+    const maxGrowth = Math.max(1, ...memberGrowth.map((m) => m.value));
 
-    const maxGrowth = Math.max(...memberGrowth.map((m) => m.value));
+    async function fetchOrgDetails(showLoading = true, showRefreshing = false) {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) {
+            router.push('/');
+            return;
+        }
 
-    /* ── Handlers ── */
-    function handleSaveProfile() {
-        setOrg(editDraft);
-        setShowEditModal(false);
-        // API: PATCH /api/admin/organizations/:id
+        if (showLoading) setIsLoading(true);
+        if (showRefreshing) setRefreshing(true);
+        setErrorMsg('');
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}`, {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            const payload = await res.json().catch(() => null) as any;
+            if (!res.ok || !payload?.success) {
+                setErrorMsg(payload?.error ?? 'Unable to load organization details.');
+                return;
+            }
+
+            const data = payload.data ?? {};
+            const rawOrg = data.org ?? {};
+            const rawOfficers = Array.isArray(data.officers) ? data.officers : [];
+            const rawMembers = Array.isArray(data.members) ? data.members : [];
+            const rawMemberGrowth = Array.isArray(data.member_growth) ? data.member_growth : [];
+
+            const nextOrg: OrgProfile = {
+                id: String(rawOrg.id ?? orgId),
+                name: String(rawOrg.name ?? ''),
+                description: String(rawOrg.description ?? ''),
+                logoUrl: String(rawOrg.logo_url ?? ''),
+                adviser: String(rawOrg.adviser ?? 'N/A'),
+                foundedDate: String(rawOrg.founded_date ?? rawOrg.created_at ?? '').slice(0, 10),
+                category: (String(rawOrg.category_name ?? 'Non-Academic') as OrgCategory),
+                accreditationStatus: String(rawOrg.accreditation_status ?? '').toLowerCase() === 'active' ? 'Active' : 'Suspended',
+                accreditedBy: String(rawOrg.accredited_by_name ?? 'N/A'),
+                accreditedAt: String(rawOrg.accredited_at ?? rawOrg.updated_at ?? new Date().toISOString()),
+            };
+
+            const nextOfficers: Officer[] = rawOfficers.map((o: any) => ({
+                id: String(o.id ?? ''),
+                userId: String(o.user_id ?? ''),
+                name: String(o.user_name ?? o.name ?? 'Unknown'),
+                schoolId: String(o.user_school_id ?? o.school_id ?? ''),
+                email: String(o.user_email ?? o.email ?? ''),
+                position: String(o.position ?? o.role ?? ''),
+                isActive: Boolean(o.is_active ?? true),
+                joinedAt: String(o.created_at ?? '').slice(0, 10),
+            }));
+            const nextMembers: Member[] = rawMembers.map((m: any) => ({
+                id: String(m.id ?? ''),
+                name: String(`${m.first_name ?? ''} ${m.last_name ?? ''}`.trim() || m.name || 'Unknown'),
+                schoolId: String(m.school_id ?? ''),
+                email: String(m.email ?? ''),
+                status: (String(m.membership_status ?? 'Pending') as MemberStatus),
+                feeStatus: m.paid_membership_fee ? 'Paid' : 'Unpaid',
+                joinedAt: String(m.joined_at ?? m.created_at ?? '').slice(0, 10),
+            }));
+            const nextMemberGrowth = rawMemberGrowth.map((g: any) => {
+                const monthKey = String(g.month ?? '');
+                const monthLabel = monthKey.length >= 7
+                    ? new Date(`${monthKey}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'short' })
+                    : monthKey;
+                return { month: monthLabel, value: Number(g.joined_count ?? 0) };
+            });
+
+            setOrg(nextOrg);
+            setEditDraft(nextOrg);
+            setOfficers(nextOfficers);
+            setMembers(nextMembers);
+            setMemberGrowth(nextMemberGrowth);
+        } finally {
+            if (showLoading) setIsLoading(false);
+            if (showRefreshing) setRefreshing(false);
+        }
     }
 
-    function handleToggleAccreditation() {
+    useEffect(() => {
+        let isCancelled = false;
+
+        async function fetchSafe() {
+            if (isCancelled || !orgId) return;
+            const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+            if (!token) {
+                router.push('/');
+                return;
+            }
+            await fetchOrgDetails(true, false);
+        }
+        fetchSafe();
+        return () => { isCancelled = true; };
+    }, [API_BASE_URL, orgId, router]);
+
+    /* Handlers */
+    async function handleSaveProfile() {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) return;
+
+        setIsSaving(true);
+        setErrorMsg('');
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    name: editDraft.name,
+                    description: editDraft.description,
+                    logo_url: editDraft.logoUrl,
+                    adviser: editDraft.adviser,
+                }),
+            });
+            const payload = await res.json().catch(() => null) as any;
+            if (!res.ok || !payload?.success) {
+                setErrorMsg(payload?.error ?? 'Unable to save organization profile.');
+                return;
+            }
+            setOrg(editDraft);
+            setShowEditModal(false);
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    async function handleToggleAccreditation() {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) return;
+
         const next: AccreditationStatus = org.accreditationStatus === 'Active' ? 'Suspended' : 'Active';
-        setOrg((prev) => ({
-            ...prev,
-            accreditationStatus: next,
-            accreditedAt: new Date().toISOString(),
-            accreditedBy: 'Current Overseer',
-        }));
-        setShowAccredModal(false);
-        // API: PATCH /api/admin/organizations/:id/accreditation
-    }
+        if (!accreditationReason.trim()) {
+            setAccreditationError(next === 'Suspended'
+                ? 'Please provide a reason for suspension.'
+                : 'Please provide a reason for restoration.');
+            return;
+        }
 
+        setIsSaving(true);
+        setErrorMsg('');
+        setAccreditationError('');
+        try {
+            const payloadBody: any = { accreditation_status: next, reason: accreditationReason.trim() };
+
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}/accreditation`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(payloadBody),
+            });
+            const payload = await res.json().catch(() => null) as any;
+            if (!res.ok || !payload?.success) {
+                setErrorMsg(payload?.error ?? 'Unable to update accreditation status.');
+                return;
+            }
+
+            setOrg((prev) => ({ ...prev, accreditationStatus: next, accreditedAt: new Date().toISOString() }));
+            setShowAccredModal(false);
+            setAccreditationReason('');
+        } finally {
+            setIsSaving(false);
+        }
+    }
     function handleAddOfficer() {
         setAddError('');
         if (!addSchoolId.trim()) { setAddError('Student ID is required.'); return; }
@@ -199,6 +343,16 @@ export default function AdminOrgDetailPage() {
     return (
         <AdminShell>
             <main className="flex flex-col gap-6 animate-fade-in">
+                {errorMsg && (
+                    <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--color-error)', color: 'var(--color-error)' }}>
+                        {errorMsg}
+                    </div>
+                )}
+                {isLoading && (
+                    <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                        Loading organization details...
+                    </div>
+                )}
 
                 {/* ── Breadcrumb ── */}
                 <div className="flex flex-col gap-4">
@@ -221,12 +375,20 @@ export default function AdminOrgDetailPage() {
                     {/* ── Page Header ── */}
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex items-center gap-4">
-                            <div
-                                className="w-16 h-16 rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0"
-                                style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
-                            >
-                                {org.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
-                            </div>
+                            {org.logoUrl ? (
+                                <img
+                                    src={org.logoUrl}
+                                    alt={`${org.name} logo`}
+                                    className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                                />
+                            ) : (
+                                <div
+                                    className="w-16 h-16 rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0"
+                                    style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
+                                >
+                                    {org.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
+                                </div>
+                            )}
                             <div>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h1 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
@@ -235,10 +397,15 @@ export default function AdminOrgDetailPage() {
                                     <span className={`badge ${org.accreditationStatus === 'Active' ? 'badge-green' : 'badge-red'}`}>
                                         {org.accreditationStatus}
                                     </span>
-                                    <span className="badge badge-blue">{org.category}</span>
+                                    <span className={`badge ${org.category === 'Academic' ? 'badge-blue' : org.category === 'Non-Academic' ? 'badge-gray' : 'badge-yellow'}`}>
+                                        {org.category}
+                                    </span>
                                 </div>
                                 <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                                    Adviser: {org.adviser} · Founded {new Date(org.foundedDate).getFullYear()}
+                                    Adviser: {org.adviser}
+                                </p>
+                                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                                    Est. {new Date(org.foundedDate).getFullYear()}
                                 </p>
                             </div>
                         </div>
@@ -276,7 +443,11 @@ export default function AdminOrgDetailPage() {
                         </div>
                         <button
                             className={`btn btn-sm ${org.accreditationStatus === 'Active' ? 'btn-danger' : 'btn-primary'}`}
-                            onClick={() => setShowAccredModal(true)}
+                            onClick={() => {
+                                setAccreditationReason('');
+                                setAccreditationError('');
+                                setShowAccredModal(true);
+                            }}
                         >
                             {org.accreditationStatus === 'Active' ? '⚠ Suspend Organization' : '✓ Restore Accreditation'}
                         </button>
@@ -298,6 +469,18 @@ export default function AdminOrgDetailPage() {
 
                 {/* Active Officers Table */}
                 <div className="card overflow-x-auto">
+                    <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+                        <h3 className="text-[15px] font-semibold text-[var(--color-text)]">Officers Table</h3>
+                        <button
+                            className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => fetchOrgDetails(false, true)}
+                            disabled={refreshing || isLoading}
+                            aria-label="Refresh officers table"
+                            title="Refresh officers table"
+                        >
+                            <IconRefresh spinning={refreshing} />
+                        </button>
+                    </div>
                     <table className="table-base">
                         <thead>
                             <tr>
@@ -482,21 +665,21 @@ export default function AdminOrgDetailPage() {
                                     <div className="flex items-center justify-between gap-3 rounded-xl bg-white border border-[var(--color-border)] px-3 py-2">
                                         <span className="text-sm text-[var(--color-text-secondary)]">Active rate</span>
                                         <span className="text-sm font-semibold text-emerald-700">
-                                            {Math.round((memberStats.active / memberStats.total) * 100)}%
+                                            {memberStats.total > 0 ? Math.round((memberStats.active / memberStats.total) * 100) : 0}%
                                         </span>
                                     </div>
 
                                     <div className="flex items-center justify-between gap-3 rounded-xl bg-white border border-[var(--color-border)] px-3 py-2">
                                         <span className="text-sm text-[var(--color-text-secondary)]">Pending rate</span>
                                         <span className="text-sm font-semibold text-amber-700">
-                                            {Math.round((memberStats.pending / memberStats.total) * 100)}%
+                                            {memberStats.total > 0 ? Math.round((memberStats.pending / memberStats.total) * 100) : 0}%
                                         </span>
                                     </div>
 
                                     <div className="flex items-center justify-between gap-3 rounded-xl bg-white border border-[var(--color-border)] px-3 py-2">
                                         <span className="text-sm text-[var(--color-text-secondary)]">Inactive rate</span>
                                         <span className="text-sm font-semibold text-gray-600">
-                                            {Math.round((memberStats.inactive / memberStats.total) * 100)}%
+                                            {memberStats.total > 0 ? Math.round((memberStats.inactive / memberStats.total) * 100) : 0}%
                                         </span>
                                     </div>
                                 </div>
@@ -631,7 +814,7 @@ export default function AdminOrgDetailPage() {
                         </div>
                         <div className="flex gap-3 justify-end pt-2">
                             <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={handleSaveProfile}>Save Changes</button>
+                            <button className="btn btn-primary" onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</button>
                         </div>
                     </div>
                 </Modal>
@@ -655,19 +838,44 @@ export default function AdminOrgDetailPage() {
                                 <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                                     You are about to suspend <strong>{org.name}</strong>. This action will be logged in the audit trail.
                                 </p>
+                                <div className="form-group">
+                                    <label className="form-label">Reason for suspension</label>
+                                    <textarea
+                                        rows={4}
+                                        value={accreditationReason}
+                                        onChange={(e) => setAccreditationReason(e.target.value)}
+                                        placeholder="Explain why this organization is being suspended"
+                                        style={{ resize: 'vertical' }}
+                                    />
+                                </div>
+                                {accreditationError && <p className="form-error">{accreditationError}</p>}
                             </>
                         ) : (
-                            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                                You are about to restore accreditation for <strong>{org.name}</strong>. They will regain the ability to publish events. This action will be logged.
-                            </p>
+                            <>
+                                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                                    You are about to restore accreditation for <strong>{org.name}</strong>. They will regain the ability to publish events. This action will be logged.
+                                </p>
+                                <div className="form-group">
+                                    <label className="form-label">Reason for restoration</label>
+                                    <textarea
+                                        rows={4}
+                                        value={accreditationReason}
+                                        onChange={(e) => { setAccreditationReason(e.target.value); setAccreditationError(''); }}
+                                        placeholder="Explain why this organization is being restored"
+                                        style={{ resize: 'vertical' }}
+                                    />
+                                </div>
+                                {accreditationError && <p className="form-error">{accreditationError}</p>}
+                            </>
                         )}
                         <div className="flex gap-3 justify-end">
                             <button className="btn btn-ghost" onClick={() => setShowAccredModal(false)}>Cancel</button>
                             <button
                                 className={`btn ${org.accreditationStatus === 'Active' ? 'btn-danger' : 'btn-primary'}`}
                                 onClick={handleToggleAccreditation}
+                                disabled={isSaving}
                             >
-                                {org.accreditationStatus === 'Active' ? 'Confirm Suspension' : 'Confirm Restoration'}
+                                {isSaving ? 'Saving...' : org.accreditationStatus === 'Active' ? 'Confirm Suspension' : 'Confirm Restoration'}
                             </button>
                         </div>
                     </div>
@@ -758,8 +966,6 @@ export default function AdminOrgDetailPage() {
 /* ----------------------------------------------------------------
    Shared Modal Shell
    ---------------------------------------------------------------- */
-import { useEffect } from 'react';
-import Link from 'next/dist/client/link';
 
 function Modal({
     title,
@@ -852,3 +1058,9 @@ function IconPlus() {
         </svg>
     );
 }
+
+
+
+
+
+

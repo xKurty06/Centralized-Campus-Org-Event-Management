@@ -15,6 +15,7 @@ use App\Http\Resources\RegistrationResource;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ManageController extends Controller
@@ -532,7 +533,7 @@ class ManageController extends Controller
                 ->select(
                     'm.*',
                     'u.school_id', 'u.first_name', 'u.last_name', 'u.email', 'u.year_level', 'u.section',
-                    'c.code as course_code',
+                    'c.course_code as course_code',
                     'd.code as dept_code'
                 )
                 ->orderByDesc('m.created_at')
@@ -577,15 +578,46 @@ class ManageController extends Controller
         if ($schoolId === '') {
             return response()->json(['success' => false, 'error' => 'school_id is required.'], 422);
         }
+        // Log incoming lookup for debugging — helps diagnose whitespace/active-flag mismatches
+        Log::debug('Manage::lookupMember called', ['school_id' => $schoolId, 'user_id' => optional($req->user())->id ?? null]);
 
         $user = DB::table('users as u')
             ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
             ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
-            ->where('u.school_id', $schoolId)
-            ->select('u.id', 'u.school_id', 'u.first_name', 'u.last_name', 'u.email', 'u.year_level', 'u.section', 'c.code as course_code', 'd.code as dept_code')
+            ->whereRaw('TRIM(u.school_id) = ?', [$schoolId])
+            ->where('u.is_active', 1)
+            ->select('u.id', 'u.school_id', 'u.first_name', 'u.last_name', 'u.email', 'u.year_level', 'u.section', 'c.course_code as course_code', 'd.code as dept_code')
             ->first();
 
         if (!$user) {
+            // Check whether an account exists but is inactive or has unexpected whitespace
+            $raw = DB::table('users as u')
+                ->whereRaw('TRIM(u.school_id) = ?', [$schoolId])
+                ->select('u.id', 'u.school_id', 'u.is_active')
+                ->first();
+
+            if ($raw) {
+                Log::debug('Manage::lookupMember found user but not active', ['school_id' => $raw->school_id, 'is_active' => $raw->is_active, 'id' => $raw->id]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Account is deactivated.',
+                    'data' => [
+                        'user_id' => $raw->id,
+                        'school_id' => $raw->school_id,
+                        'is_active' => (bool) $raw->is_active,
+                    ],
+                ], 422);
+            } else {
+                // Try loose match to help debug unexpected characters
+                $loose = DB::table('users as u')
+                    ->where('u.school_id', 'like', "%{$schoolId}%")
+                    ->select('u.id', 'u.school_id', 'u.is_active')
+                    ->first();
+                if ($loose) {
+                    Log::debug('Manage::lookupMember loose match found', ['db_school_id' => $loose->school_id, 'is_active' => $loose->is_active, 'id' => $loose->id]);
+                }
+            }
+
             return response()->json(['success' => false, 'error' => 'No verified account found with that Student ID.'], 404);
         }
 

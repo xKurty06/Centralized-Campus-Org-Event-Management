@@ -169,7 +169,10 @@ export default function AdminAuditPage() {
                         <td className="py-3 px-4 text-xs" style={{ color: 'var(--color-text-secondary)', maxWidth: '200px' }}><span className="truncate block">{entry.target_label}</span><span className="font-mono text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{entry.target_id}</span></td>
                         <td className="py-3 px-4 text-right">{entry.meta && <button className="btn btn-ghost btn-sm" style={{ padding: '4px', color: 'var(--color-text-muted)' }} aria-label="Expand details"><svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5" style={{ transform: expandedId === entry.id ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease' }}><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></button>}</td>
                       </tr>
-                      {expandedId === entry.id && entry.meta && <tr style={{ background: 'var(--color-surface-2)' }}><td colSpan={6} style={{ padding: '12px 20px', borderTop: '1px dashed var(--color-border)' }}><div className="flex items-start gap-2"><span className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Detail:</span><code className="text-xs px-2 py-1 rounded font-mono break-all" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>{entry.meta}</code></div></td></tr>}
+                      {expandedId === entry.id && entry.meta && <tr style={{ background: 'var(--color-surface-2)' }}><td colSpan={6} style={{ padding: '12px 20px', borderTop: '1px dashed var(--color-border)' }}><div className="flex flex-col gap-2">
+                          <div className="flex items-start gap-2"><span className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Detail:</span></div>
+                          {renderMeta(entry.meta)}
+                        </div></td></tr>}
                     </Fragment>
                   ))}
                 </tbody>
@@ -180,6 +183,29 @@ export default function AdminAuditPage() {
       </main>
     </AdminShell>
   );
+}
+
+function renderMeta(meta?: string) {
+  if (!meta) return null;
+
+  try {
+    const parsed = JSON.parse(meta);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return (
+        <div className="space-y-2">
+          {Object.entries(parsed).map(([key, value]) => (
+            <div key={key} className="flex flex-wrap gap-2 items-start">
+              <span className="text-[11px] rounded px-2 py-1 break-all" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>{key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}: {String(value)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  } catch {
+    // fall back to raw text
+  }
+
+  return <span className="text-[11px] rounded px-2 py-1 break-all" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>{meta}</span>;
 }
 
 function IconSearch() {

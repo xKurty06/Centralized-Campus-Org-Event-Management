@@ -15,6 +15,7 @@ class AccreditationRequest extends FormRequest
     {
         return [
             'accreditation_status' => 'required|in:Active,Suspended',
+            'reason' => 'required_if:accreditation_status,Suspended|string|max:500',
         ];
     }
 }

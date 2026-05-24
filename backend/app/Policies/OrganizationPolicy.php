@@ -13,7 +13,16 @@ class OrganizationPolicy
      */
     public function update(User $user, Organization $organization): bool
     {
-        $count = DB::table('org_officers')->where('user_id', $user->id)->where('org_id', $organization->id)->where('is_active', 1)->count();
+        if (($user->global_role ?? null) === 'Overseer') {
+            return true;
+        }
+
+        $count = DB::table('org_officers')
+            ->where('user_id', $user->id)
+            ->where('org_id', $organization->id)
+            ->where('is_active', 1)
+            ->count();
+
         return $count > 0;
     }
 }
