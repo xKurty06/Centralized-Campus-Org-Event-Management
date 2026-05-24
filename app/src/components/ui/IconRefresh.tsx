@@ -4,8 +4,7 @@ export function IconRefresh({ spinning = false }: { spinning?: boolean }) {
   if (spinning) {
     return (
       <LoaderCircle
-        className="w-4 h-4"
-        style={{ animation: 'spin 0.8s linear infinite' }}
+        className="w-4 h-4 animate-spin"
         aria-hidden="true"
       />
     );

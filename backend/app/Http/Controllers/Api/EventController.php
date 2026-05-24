@@ -70,16 +70,15 @@ class EventController extends Controller
                 )
                 ->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
-            $data = (new EventResource($event))->toArray(request());
-            $data['is_member'] = false;
+            $eventRow = (object) array_merge((array) $event, ['is_member' => false]);
             if ($user) {
-                $data['is_member'] = DB::table('org_members')
+                $eventRow->is_member = DB::table('org_members')
                     ->where('org_id', $event->host_org_id)
                     ->where('user_id', $user->id)
                     ->where('membership_status', 'Active')
                     ->exists();
             }
-            return response()->json(['success' => true, 'data' => $data], 200);
+            return response()->json(['success' => true, 'data' => new EventResource($eventRow)], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }

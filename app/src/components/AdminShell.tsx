@@ -423,18 +423,19 @@ function Sidebar({
                     href="/events"
                     title={collapsed ? 'Back to Site' : undefined}
                     className={[
-                        'flex items-center rounded-lg py-2.5 w-full',
+                        'flex items-center rounded-lg py-2.5 w-full hover:text-green-600 transition-colors',
                         isMounted ? 'transition-all duration-150' : '',
                         collapsed ? 'px-0 justify-center' : 'px-3',
                     ].join(' ')}
                     style={{ color: 'var(--color-text-secondary)' }}
                 >
-                    <svg
-                        className="w-4 h-4 shrink-0"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
+                    <div className="hover:text-green-600 transition-colors flex items-center">
+                        <svg
+                            className="w-4 h-4 shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                     >
@@ -449,6 +450,7 @@ function Sidebar({
                     >
                         Back to Events
                     </span>
+                    </div>
                 </Link>
 
                 {/* User */}

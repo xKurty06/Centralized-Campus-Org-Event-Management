@@ -398,7 +398,7 @@ export default function ManageMembersPage() {
                         </p>
 
                         {/* New container wrapping the title and button to align them perfectly left and right */}
-                        <div className="flex flex-row items-center justify-between gap-4 w-full mt-0.2">
+                        <div className="flex flex-row items-center justify-between w-full mt-2">
                             <div>
                                 <h1
                                     className="text-[22px] font-bold tracking-tight leading-none"
@@ -406,6 +406,9 @@ export default function ManageMembersPage() {
                                 >
                                     Member Roster
                                 </h1>
+                                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                                    Manage membership status and fee payments for your organization.
+                                </p>
                             </div>
 
                             <button
@@ -417,9 +420,7 @@ export default function ManageMembersPage() {
                         </div>
 
                         {/* Description paragraph sits cleanly below the title-button row */}
-                        <p className="text-sm mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-                            Manage membership status and fee payments for your organization.
-                        </p>
+
                     </div>
                 </div>
 
@@ -557,47 +558,47 @@ export default function ManageMembersPage() {
                         </button>
                     </div>
                     <div className="overflow-x-auto">
-                    <table className="table-base">
-                        <thead>
-                            <tr>
-                                <th>Member</th>
-                                <th>Student ID</th>
-                                <th>Course</th>
-                                <th>Yr / Sec</th>
-                                <th>Joined</th>
-                                <th>Status</th>
-                                <th>Membership Fee</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.length === 0 ? (
+                        <table className="table-base">
+                            <thead>
                                 <tr>
-                                    <td
-                                        colSpan={8}
-                                        className="text-center py-14 text-sm"
-                                        style={{ color: 'var(--color-text-muted)' }}
-                                    >
-                                        No members match your filters.
-                                    </td>
+                                    <th>Member</th>
+                                    <th>Student ID</th>
+                                    <th>Course</th>
+                                    <th>Yr / Sec</th>
+                                    <th>Joined</th>
+                                    <th>Status</th>
+                                    <th>Membership Fee</th>
+                                    <th></th>
                                 </tr>
-                            ) : (
-                                filtered.map((member) => (
-                                    <MemberRow
-                                        key={member.id}
-                                        member={member}
-                                        statusSelectStyle={STATUS_SELECT_STYLE}
-                                        onFeeToggle={() => setFeeTarget(member)}
-                                        onStatusChange={(s) => {
-                                            setStatusTarget(member);
-                                            setPendingStatus(s);
-                                        }}
-                                        onViewDetail={() => setDetailMember(member)}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filtered.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={8}
+                                            className="text-center py-14 text-sm"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            No members match your filters.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filtered.map((member) => (
+                                        <MemberRow
+                                            key={member.id}
+                                            member={member}
+                                            statusSelectStyle={STATUS_SELECT_STYLE}
+                                            onFeeToggle={() => setFeeTarget(member)}
+                                            onStatusChange={(s) => {
+                                                setStatusTarget(member);
+                                                setPendingStatus(s);
+                                            }}
+                                            onViewDetail={() => setDetailMember(member)}
+                                        />
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
 
                     <div

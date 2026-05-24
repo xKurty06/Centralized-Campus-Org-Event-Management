@@ -112,7 +112,7 @@ function validate(form: FormData): FormErrors {
 
   if (!form.capacity || isNaN(+form.capacity) || +form.capacity < 1) e.capacity = 'Enter a valid capacity (min 1).';
   if (!form.description.trim()) e.description = 'Event description is required.';
-  
+
   if (form.is_paid) {
     if (!form.price || isNaN(+form.price) || +form.price <= 0) e.price = 'Enter a valid price greater than 0.';
     if (!form.payment_instructions.trim()) e.payment_instructions = 'Payment instructions are required for paid events.';
@@ -296,8 +296,10 @@ export default function CreateEventPage() {
 
             Back to Dashboard
           </Link>
-          <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Create new event</h1>
-          <p className="text-[14px] text-gray-500 mt-1">Fill in the details to publish an event for your organization.</p>
+          <div>
+            <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Create new event</h1>
+            <p className="text-[14px] text-gray-500">Fill in the details to publish an event for your organization.</p>
+          </div>
         </div>
 
         {/* ── Step indicator ── */}

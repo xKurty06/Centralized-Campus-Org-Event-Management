@@ -325,7 +325,7 @@ function Sidebar({
 
             {/* ── Footer ── */}
             <div
-                className="border-t p-3 flex flex-col gap-1"
+                className="border-t p-3 flex flex-col gap-1 hover:text-green-600 transition-colors"
                 style={{ borderColor: 'var(--color-border)' }}
             >
                 {/* Back to site */}
@@ -333,32 +333,34 @@ function Sidebar({
                     href="/events"
                     title={collapsed ? 'Back to Site' : undefined}
                     className={[
-                        'flex items-center rounded-lg py-2.5 w-full',
+                        'flex items-center rounded-lg py-2.5 w-full hover:text-green-700 transition-colors',
                         isMounted ? 'transition-all duration-150' : '',
                         collapsed ? 'px-0 justify-center' : 'px-3',
                     ].join(' ')}
                     style={{ color: 'var(--color-text-secondary)' }}
                 >
-                    <svg
-                        className="w-4 h-4 shrink-0"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
+                    <div className="hover:text-green-600 transition-colors flex items-center">
+                        <svg
+                            className="w-4 h-4 shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
 
-                    <span
-                        className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
-                            ? 'w-0 max-w-0 opacity-0 ml-0'
-                            : 'opacity-100 ml-3'
-                            }`}
-                    >
-                        Back to Site
-                    </span>
+                        <span
+                            className={`text-[13px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed
+                                ? 'w-0 max-w-0 opacity-0 ml-0'
+                                : 'opacity-100 ml-3'
+                                }`}
+                        >
+                            Back to Site
+                        </span>
+                    </div>
                 </Link>
 
                 {/* Current officer */}
