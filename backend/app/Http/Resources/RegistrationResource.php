@@ -36,6 +36,10 @@ class RegistrationResource extends JsonResource
             'first_name' => $this->first_name ?? null,
             'last_name' => $this->last_name ?? null,
             'proof_status' => $this->proof_status ?? null,
+            'proof_image_url' => $this->proof_image_url ?? null,
+            'proof_uploaded_at' => $this->proof_uploaded_at ? (string) $this->proof_uploaded_at : null,
+            'dept_code' => $this->dept_code ?? null,
+            'year_level' => isset($this->year_level) ? (int) $this->year_level : null,
             'full_name' => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
         ];
     }

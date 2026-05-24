@@ -234,6 +234,23 @@ class ManageController extends Controller
                 ->where('id', $id)
                 ->update(array_merge($data, ['updated_at' => now()]));
 
+            $nextStatus = $data['status'] ?? null;
+            if ($nextStatus === 'Cancelled' && ($event->status ?? null) !== 'Cancelled') {
+                $userIds = DB::table('registrations')
+                    ->where('event_id', $id)
+                    ->pluck('user_id');
+
+                $notification = new NotificationService();
+                foreach ($userIds as $userId) {
+                    $notification->notify(
+                        (string) $userId,
+                        'Event_Cancelled',
+                        $id,
+                        'An event you registered for has been cancelled: ' . ($event->title ?? 'Untitled Event')
+                    );
+                }
+            }
+
             $updated = DB::table('events')->where('id', $id)->first();
 
             return response()->json(['success' => true, 'data' => new EventResource($updated)]);
@@ -244,24 +261,31 @@ class ManageController extends Controller
 
     public function deleteEvent(Request $req, string $id)
     {
+        DB::beginTransaction();
         try {
             $orgRow = $this->resolveOfficer($req);
             if (!$orgRow) {
+                DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
             }
 
             $event = DB::table('events')->where('id', $id)->first();
             if (!$event) {
+                DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
             }
             if ($event->host_org_id !== $orgRow->org_id) {
+                DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
 
+            DB::table('notifications')->where('reference_id', $id)->delete();
             DB::table('events')->where('id', $id)->delete();
 
+            DB::commit();
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
     }
@@ -287,9 +311,20 @@ class ManageController extends Controller
 
             $q = DB::table('registrations as r')
                 ->join('users as u', 'r.user_id', '=', 'u.id')
+                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
                 ->leftJoin('payment_proofs as p', 'r.id', '=', 'p.reg_id')
                 ->where('r.event_id', $event_id)
-                ->select('r.*', 'u.school_id', 'u.first_name', 'u.last_name', 'p.status as proof_status');
+                ->select(
+                    'r.*',
+                    'u.school_id',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.year_level',
+                    'd.code as dept_code',
+                    'p.status as proof_status',
+                    'p.image_url as proof_image_url',
+                    'p.uploaded_at as proof_uploaded_at'
+                );
 
             if ($filter === 'proof_review') {
                 $q->where('p.status', 'Pending_Review');

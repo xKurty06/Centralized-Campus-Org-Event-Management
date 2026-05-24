@@ -33,7 +33,6 @@ interface ManagedEvent {
   start_date: string;
   end_date: string;
   venue_name: string;
-  venue_address: string;
   status: EventStatus;
   is_paid: boolean;
   fee_amount?: number;
@@ -140,7 +139,6 @@ function normalizeEvent(e: Record<string, unknown>): ManagedEvent {
     start_date: String(e.start_date ?? new Date().toISOString()),
     end_date: String(e.end_date ?? e.start_date ?? new Date().toISOString()),
     venue_name: String(e.venue_name ?? "TBA"),
-    venue_address: String(e.venue_address ?? "TBA"),
     status: (e.status ?? "Upcoming") as EventStatus,
     is_paid: Boolean(e.is_paid),
     fee_amount: e.fee_amount != null ? Number(e.fee_amount) : undefined,
@@ -546,9 +544,9 @@ export default function EventDashboardPage() {
                 </span>
                 <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
                   <IconPin />
-                  {event.venue_name} · {event.venue_address}
+                  {event.venue_name}
                 </span>
-                <span className="flex items-center gap-1.5 text-[12px] text-gray-400">
+                <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
                   <IconInfo />
                   Created {formatDate(event.created_at)}
                 </span>
