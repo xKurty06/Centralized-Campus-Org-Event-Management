@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import ManageShell from '@/components/ManageShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
+import { IconRefresh } from '@/components/ui/IconRefresh';
 
 /* ----------------------------------------------------------------
    Schema reference — Org_Members table
@@ -54,7 +55,8 @@ interface Member {
 /* ----------------------------------------------------------------
    Placeholder data
    ---------------------------------------------------------------- */
-const ORG_NAME = 'Computer Students Society';
+const ORG_NAME = 'Organization';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 const SEED: Member[] = [
     {
@@ -165,7 +167,10 @@ const STATUS_SELECT_STYLE: Record<MembershipStatus, React.CSSProperties> = {
    Page
    ---------------------------------------------------------------- */
 export default function ManageMembersPage() {
-    const [members, setMembers] = useState<Member[]>(SEED);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [loadError, setLoadError] = useState('');
 
     // ── Filters
     const [search, setSearch] = useState('');
@@ -179,6 +184,7 @@ export default function ManageMembersPage() {
     const [addLoading, setAddLoading] = useState(false);
     const [addError, setAddError] = useState('');
     const [lookupResult, setLookupResult] = useState<{
+        userId: string;
         firstName: string; lastName: string;
         course: string; dept: string;
         yearLevel: number; section: number;
@@ -196,8 +202,48 @@ export default function ManageMembersPage() {
 
     /* ── Derived ── */
     const departments = useMemo(() => {
-        const d = [...new Set(SEED.map((m) => m.dept))].sort();
+        const d = [...new Set(members.map((m) => m.dept).filter(Boolean))].sort();
         return ['All', ...d];
+    }, [members]);
+
+    async function loadMembers(showRefreshing = false) {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) {
+            setLoadError('Session missing. Please sign in again.');
+            setLoading(false);
+            return;
+        }
+
+        if (showRefreshing) setRefreshing(true);
+        else setLoading(true);
+
+        const res = await fetch(`${API_BASE_URL}/manage/members`, {
+            headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+        const payload = await res?.json().catch(() => null) as { success?: boolean; data?: any[]; error?: string } | null;
+        if (!res || !res.ok || !payload?.success || !Array.isArray(payload.data)) {
+            setLoadError(payload?.error ?? 'Unable to load members.');
+            setMembers([]);
+        } else {
+            setMembers(payload.data.map((m) => ({
+                id: m.id, userId: m.user_id, orgId: m.org_id,
+                membershipStatus: m.membership_status, paidMembershipFee: Boolean(m.paid_membership_fee),
+                joinedAt: m.joined_at ?? m.created_at ?? new Date().toISOString(),
+                updatedAt: m.updated_at ?? new Date().toISOString(),
+                schoolId: m.school_id ?? '-', firstName: m.first_name ?? '', lastName: m.last_name ?? '',
+                email: m.email ?? '-', course: m.course ?? '-', dept: m.dept ?? '-',
+                yearLevel: Number(m.year_level ?? 0), section: Number(m.section ?? 0),
+                isOfficer: Boolean(m.is_officer),
+            })));
+            setLoadError('');
+        }
+
+        if (showRefreshing) setRefreshing(false);
+        else setLoading(false);
+    }
+
+    useEffect(() => {
+        loadMembers(false);
     }, []);
 
     const filtered = useMemo(() => {
@@ -235,51 +281,57 @@ export default function ManageMembersPage() {
             return;
         }
         setAddLoading(true);
-        await new Promise((r) => setTimeout(r, 700));
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        const res = await fetch(`${API_BASE_URL}/manage/members/lookup?school_id=${encodeURIComponent(addSchoolId.trim())}`, {
+            headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+        const payload = await res?.json().catch(() => null) as { success?: boolean; data?: any; error?: string } | null;
         setAddLoading(false);
-        // Simulate not found
-        if (addSchoolId.trim() === '0000-0-00000') {
-            setAddError('No verified account found with that Student ID.');
+        if (!res || !res.ok || !payload?.success || !payload.data) {
+            setAddError(payload?.error ?? 'Lookup failed.');
             return;
         }
-        // Simulate found — replace with real API response shape
         setLookupResult({
-            firstName: 'Sample', lastName: 'Student',
-            course: 'BSCS', dept: 'CEIT',
-            yearLevel: 2, section: 1,
+            userId: payload.data.id,
+            firstName: payload.data.first_name ?? '',
+            lastName: payload.data.last_name ?? '',
+            course: payload.data.course_code ?? '-',
+            dept: payload.data.dept_code ?? '-',
+            yearLevel: Number(payload.data.year_level ?? 0),
+            section: Number(payload.data.section ?? 0),
         });
     }
 
-    function handleConfirmAdd() {
+    async function handleConfirmAdd() {
         if (!lookupResult) return;
-        const now = new Date().toISOString();
-        const next: Member = {
-            id: `m-${Date.now()}`,
-            userId: `u-new-${Date.now()}`,
-            orgId: 'org-1',
-            membershipStatus: 'Active',
-            paidMembershipFee: false,
-            joinedAt: now,
-            updatedAt: now,
-            schoolId: addSchoolId.trim(),
-            firstName: lookupResult.firstName,
-            lastName: lookupResult.lastName,
-            email: `${addSchoolId.replace(/-/g, '.')}@cvsu.edu.ph`,
-            course: lookupResult.course,
-            dept: lookupResult.dept,
-            yearLevel: lookupResult.yearLevel,
-            section: lookupResult.section,
-            isOfficer: false,
-        };
-        setMembers((prev) => [next, ...prev]);
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        const res = await fetch(`${API_BASE_URL}/manage/members`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ user_id: lookupResult.userId }),
+        }).catch(() => null);
+        const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
+        if (!res || !res.ok || !payload?.success) {
+            setAddError(payload?.error ?? 'Unable to add member.');
+            return;
+        }
+        // refresh list
+        window.location.reload();
         closeAddModal();
-        // API: POST /api/manage/members { org_id, user_id }
     }
 
-    function handleFeeToggle() {
+    async function handleFeeToggle() {
         if (!feeTarget) return;
         const now = new Date().toISOString();
         const next = !feeTarget.paidMembershipFee;
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        const res = await fetch(`${API_BASE_URL}/manage/members/${feeTarget.id}`, {
+            method: 'PATCH',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ paid_membership_fee: next }),
+        }).catch(() => null);
+        const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
+        if (!res || !res.ok || !payload?.success) return;
         setMembers((prev) =>
             prev.map((m) =>
                 m.id === feeTarget.id
@@ -291,12 +343,19 @@ export default function ManageMembersPage() {
             setDetailMember((p) => p ? { ...p, paidMembershipFee: next, updatedAt: now } : p);
         }
         setFeeTarget(null);
-        // API: PATCH /api/manage/members/:id { paid_membership_fee }
     }
 
-    function handleStatusChange() {
+    async function handleStatusChange() {
         if (!statusTarget || !pendingStatus) return;
         const now = new Date().toISOString();
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        const res = await fetch(`${API_BASE_URL}/manage/members/${statusTarget.id}`, {
+            method: 'PATCH',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ membership_status: pendingStatus }),
+        }).catch(() => null);
+        const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
+        if (!res || !res.ok || !payload?.success) return;
         setMembers((prev) =>
             prev.map((m) =>
                 m.id === statusTarget.id
@@ -309,7 +368,6 @@ export default function ManageMembersPage() {
         }
         setStatusTarget(null);
         setPendingStatus(null);
-        // API: PATCH /api/manage/members/:id { membership_status }
     }
 
     function closeAddModal() {
@@ -485,7 +543,20 @@ export default function ManageMembersPage() {
                 </div>
 
                 {/* ── Table ── */}
-                <div className="card overflow-x-auto">
+                <div className="card">
+                    <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+                        <h2 className="text-[15px] font-semibold text-[var(--color-text)]">Members</h2>
+                        <button
+                            className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => loadMembers(true)}
+                            disabled={refreshing || loading}
+                            aria-label="Refresh members"
+                            title="Refresh members"
+                        >
+                            <IconRefresh spinning={refreshing} />
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
                     <table className="table-base">
                         <thead>
                             <tr>
@@ -527,6 +598,7 @@ export default function ManageMembersPage() {
                             )}
                         </tbody>
                     </table>
+                    </div>
 
                     <div
                         className="px-4 py-3 flex items-center justify-between"

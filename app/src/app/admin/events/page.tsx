@@ -1,520 +1,672 @@
-'use client';
+﻿"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import AdminShell from '@/components/AdminShell';
-import { FilterSelect, FilterChip } from '@/components/ui/filter';
+import { useEffect, useMemo, useState } from "react";
+import { FilterChip, FilterSelect } from "@/components/ui/filter";
+import { IconRefresh } from "@/components/ui/IconRefresh";
+import { createPortal } from "react-dom";
+import { TableRowsSkeleton } from "@/components/skeletons";
 
-/* ----------------------------------------------------------------
-   Types
-   ---------------------------------------------------------------- */
-type EventStatus = 'Upcoming' | 'Open' | 'Full' | 'Closed' | 'Completed' | 'Cancelled';
-type AudienceType = 'Open' | 'CvSU_Only' | 'Org_Members_Only';
-type EventCategory = 'Workshop' | 'Seminar' | 'Competition' | 'Activity' | 'Training' | 'Outreach' | 'Cultural' | 'Other';
+type EventStatus = "Upcoming" | "Open" | "Closed" | "Completed" | "Cancelled";
 
 interface AdminEvent {
-    id: string;
-    title: string;
-    hostOrg: string;
-    venue: string;
-    category: EventCategory;
-    audienceType: AudienceType;
-    startDate: string;
-    status: EventStatus;
-    isPaid: boolean;
-    capacity: number;
-    registrants: number;
-    isFlagged: boolean;
-    flagReason?: string; // Added flag reason
+  id: string;
+  title: string;
+  startTime?: string;
+  venue: string;
+  category: string;
+  bannerUrl: string | null;
+  audienceType: string;
+  isPaid: boolean;
+  capacity: number;
+  participants: number;
+  status: EventStatus;
 }
 
-/* ----------------------------------------------------------------
-   Placeholder Data
-   ---------------------------------------------------------------- */
-const PLACEHOLDER_EVENTS: AdminEvent[] = [
-    { id: 'ev-1', title: 'Web Dev Workshop 2025', hostOrg: 'CSS', venue: 'AVR 2', category: 'Workshop', audienceType: 'CvSU_Only', startDate: '2025-05-10', status: 'Completed', isPaid: false, capacity: 80, registrants: 64, isFlagged: false },
-    { id: 'ev-2', title: 'Hackathon: Code for a Cause', hostOrg: 'CSS', venue: 'Gymnasium', category: 'Competition', audienceType: 'Open', startDate: '2025-08-03', status: 'Open', isPaid: true, capacity: 50, registrants: 38, isFlagged: false },
-    { id: 'ev-3', title: 'Career Talk: Tech Industry', hostOrg: 'CSS', venue: 'SMT Hall', category: 'Seminar', audienceType: 'CvSU_Only', startDate: '2025-09-20', status: 'Upcoming', isPaid: false, capacity: 100, registrants: 0, isFlagged: false },
-    { id: 'ev-4', title: 'Night of Stars: SPECS Anniversary', hostOrg: 'SPECS', venue: 'Open Grounds', category: 'Cultural', audienceType: 'Open', startDate: '2025-04-05', status: 'Cancelled', isPaid: true, capacity: 200, registrants: 12, isFlagged: false },
-    { id: 'ev-5', title: 'Nursing Skills Training', hostOrg: 'NSO', venue: 'Sim Lab', category: 'Training', audienceType: 'Org_Members_Only', startDate: '2025-07-15', status: 'Open', isPaid: false, capacity: 30, registrants: 28, isFlagged: false },
-    { id: 'ev-6', title: 'Community Feeding Drive', hostOrg: 'YFC', venue: 'TBA', category: 'Outreach', audienceType: 'Open', startDate: '2025-08-20', status: 'Upcoming', isPaid: false, capacity: 60, registrants: 4, isFlagged: true, flagReason: 'Needs venue confirmation before wider promotion.' },
-    { id: 'ev-7', title: 'Business Plan Competition', hostOrg: 'JMA', venue: 'AVR 1', category: 'Competition', audienceType: 'CvSU_Only', startDate: '2025-09-05', status: 'Upcoming', isPaid: true, capacity: 40, registrants: 0, isFlagged: false },
-    { id: 'ev-8', title: 'Dance Workshop: Folklorico', hostOrg: 'CCC', venue: 'Mini Theater', category: 'Cultural', audienceType: 'Open', startDate: '2025-06-28', status: 'Full', isPaid: true, capacity: 25, registrants: 25, isFlagged: false },
-    { id: 'ev-9', title: 'Budget 101: Financial Literacy', hostOrg: 'JMA', venue: 'AVR 2', category: 'Seminar', audienceType: 'Open', startDate: '2025-05-22', status: 'Completed', isPaid: false, capacity: 70, registrants: 55, isFlagged: false },
-    { id: 'ev-10', title: 'App Dev Bootcamp', hostOrg: 'CSS', venue: 'CIT Lab 3', category: 'Workshop', audienceType: 'CvSU_Only', startDate: '2025-10-02', status: 'Upcoming', isPaid: true, capacity: 35, registrants: 0, isFlagged: true, flagReason: 'Missing registration fee details.' },
-];
-
-/* ----------------------------------------------------------------
-   Helpers
-   ---------------------------------------------------------------- */
-const STATUS_BADGE: Record<EventStatus, string> = {
-    Upcoming: 'badge-blue',
-    Open: 'badge-green',
-    Full: 'badge-yellow',
-    Closed: 'badge-gray',
-    Completed: 'badge-gray',
-    Cancelled: 'badge-red',
+type ApiEvent = {
+  id: string;
+  title?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  effective_status?: string | null;
+  capacity?: number | null;
+  total_registered?: number | null;
+  audience_type?: string | null;
+  is_paid?: boolean | null;
+  status?: string | null;
+  category_name?: string | null;
+  venue_name?: string | null;
+  banner_url?: string | null;
 };
 
-const AUDIENCE_LABEL: Record<AudienceType, string> = {
-    Open: 'Open',
-    CvSU_Only: 'CvSU Only',
-    Org_Members_Only: 'Org Members',
-};
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = "Asia/Manila";
 
-/* ----------------------------------------------------------------
-   Page
-   ---------------------------------------------------------------- */
+function parseEventDate(value?: string | null): Date {
+  const s = String(value ?? "").trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes("T") ? s : s.replace(" ", "T");
+  return new Date(`${normalized}+08:00`);
+}
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_BASE_URL).origin;
+  } catch {
+    return "http://localhost:8000";
+  }
+})();
+
+function normalizeImageUrl(raw?: string | null): string | null {
+  if (!raw) return null;
+  const value = String(raw).trim();
+  if (!value) return null;
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("//")
+  )
+    return value;
+  const path = value.startsWith("/") ? value : `/${value}`;
+  return `${API_ORIGIN}${path}`;
+}
+
+function formatAdminDateTime(value?: string | null): string {
+  if (!value) return "-";
+  const d = parseEventDate(value);
+  if (Number.isNaN(d.getTime())) return "-";
+
+  // 1. Get the month and day (e.g., "May 29")
+  const monthDay = d.toLocaleString("en-US", { month: "long", day: "numeric", timeZone: PH_TIMEZONE });
+
+  // 2. Get the full year (e.g., 2026)
+  const year = d.getFullYear();
+
+  // 3. Get the time (e.g., "10:00 AM")
+  const time = d.toLocaleString("en-US", {
+    hour: "numeric", // "numeric" avoids leading zeros like "05:00 PM" -> "5:00 PM"
+    minute: "2-digit",
+    hour12: true,
+    timeZone: PH_TIMEZONE,
+  });
+
+  // 4. Piece them together exactly how you want it
+  return `${monthDay}, ${year} • ${time}`;
+}
+
+function normalizeStatus(
+  rawStatus?: string | null,
+  startDate?: string | null,
+  endDate?: string | null,
+): EventStatus {
+  const s = String(rawStatus ?? "")
+    .trim()
+    .toLowerCase();
+  if (s === "upcoming") return "Upcoming";
+  if (s === "open") return "Open";
+  if (s === "full") return "Closed";
+  if (s === "closed") return "Closed";
+  if (s === "completed") return "Completed";
+  if (s === "cancelled") return "Cancelled";
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate ?? startDate);
+  if (!Number.isNaN(end.getTime()) && end < new Date()) return "Completed";
+  if (!Number.isNaN(start.getTime()) && start > new Date()) return "Upcoming";
+  return "Open";
+}
+
+function getStatusClass(status: EventStatus): string {
+  switch (status) {
+    case "Upcoming":
+      return "badge badge-blue";
+    case "Open":
+      return "badge badge-green";
+    case "Closed":
+      return "badge badge-gray";
+    case "Completed":
+      return "badge badge-gray";
+    case "Cancelled":
+      return "badge badge-red";
+  }
+}
+
 export default function AdminEventsPage() {
-    const [search, setSearch] = useState('');
-    const [filterStatus, setFilterStatus] = useState<'All' | EventStatus>('All');
-    const [filterCategory, setFilterCategory] = useState<'All' | EventCategory>('All');
-    const [filterOrg, setFilterOrg] = useState('All');
-    const [filterFlagged, setFilterFlagged] = useState(false);
+  const [rows, setRows] = useState<AdminEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"All" | EventStatus>("All");
+  const [typeFilter, setTypeFilter] = useState<"All" | "Paid" | "Free">("All");
+  const [audienceFilter, setAudienceFilter] = useState<
+    "All" | "CvSU_Only" | "Org_Members_Only"
+  >("All");
+  const [deleteTarget, setDeleteTarget] = useState<AdminEvent | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-    const [confirmRemove, setConfirmRemove] = useState<AdminEvent | null>(null);
-    const [confirmFlag, setConfirmFlag] = useState<AdminEvent | null>(null);
-    const [flagReasonInput, setFlagReasonInput] = useState(''); // Holds the reason typed in the modal
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
-    const [events, setEvents] = useState<AdminEvent[]>(PLACEHOLDER_EVENTS);
+  function handleExpiredSession() {
+    window.localStorage.removeItem("auth_token");
+    window.localStorage.removeItem("auth_user");
+    window.sessionStorage.removeItem("auth_token");
+    window.sessionStorage.removeItem("auth_user");
+    window.location.href = "/";
+  }
 
-    const orgs = useMemo(() => {
-        const all = [...new Set(events.map((e) => e.hostOrg))].sort();
-        return ['All', ...all];
-    }, [events]);
-
-    const filtered = useMemo(() => {
-        return events.filter((ev) => {
-            const q = search.toLowerCase();
-            const matchSearch = ev.title.toLowerCase().includes(q) || ev.hostOrg.toLowerCase().includes(q) || ev.venue.toLowerCase().includes(q);
-            const matchStatus = filterStatus === 'All' || ev.status === filterStatus;
-            const matchCategory = filterCategory === 'All' || ev.category === filterCategory;
-            const matchOrg = filterOrg === 'All' || ev.hostOrg === filterOrg;
-            const matchFlagged = !filterFlagged || ev.isFlagged;
-            return matchSearch && matchStatus && matchCategory && matchOrg && matchFlagged;
-        });
-    }, [events, search, filterStatus, filterCategory, filterOrg, filterFlagged]);
-
-    const stats = useMemo(() => ({
-        total: events.length,
-        active: events.filter((e) => ['Open', 'Upcoming', 'Full'].includes(e.status)).length,
-        flagged: events.filter((e) => e.isFlagged).length,
-        completed: events.filter((e) => e.status === 'Completed').length,
-    }), [events]);
-
-    function handleRemove(ev: AdminEvent) {
-        setEvents((prev) => prev.filter((e) => e.id !== ev.id));
-        setConfirmRemove(null);
+  async function loadEvents(showRefreshing = false) {
+    const token =
+      window.localStorage.getItem("auth_token") ??
+      window.sessionStorage.getItem("auth_token");
+    if (!token) {
+      setLoading(false);
+      return;
     }
-
-    function handleToggleFlag(ev: AdminEvent, reason?: string) {
-        setEvents((prev) =>
-            prev.map((e) =>
-                e.id === ev.id
-                    ? {
-                        ...e,
-                        isFlagged: !e.isFlagged,
-                        flagReason: !e.isFlagged ? reason : undefined
-                    }
-                    : e
-            )
-        );
-        setConfirmFlag(null);
-        setFlagReasonInput('');
+    if (showRefreshing) setRefreshing(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/events?per_page=500`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.status === 401 || res.status === 403) {
+        handleExpiredSession();
+        return;
+      }
+      const payload = (await res.json().catch(() => null)) as {
+        success?: boolean;
+        data?: ApiEvent[];
+        error?: string;
+      } | null;
+      if (!res.ok || !payload?.success || !Array.isArray(payload.data)) {
+        setError(payload?.error ?? "Unable to load events.");
+        setRows([]);
+        return;
+      }
+      setRows(
+        payload.data.map((e) => ({
+          id: e.id,
+          title: e.title ?? "Untitled Event",
+          startTime: formatAdminDateTime(e.start_date),
+          venue: e.venue_name ?? "TBA",
+          category: e.category_name ?? "Other",
+          bannerUrl: normalizeImageUrl(e.banner_url),
+          audienceType: e.audience_type ?? "CvSU_Only",
+          isPaid: Boolean(e.is_paid),
+          capacity: Number(e.capacity ?? 0),
+          participants: Number(e.total_registered ?? 0),
+          status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
+        })),
+      );
+      setError("");
+    } finally {
+      setLoading(false);
+      if (showRefreshing) setRefreshing(false);
     }
+  }
 
-    const hasActiveFilters = !!search || filterStatus !== 'All' || filterCategory !== 'All' || filterOrg !== 'All' || filterFlagged;
+  useEffect(() => {
+    loadEvents(false);
+  }, []);
 
-    return (
-        <AdminShell>
-            <main className="flex flex-col gap-6 animate-fade-in">
+  async function deleteEvent(ev: AdminEvent) {
+    const token =
+      window.localStorage.getItem("auth_token") ??
+      window.sessionStorage.getItem("auth_token");
+    if (!token) return;
+    if (!deleteReason.trim()) {
+      setDeleteError("Please provide a reason for removal.");
+      return;
+    }
+    setDeleting(true);
+    const res = await fetch(`${API_BASE_URL}/admin/events/${ev.id}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ reason: deleteReason.trim() }),
+    }).catch(() => null);
+    if (res?.status === 401 || res?.status === 403) {
+      handleExpiredSession();
+      return;
+    }
+    const payload = (await res?.json().catch(() => null)) as {
+      success?: boolean;
+      error?: string;
+    } | null;
+    if (!res || !res.ok || !payload?.success) {
+      setDeleteError(payload?.error ?? "Unable to remove event.");
+      setDeleting(false);
+      return;
+    }
+    setRows((prev) => prev.filter((x) => x.id !== ev.id));
+    setDeleting(false);
+    setDeleteReason("");
+    setDeleteError("");
+    setDeleteTarget(null);
+  }
 
-                {/* ── Header ── */}
-                <div>
-                    <p
-                        className="text-xs font-semibold uppercase tracking-widest mb-1"
-                        style={{ color: "var(--color-text-muted)" }}
-                    >
-                        Admin
-                    </p>
-                    <h1
-                        className="text-[22px] font-bold tracking-tight"
-                        style={{ color: "var(--color-text)" }}
-                    >
-                        Events
-                    </h1>
-                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                        Review all published events across the platform. Remove or flag events as needed.
-                    </p>
-                </div>
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return rows
+      .filter((r) => {
+        const matchSearch =
+          !q ||
+          r.title.toLowerCase().includes(q) ||
+          r.venue.toLowerCase().includes(q);
+        const matchStatus = statusFilter === "All" || r.status === statusFilter;
+        const matchType = typeFilter === "All" || (typeFilter === "Paid" ? r.isPaid : !r.isPaid);
+        const matchAudience = audienceFilter === "All" || r.audienceType === audienceFilter;
+        return matchSearch && matchStatus && matchType && matchAudience;
+      })
+      .sort((a, b) => {
+        const aCompleted = a.status === "Completed";
+        const bCompleted = b.status === "Completed";
+        if (aCompleted === bCompleted) return 0;
+        return aCompleted ? 1 : -1;
+      });
+  }, [
+    rows,
+    search,
+    statusFilter,
+    typeFilter,
+    audienceFilter,
+  ]);
+  const hasActiveFilters =
+    !!search ||
+    statusFilter !== "All" ||
+    typeFilter !== "All" ||
+    audienceFilter !== "All";
 
-
-                {/* ── Stats ── */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard label="Total Events" value={stats.total} color="blue" />
-                    <StatCard label="Active" value={stats.active} color="green" />
-                    <StatCard label="Flagged" value={stats.flagged} color="yellow" />
-                    <StatCard label="Completed" value={stats.completed} color="gray" />
-                </div>
-
-                {/* ── Filters ─────────────────────────────────────────────── */}
-                <div className="card mb-6">
-                    <div className="card-body py-3.5">
-                        <div className="flex flex-col gap-2.5">
-
-                            {/* Controls row */}
-                            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center flex-wrap">
-
-                                {/* Search */}
-                                <div className="input-icon-wrapper flex-1 min-w-[200px]">
-                                    <span className="input-icon-left"><IconSearch /></span>
-                                    <input
-                                        type="text"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search by title, org, or venue…"
-                                        className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
-                                    />
-                                    {search && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setSearch('')}
-                                            aria-label="Clear search"
-                                            className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60"
-                                            style={{ color: 'var(--color-text-muted)' }}
-                                        >
-                                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                                                <path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-
-                                <FilterSelect
-                                    value={filterStatus}
-                                    defaultValue="All"
-                                    onChange={(v) => setFilterStatus(v as typeof filterStatus)}
-                                    options={[
-                                        { value: 'All', label: 'All Status' },
-                                        ...(['Upcoming', 'Open', 'Full', 'Closed', 'Completed', 'Cancelled'] as EventStatus[])
-                                            .map((s) => ({ value: s, label: s })),
-                                    ]}
-                                    className="sm:w-36"
-                                />
-
-                                <FilterSelect
-                                    value={filterCategory}
-                                    defaultValue="All"
-                                    onChange={(v) => setFilterCategory(v as typeof filterCategory)}
-                                    options={[
-                                        { value: 'All', label: 'All Categories' },
-                                        ...(['Workshop', 'Seminar', 'Competition', 'Activity', 'Training', 'Outreach', 'Cultural', 'Other'] as EventCategory[])
-                                            .map((c) => ({ value: c, label: c })),
-                                    ]}
-                                    className="sm:w-40"
-                                />
-
-                                <FilterSelect
-                                    value={filterOrg}
-                                    defaultValue="All"
-                                    onChange={(v) => setFilterOrg(v)}
-                                    options={orgs.map((o) => ({ value: o, label: o === 'All' ? 'All Orgs' : o }))}
-                                    className="sm:w-36"
-                                />
-
-                                {/* Flagged toggle */}
-                                <button
-                                    type="button"
-                                    onClick={() => setFilterFlagged((v) => !v)}
-                                    className="btn btn-sm flex items-center gap-1.5 whitespace-nowrap"
-                                    style={filterFlagged ? {
-                                        background: 'var(--color-primary-muted)',
-                                        color: 'var(--color-primary)',
-                                        border: '1px solid var(--color-primary)',
-                                        fontWeight: 600,
-                                    } : {
-                                        background: 'var(--color-surface)',
-                                        color: 'var(--color-text-secondary)',
-                                        border: '1px solid var(--color-border)',
-                                    }}
-                                >
-                                    <IconFlag />
-                                    {filterFlagged ? 'Flagged only' : 'Show flagged'}
-                                </button>
-
-                                {hasActiveFilters && (
-                                    <button
-                                        type="button"
-                                        onClick={() => { setSearch(''); setFilterStatus('All'); setFilterCategory('All'); setFilterOrg('All'); setFilterFlagged(false); }}
-                                        className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto"
-                                        style={{ color: 'var(--color-error)' }}
-                                    >
-                                        Clear all
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Active filter chips */}
-                            {hasActiveFilters && (
-                                <div
-                                    className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
-                                    style={{ borderColor: 'var(--color-border)' }}
-                                >
-                                    <span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                                        Filtering by:
-                                    </span>
-                                    {search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}
-                                    {filterStatus !== 'All' && <FilterChip label={filterStatus} onRemove={() => setFilterStatus('All')} />}
-                                    {filterCategory !== 'All' && <FilterChip label={filterCategory} onRemove={() => setFilterCategory('All')} />}
-                                    {filterOrg !== 'All' && <FilterChip label={filterOrg} onRemove={() => setFilterOrg('All')} />}
-                                    {filterFlagged && <FilterChip label="Flagged" onRemove={() => setFilterFlagged(false)} />}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Table ── */}
-                <div className="card overflow-x-auto">
-                    <table className="table-base">
-                        <thead>
-                            <tr>
-                                <th>Event</th>
-                                <th>Org</th>
-                                <th>Venue</th>
-                                <th>Category</th>
-                                <th>Audience</th>
-                                <th>Date</th>
-                                <th>Capacity</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.length === 0 ? (
-                                <tr>
-                                    <td colSpan={9} className="text-center py-10 text-sm text-[var(--color-text-muted)]">
-                                        No events match your filters.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filtered.map((ev) => (
-                                    <tr key={ev.id} className={ev.isFlagged ? 'bg-amber-50/40' : ''}>
-                                        {/* Title */}
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                {ev.isFlagged && (
-                                                    <span
-                                                        title={`Flagged${ev.flagReason ? `: ${ev.flagReason}` : ''}`}
-                                                        className="text-amber-500 flex-shrink-0 cursor-help"
-                                                    >
-                                                        <IconFlag />
-                                                    </span>
-                                                )}
-                                                <div>
-                                                    <p className="text-sm font-medium text-[var(--color-text)] leading-tight">{ev.title}</p>
-                                                    {ev.isPaid && (
-                                                        <span className="text-[10px] text-[var(--color-text-muted)] font-medium">Paid Event</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="text-sm font-medium text-[var(--color-primary)]">
-                                            <Link href={`/admin/organizations/org-placeholder`} className="hover:underline">
-                                                {ev.hostOrg}
-                                            </Link>
-                                        </td>
-                                        <td className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">{ev.venue}</td>
-                                        <td>
-                                            <span className="badge badge-blue">{ev.category}</span>
-                                        </td>
-                                        <td className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
-                                            {AUDIENCE_LABEL[ev.audienceType]}
-                                        </td>
-                                        <td className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">{ev.startDate}</td>
-                                        <td className="text-sm text-[var(--color-text-secondary)]">
-                                            <div className="flex items-center gap-1">
-                                                <span className={ev.registrants >= ev.capacity ? 'text-[var(--color-error)]' : ''}>
-                                                    {ev.registrants}
-                                                </span>
-                                                <span className="text-[var(--color-text-muted)]">/</span>
-                                                <span>{ev.capacity}</span>
-                                            </div>
-                                            {/* Fill bar */}
-                                            <div className="w-16 h-1 rounded-full bg-[var(--color-border)] mt-1 overflow-hidden">
-                                                <div
-                                                    className="h-full rounded-full"
-                                                    style={{
-                                                        width: `${Math.min((ev.registrants / ev.capacity) * 100, 100)}%`,
-                                                        backgroundColor: ev.registrants >= ev.capacity
-                                                            ? 'var(--color-error)'
-                                                            : 'var(--color-primary-light)',
-                                                    }}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${STATUS_BADGE[ev.status]}`}>{ev.status}</span>
-                                        </td>
-                                        <td>
-                                            <div className="flex items-center gap-1.5">
-                                                {/* Flag / Unflag */}
-                                                <button
-                                                    onClick={() => {
-                                                        setConfirmFlag(ev);
-                                                        setFlagReasonInput(ev.flagReason || '');
-                                                    }}
-                                                    title={ev.isFlagged ? 'Unflag' : 'Flag'}
-                                                    className={`btn btn-sm ${ev.isFlagged ? 'btn-outline' : 'btn-ghost'} px-2`}
-                                                >
-                                                    <IconFlag />
-                                                </button>
-                                                {/* Remove */}
-                                                <button
-                                                    onClick={() => setConfirmRemove(ev)}
-                                                    title="Remove event"
-                                                    className="btn btn-sm btn-danger px-2"
-                                                >
-                                                    <IconTrash />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-
-                    {/* Footer */}
-                    <div className="px-4 py-3 border-t border-[var(--color-border)] flex items-center justify-between">
-                        <p className="text-xs text-[var(--color-text-muted)]">
-                            Showing {filtered.length} of {events.length} events
-                        </p>
-                        <div className="flex items-center gap-1">
-                            <button className="btn btn-ghost btn-sm" disabled>← Prev</button>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-semibold">1</span>
-                            <button className="btn btn-ghost btn-sm" disabled>Next →</button>
-                        </div>
-                    </div>
-                </div>
-            </main>
-
-            {/* ── Remove Confirm Modal ── */}
-            {confirmRemove && (
-                <>
-                    <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setConfirmRemove(null)} />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in">
-                            <h3 className="text-base font-semibold text-[var(--color-text)] mb-2">Remove Event?</h3>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-1">
-                                Event: <span className="font-semibold">{confirmRemove.title}</span>
-                            </p>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
-                                This will permanently remove the event from the platform. All associated registrations and payment records will be preserved for audit purposes.
-                            </p>
-                            <div className="flex gap-3 justify-end">
-                                <button className="btn btn-ghost" onClick={() => setConfirmRemove(null)}>Cancel</button>
-                                <button className="btn btn-danger" onClick={() => handleRemove(confirmRemove)}>Yes, Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {/* ── Flag Confirm Modal ── */}
-            {confirmFlag && (
-                <>
-                    <div className="fixed inset-0 bg-black/40 z-50" onClick={() => { setConfirmFlag(null); setFlagReasonInput(''); }} />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in">
-                            <h3 className="text-base font-semibold text-[var(--color-text)] mb-2">
-                                {confirmFlag.isFlagged ? 'Remove Flag?' : 'Flag Event?'}
-                            </h3>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-2">
-                                Event: <span className="font-semibold">{confirmFlag.title}</span>
-                            </p>
-                            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-                                {confirmFlag.isFlagged
-                                    ? 'This will clear the flag on this event. It will no longer appear in the flagged filter.'
-                                    : 'Flagging this event marks it for review. The event remains visible to students but is highlighted for admin attention.'
-                                }
-                            </p>
-
-                            {!confirmFlag.isFlagged && (
-                                <div className="mb-6">
-                                    <label className="block text-sm font-medium text-[var(--color-text)]">
-                                        Reason for flagging <span className="text-red-500">*</span>
-                                    </label>
-                                    <textarea
-                                        value={flagReasonInput}
-                                        onChange={(e) => setFlagReasonInput(e.target.value)}
-                                        className="w-full mt-1.5 p-3 text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] resize-y min-h-[80px]"
-                                        placeholder="e.g., Missing venue details, suspicious links, etc."
-                                        autoFocus
-                                    />
-                                </div>
-                            )}
-
-                            <div className={`flex gap-3 justify-end ${confirmFlag.isFlagged ? 'mt-6' : ''}`}>
-                                <button className="btn btn-ghost" onClick={() => { setConfirmFlag(null); setFlagReasonInput(''); }}>Cancel</button>
-                                <button
-                                    className={`btn ${confirmFlag.isFlagged ? 'btn-outline' : 'btn-primary'}`}
-                                    onClick={() => handleToggleFlag(confirmFlag, flagReasonInput)}
-                                    disabled={!confirmFlag.isFlagged && !flagReasonInput.trim()}
-                                >
-                                    {confirmFlag.isFlagged ? 'Remove Flag' : 'Yes, Flag It'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-        </AdminShell>
-    );
-}
-
-/* ----------------------------------------------------------------
-   Sub-components
-   ---------------------------------------------------------------- */
-const STAT_COLORS = {
-    blue: { bg: 'bg-blue-50', text: 'text-blue-700' },
-    green: { bg: 'bg-[var(--color-primary-muted)]', text: 'text-[var(--color-primary)]' },
-    yellow: { bg: 'bg-amber-50', text: 'text-amber-700' },
-    gray: { bg: 'bg-[var(--color-surface-2)]', text: 'text-[var(--color-text-secondary)]' },
-};
-
-function StatCard({ label, value, color }: { label: string; value: number; color: keyof typeof STAT_COLORS }) {
-    const c = STAT_COLORS[color];
-    return (
-        <div className={`card ${c.bg} border-0`}>
-            <div className="card-body py-4">
-                <p className={`text-2xl font-bold ${c.text}`}>{value}</p>
-                <p className={`text-xs font-medium mt-0.5 ${c.text}`}>{label}</p>
-            </div>
+  return (
+    <>
+      <main className="flex flex-col gap-6 animate-fade-in">
+        <div>
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-1"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Admin
+          </p>
+          <h1
+            className="text-[22px] font-bold tracking-tight"
+            style={{ color: "var(--color-text)" }}
+          >
+            Events
+          </h1>
+          <p
+            className="text-sm mt-0.5"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Manage published events.
+          </p>
         </div>
-    );
-}
 
-function IconSearch() {
-    return (
-        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-            <path d="M9 17A8 8 0 109 1a8 8 0 000 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-    );
-}
+        <div className="card">
+          <div className="card-body py-3.5">
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col lg:flex-row gap-2.5 lg:items-center">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by title or venue..."
+                  className="input-has-left-icon flex-1"
+                />
+                <FilterSelect
+                  value={statusFilter}
+                  defaultValue="All"
+                  onChange={(v) => setStatusFilter(v as "All" | EventStatus)}
+                  options={[
+                    { value: "All", label: "All Status" },
+                    { value: "Upcoming", label: "Upcoming" },
+                    { value: "Open", label: "Open" },
+                    { value: "Closed", label: "Closed" },
+                    { value: "Completed", label: "Completed" },
+                    { value: "Cancelled", label: "Cancelled" },
+                  ]}
+                  className="lg:w-40"
+                />
+                <FilterSelect
+                  value={typeFilter}
+                  defaultValue="All"
+                  onChange={(v) => setTypeFilter(v as "All" | "Paid" | "Free")}
+                  options={[
+                    { value: "All", label: "All Types" },
+                    { value: "Paid", label: "Paid" },
+                    { value: "Free", label: "Free" },
+                  ]}
+                  className="lg:w-36"
+                />
+                <FilterSelect
+                  value={audienceFilter}
+                  defaultValue="All"
+                  onChange={(v) =>
+                    setAudienceFilter(v as "All" | "CvSU_Only" | "Org_Members_Only")
+                  }
+                  options={[
+                    { value: "All", label: "All Audience" },
+                    { value: "CvSU_Only", label: "CvSU Students Only" },
+                    { value: "Org_Members_Only", label: "Exclusive" },
+                  ]}
+                  className="lg:w-44"
+                />
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("");
+                      setStatusFilter("All");
+                      setTypeFilter("All");
+                      setAudienceFilter("All");
+                    }}
+                    className="btn btn-ghost btn-sm whitespace-nowrap self-start lg:self-auto"
+                    style={{ color: "var(--color-error)" }}
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {hasActiveFilters && (
+                <div
+                  className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t"
+                  style={{ borderColor: "var(--color-border)" }}
+                >
+                  <span
+                    className="text-[11px] font-medium mr-0.5"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    Filtering by:
+                  </span>
+                  {search && (
+                    <FilterChip label={`"${search}"`} onRemove={() => setSearch("")} />
+                  )}
+                  {statusFilter !== "All" && (
+                    <FilterChip
+                      label={statusFilter}
+                      onRemove={() => setStatusFilter("All")}
+                    />
+                  )}
+                  {typeFilter !== "All" && (
+                    <FilterChip
+                      label={typeFilter}
+                      onRemove={() => setTypeFilter("All")}
+                    />
+                  )}
+                  {audienceFilter !== "All" && (
+                    <FilterChip
+                      label={
+                        audienceFilter === "Org_Members_Only"
+                          ? "Exclusive"
+                          : "CvSU Students Only"
+                      }
+                      onRemove={() => setAudienceFilter("All")}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-function IconFlag() {
-    return (
-        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-            <path d="M4 3v14M4 3l12 5-12 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
-}
+        <div className="card">
+          <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+            <h2 className="text-[15px] font-semibold text-[var(--color-text)]">
+              Events Table
+            </h2>
+            <button
+              className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => loadEvents(true)}
+              disabled={refreshing || loading}
+              aria-label="Refresh events"
+              title="Refresh events"
+            >
+              <IconRefresh spinning={refreshing} />
+            </button>
+          </div>
+          {!!error && (
+            <div
+              className="px-4 py-3 text-sm"
+              style={{ color: "var(--color-error)" }}
+            >
+              {error}
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <table className="table-base">
+              <colgroup>
+                <col className="w-[34%]" />
+                <col className="w-[20%]" />
+                <col className="w-[14%]" />
+                <col className="w-[10%]" />
+                <col className="w-[10%]" />
+                <col className="w-[8%]" />
+                <col className="w-[4%]" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th className="text-left align-middle">Event</th>
+                  <th className="text-left align-middle">Date</th>
+                  <th className="text-left align-middle">Audience</th>
+                  <th className="text-left align-middle">Type</th>
+                  <th className="text-left align-middle">Capacity</th>
+                  <th className="text-left align-middle">Status</th>
+                  <th className="text-left align-middle">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <TableRowsSkeleton columns={7} rows={6} />
+                ) : filtered.length === 0 ? (
+                  <tr className="animate-content-reveal">
+                    <td
+                      colSpan={7}
+                      className="text-center py-10 text-sm text-[var(--color-text-muted)]"
+                    >
+                      No events found.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((ev) => (
+                    <tr key={ev.id} className={`animate-content-reveal ${ev.status === "Completed" ? "bg-gray-50 text-gray-400" : ""}`}>
+                      <td className="text-sm font-medium max-w-[300px] align-middle">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-10 h-10 rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-2)] flex-shrink-0 ${ev.status === "Completed" ? "grayscale" : ""}`}>
+                            {ev.bannerUrl ? (
+                              <img
+                                src={ev.bannerUrl}
+                                alt={`${ev.title} banner`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] font-semibold text-[var(--color-text-muted)]">
+                                No Img
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className={ev.status === "Completed" ? "truncate text-gray-500" : "truncate"}>{ev.title}</span>
+                            <span className="text-xs text-[var(--color-text-muted)] truncate">
+                              {ev.venue} • {ev.category}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-sm align-middle">
+                        <span
+                          className="inline-flex items-center py-0.5 text-xs font-medium text-[var(--color-text-secondary)]"
+                          suppressHydrationWarning
+                        >
+                          {ev.startTime}
+                        </span>
+                      </td>
+                      <td className="text-sm align-middle">
+                        <span
+                          className={`badge ${ev.audienceType === "Org_Members_Only" ? "badge-green" : "badge-blue"}`}
+                        >
+                          {ev.audienceType === "Org_Members_Only"
+                            ? "Exclusive"
+                            : "CvSU Students Only"}
+                        </span>
+                      </td>
+                      <td className="text-sm align-middle">
+                        <span
+                          className={`badge ${ev.isPaid ? "badge-yellow" : "badge-green"}`}
+                        >
+                          {ev.isPaid ? "Paid" : "Free"}
+                        </span>
+                      </td>
+                      <td className="text-sm align-middle">
+                        <span className="inline-flex items-center py-0.5 text-xs font-medium tabular-nums text-[var(--color-text-secondary)]">
+                          {ev.participants}/{ev.capacity}
+                        </span>
+                      </td>
+                      <td className="text-sm align-middle">
+                        <span className={getStatusClass(ev.status)}>
+                          {ev.status}
+                        </span>
+                      </td>
+                      <td className="align-middle">
+                        <button
+                          className="btn btn-sm btn-danger"
+                          title="Remove event"
+                          onClick={() => {
+                            setDeleteTarget(ev);
+                            setDeleteReason("");
+                            setDeleteError("");
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-function IconTrash() {
-    return (
-        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
-            <path d="M6 4V3a1 1 0 011-1h6a1 1 0 011 1v1M3 4h14M5 4l1 13h8l1-13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
+        {mounted &&
+          deleteTarget &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+              style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+            >
+              <div className="card w-full max-w-md shadow-2xl">
+                <div className="card-body flex flex-col gap-4">
+                  <p className="text-[16px] font-semibold">Remove event?</p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {deleteTarget.title}
+                  </p>
+
+                  <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        Date
+                      </span>
+                      <span className="font-medium">
+                        {deleteTarget.startTime ?? "-"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        Venue
+                      </span>
+                      <span className="font-medium">
+                        {deleteTarget.venue ?? "TBA"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        Category
+                      </span>
+                      <span className="font-medium">
+                        {deleteTarget.category}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        Audience
+                      </span>
+                      <span className="font-medium">
+                        {deleteTarget.audienceType === "Org_Members_Only"
+                          ? "Exclusive"
+                          : "CvSU Students Only"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded ${getStatusClass(deleteTarget.status)}`}
+                    >
+                      {deleteTarget.status}
+                    </span>
+                    <span className="text-xs text-[var(--color-text-muted)]">
+                      Capacity:{" "}
+                      <span className="font-medium">
+                        {deleteTarget.capacity}
+                      </span>
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm text-[var(--color-text-muted)]">
+                    Please provide a concise reason for removal. This action
+                    will remove the event from public listings.
+                  </p>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      Reason
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={deleteReason}
+                      onChange={(e) => {
+                        setDeleteReason(e.target.value);
+                        setDeleteError("");
+                      }}
+                      placeholder="Why is this event being removed?"
+                      className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 text-sm resize-none"
+                    />
+                    {deleteError && (
+                      <p className="text-xs text-[var(--color-error)]">
+                        {deleteError}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      className="btn btn-ghost flex-1"
+                      disabled={deleting}
+                      onClick={() => setDeleteTarget(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-danger flex-1"
+                      disabled={deleting}
+                      onClick={() => deleteEvent(deleteTarget)}
+                    >
+                      {deleting ? "Removing..." : "Yes, Remove"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )}
+      </main>
+    </>
+  );
 }

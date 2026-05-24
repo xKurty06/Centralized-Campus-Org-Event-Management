@@ -1,9 +1,9 @@
 ﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { LoaderCircle, RefreshCw } from 'lucide-react';
 import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
+import { IconRefresh } from '@/components/ui/IconRefresh';
 
 type GlobalRole = 'User' | 'Overseer';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
@@ -274,12 +274,5 @@ function Modal({ title, children, onClose, danger = false }: { title: string; ch
 
 function IconSearch() {
     return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M9 17A8 8 0 109 1a8 8 0 000 16zM19 19l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>;
-}
-
-function IconRefresh({ spinning = false }: { spinning?: boolean }) {
-    if (spinning) {
-        return <LoaderCircle className="w-4 h-4" style={{ animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />;
-    }
-    return <RefreshCw className="w-4 h-4" aria-hidden="true" />;
 }
 

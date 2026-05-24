@@ -32,6 +32,11 @@ class RegistrationResource extends JsonResource
             'check_in_at' => $this->check_in_at ? (string) $this->check_in_at : null,
             'created_at' => $this->normalizeDate($this->created_at),
             'updated_at' => $this->normalizeDate($this->updated_at),
+            'school_id' => $this->school_id ?? null,
+            'first_name' => $this->first_name ?? null,
+            'last_name' => $this->last_name ?? null,
+            'proof_status' => $this->proof_status ?? null,
+            'full_name' => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
         ];
     }
 }

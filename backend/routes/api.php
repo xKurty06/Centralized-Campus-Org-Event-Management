@@ -48,6 +48,10 @@ foreach (['', 'v1'] as $versionPrefix) {
             Route::get('/dashboard', [ManageController::class, 'dashboard']);
             Route::get('/org-profile', [ManageController::class, 'orgProfile']);
             Route::put('/org-profile', [ManageController::class, 'updateOrgProfile']);
+            Route::get('/members', [ManageController::class, 'members']);
+            Route::get('/members/lookup', [ManageController::class, 'lookupMember']);
+            Route::post('/members', [ManageController::class, 'addMember']);
+            Route::patch('/members/{id}', [ManageController::class, 'updateMember']);
             Route::post('/events', [ManageController::class, 'createEvent']);
             Route::put('/events/{id}', [ManageController::class, 'updateEvent']);
             Route::delete('/events/{id}', [ManageController::class, 'deleteEvent']);

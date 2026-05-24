@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import ManageShell from '@/components/ManageShell';
+import { ManageFormSkeleton } from '@/components/skeletons';
+import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
 /* ----------------------------------------------------------------
    Types — aligned to DB schema
@@ -19,6 +20,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 interface OrgProfile {
   id: string;
+  slug?: string;
   name: string;
   description: string;
   logo_url: string | null;
@@ -28,19 +30,24 @@ interface OrgProfile {
   accredited_at: string;
 }
 
-/* ----------------------------------------------------------------
-   Mock — replace with GET /api/manage/org-profile
-   ---------------------------------------------------------------- */
-const MOCK_ORG: OrgProfile = {
-  id: 'csso',
-  name: 'Computer Science Society',
-  description: 'The Computer Science Society (CSSO) is the official academic organization of BS Computer Science students at Cavite State University. We are committed to fostering a culture of innovation, technical excellence, and professional development among our members.\n\nThrough workshops, hackathons, seminars, and industry partnerships, CSSO bridges the gap between academic learning and real-world technology practice.',
+const EMPTY_ORG: OrgProfile = {
+  id: '',
+  name: '',
+  description: '',
   logo_url: null,
-  adviser: 'Prof. Maria Santos',
+  adviser: '',
   category: 'Academic',
   accreditation_status: 'Active',
-  accredited_at: '2024-06-15T10:00:00',
+  accredited_at: new Date().toISOString(),
 };
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_BASE_URL).origin;
+  } catch {
+    return 'http://localhost:8000';
+  }
+})();
 
 /* ----------------------------------------------------------------
    Helpers
@@ -51,6 +58,15 @@ function formatDate(iso: string) {
 
 function getInitials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function normalizeImageUrl(raw?: string | null): string | null {
+  if (!raw) return null;
+  const value = String(raw).trim();
+  if (!value) return null;
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('//')) return value;
+  const path = value.startsWith('/') ? value : `/${value}`;
+  return `${API_ORIGIN}${path}`;
 }
 
 const CATEGORY_META: Record<OrgCategory, { color: string; bg: string }> = {
@@ -91,7 +107,8 @@ function ConnectionBadge({ isOnline }: { isOnline: boolean }) {
    Page
    ---------------------------------------------------------------- */
 export default function ManageOrgProfilePage() {
-  const org = MOCK_ORG;
+  const [org, setOrg] = useState<OrgProfile>(EMPTY_ORG);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [name, setName] = useState(org.name);
   const [description, setDescription] = useState(org.description);
@@ -100,7 +117,45 @@ export default function ManageOrgProfilePage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/manage/org-profile`, {
+        headers: manageRequestHeaders(token),
+      }).catch(() => null);
+      const payload = await res?.json().catch(() => null) as any;
+      const envelope = payload?.data?.org ?? payload?.data ?? null;
+      const data = envelope?.data ?? envelope;
+      if (!res?.ok || !data?.name) {
+        setLoadError(payload?.error ?? 'Failed to load organization profile.');
+        setIsHydrated(true);
+        return;
+      }
+      setLoadError('');
+      const nextOrg: OrgProfile = {
+        id: data.id ?? '',
+        slug: data.slug ? String(data.slug) : String(data.id ?? ''),
+        name: data.name ?? '',
+        description: data.description ?? '',
+        logo_url: normalizeImageUrl(data.logo_url ?? null),
+        adviser: data.adviser ?? '',
+        category: data.category_name ?? 'Academic',
+        accreditation_status: data.accreditation_status === 'Suspended' ? 'Suspended' : 'Active',
+        accredited_at: data.updated_at ?? data.created_at ?? new Date().toISOString(),
+      };
+      setOrg(nextOrg);
+      setName(nextOrg.name);
+      setDescription(nextOrg.description);
+      setAdviser(nextOrg.adviser);
+      setLogoPreview(nextOrg.logo_url);
+      setIsHydrated(true);
+    })();
+  }, []);
 
   const isDirty =
     name !== org.name ||
@@ -124,9 +179,48 @@ export default function ManageOrgProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!isDirty) return;
+    setErrorMessage('');
     setSaveState('saving');
-    // TODO: PATCH /api/manage/org-profile { name, description, adviser, logo }
-    await new Promise((r) => setTimeout(r, 1200));
+    const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+    if (!token) {
+      setErrorMessage('Session expired. Please sign in again.');
+      setSaveState('error');
+      return;
+    }
+    const body = new FormData();
+    body.append('name', name);
+    body.append('description', description);
+    body.append('adviser', adviser);
+    if (logoFile) body.append('logo_file', logoFile);
+    if (!logoPreview && org.logo_url) body.append('remove_logo', '1');
+    const res = await fetch(`${API_BASE_URL}/manage/org-profile`, {
+      method: 'PUT',
+      headers: manageRequestHeaders(token),
+      body,
+    }).catch(() => null);
+    const payload = await res?.json().catch(() => null) as { error?: string; data?: any } | null;
+    if (!res?.ok) {
+      setErrorMessage(payload?.error ?? 'Save failed. Try again.');
+      setSaveState('error');
+      return;
+    }
+    const saved = payload?.data;
+    const nextOrg: OrgProfile = {
+      ...org,
+      id: String(saved?.id ?? org.id),
+      slug: saved?.slug ? String(saved.slug) : String(saved?.id ?? org.id),
+      name: String(saved?.name ?? name),
+      description: String(saved?.description ?? description),
+      adviser: String(saved?.adviser ?? adviser),
+      logo_url: normalizeImageUrl(saved?.logo_url ?? logoPreview),
+      accredited_at: String(saved?.updated_at ?? new Date().toISOString()),
+    };
+    setOrg(nextOrg);
+    setName(nextOrg.name);
+    setDescription(nextOrg.description);
+    setAdviser(nextOrg.adviser);
+    setLogoPreview(nextOrg.logo_url);
+    setLogoFile(null);
     setSaveState('saved');
     setTimeout(() => setSaveState('idle'), 3000);
   }
@@ -142,9 +236,29 @@ export default function ManageOrgProfilePage() {
 
   const catMeta = CATEGORY_META[org.category];
 
+  if (!isHydrated) {
+    return (
+      <>
+        <div className="flex flex-col gap-6 animate-fade-in">
+          {!!loadError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              {loadError}
+            </div>
+          )}
+          <ManageFormSkeleton />
+        </div>
+      </>
+    );
+  }
+
   return (
-    <ManageShell pageTitle="Salikop">
-      <div className="flex flex-col gap-6 animate-fade-in">
+    <>
+      <div className="flex flex-col gap-6 animate-content-reveal">
+        {!!loadError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            {loadError}
+          </div>
+        )}
 
         {/* ── Header ── */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -157,6 +271,9 @@ export default function ManageOrgProfilePage() {
                 <h1 className="text-[22px] font-bold text-[var(--color-text)] tracking-tight">
                   Edit Org Profile
                 </h1>
+                <p className="text-[14px] text-gray-500 mt-0.5">
+                  Update your organization's information and details.
+                </p>
               </div>
               <div>
                 <ConnectionBadge isOnline={isOnline} />
@@ -174,7 +291,7 @@ export default function ManageOrgProfilePage() {
           <div className="flex items-center gap-3 flex-wrap">
             {org.accreditation_status === 'Active' ? (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Active · Accredited
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Active
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold bg-red-50 text-red-500 border border-red-200 px-3 py-1.5 rounded-full">
@@ -185,7 +302,7 @@ export default function ManageOrgProfilePage() {
               {org.category}
             </span>
             <Link
-              href={`/organizations/${org.id}`}
+              href={`/organizations/${org.slug ?? org.id}`}
               target="_blank"
               className="flex items-center gap-1.5 text-[12px] font-semibold text-text-secondary border border-border hover:bg-surface-2 hover:text-text px-3 py-1.5 rounded-full transition-all no-underline"
             >
@@ -211,7 +328,7 @@ export default function ManageOrgProfilePage() {
 
           <div className="text-right">
             <p className="text-[12px] text-gray-500">Last updated: <span className="font-medium text-gray-700">{formatDate(org.accredited_at)}</span></p>
-            <p className="text-[11px] text-gray-400 mt-0.5">Accreditation is managed by OSA</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Accreditation is managed by Admin</p>
           </div>
         </div>
 
@@ -223,7 +340,7 @@ export default function ManageOrgProfilePage() {
             </svg>
             <div>
               <p className="text-[13px] font-semibold text-red-700">Organization is suspended</p>
-              <p className="text-[12px] text-red-600 mt-0.5">You can still update your profile, but you cannot publish new events while suspended. Contact OSA to restore accreditation.</p>
+              <p className="text-[12px] text-red-600 mt-0.5">You can still update your profile, but you cannot publish new events while suspended. Contact Admin to restore accreditation.</p>
             </div>
           </div>
         )}
@@ -365,7 +482,7 @@ export default function ManageOrgProfilePage() {
                   <svg className="w-4 h-4 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  <p className="text-[12px] font-semibold text-red-600">Save failed. Try again.</p>
+                  <p className="text-[12px] font-semibold text-red-600">{errorMessage || 'Save failed. Try again.'}</p>
                 </div>
               )}
               <button
@@ -407,12 +524,12 @@ export default function ManageOrgProfilePage() {
                 <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <p className="text-[11px] text-blue-700 leading-relaxed">
-                <span className="font-semibold">Category and accreditation status</span> are controlled by the OSA and cannot be edited here.
+                <span className="font-semibold">Category and accreditation status</span> are controlled by the Admin and cannot be edited here.
               </p>
             </div>
           </div>
         </form>
       </div>
-    </ManageShell>
+    </>
   );
 }

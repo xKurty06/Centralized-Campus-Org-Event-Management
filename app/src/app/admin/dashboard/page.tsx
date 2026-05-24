@@ -1,9 +1,9 @@
 ﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { LoaderCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import AdminShell from '@/components/AdminShell';
+import { IconRefresh } from '@/components/ui/IconRefresh';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
@@ -117,13 +117,6 @@ function ActivityIcon({ type }: { type: ActivityRow['type'] }) {
   };
   const { bg, icon } = map[type];
   return <div className={`w-7 h-7 rounded-full ${bg} flex items-center justify-center flex-shrink-0`}>{icon}</div>;
-}
-
-function IconRefresh({ spinning = false }: { spinning?: boolean }) {
-  if (spinning) {
-    return <LoaderCircle className="w-4 h-4" style={{ animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />;
-  }
-  return <RefreshCw className="w-4 h-4" aria-hidden="true" />;
 }
 
 export default function AdminDashboardPage() {

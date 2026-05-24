@@ -12,7 +12,8 @@ class OrgOfficerResource extends JsonResource
             'id' => $this->id,
             'org_id' => $this->org_id,
             'user_id' => $this->user_id,
-            'role' => $this->role,
+            'position' => $this->position ?? null,
+            'role' => $this->position ?? null,
             'is_active' => (bool) $this->is_active,
         ];
     }

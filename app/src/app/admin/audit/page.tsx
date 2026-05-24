@@ -1,9 +1,9 @@
 ﻿'use client';
 
 import { useState, useEffect, useMemo, Fragment } from 'react';
-import { LoaderCircle, RefreshCw } from 'lucide-react';
 import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
+import { IconRefresh } from '@/components/ui/IconRefresh';
 
 type ActionCategory = 'Accreditation' | 'User' | 'Event' | 'Membership' | 'Officer' | 'Payment';
 
@@ -188,12 +188,5 @@ function IconSearch() {
 
 function IconDownload() {
   return <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
-
-function IconRefresh({ spinning = false }: { spinning?: boolean }) {
-  if (spinning) {
-    return <LoaderCircle className="w-4 h-4" style={{ animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />;
-  }
-  return <RefreshCw className="w-4 h-4" aria-hidden="true" />;
 }
 

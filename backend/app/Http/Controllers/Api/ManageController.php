@@ -19,6 +19,29 @@ use Illuminate\Support\Str;
 
 class ManageController extends Controller
 {
+    private function buildEventRow(object $event): object
+    {
+        $paidStatuses = ['Paid', 'Confirmed'];
+        $totalRegistered = (int) DB::table('registrations')->where('event_id', $event->id)->count();
+        $totalPaid = (int) DB::table('registrations')->where('event_id', $event->id)->whereIn('payment_status', $paidStatuses)->count();
+        $totalPending = (int) DB::table('registrations')->where('event_id', $event->id)->where('payment_status', 'Pending')->count();
+        $proofsPendingReview = (int) DB::table('payment_proofs as p')
+            ->join('registrations as r', 'p.reg_id', '=', 'r.id')
+            ->where('r.event_id', $event->id)
+            ->where('p.status', 'Pending_Review')
+            ->count();
+        $venueName = DB::table('venues')->where('id', $event->venue_id)->value('name');
+        $categoryName = DB::table('event_categories')->where('id', $event->category_id)->value('name');
+
+        return (object) array_merge((array) $event, [
+            'venue_name' => $venueName,
+            'category_name' => $categoryName,
+            'total_registered' => $totalRegistered,
+            'total_paid' => $totalPaid,
+            'total_pending' => $totalPending,
+            'proofs_pending_review' => $proofsPendingReview,
+        ]);
+    }
     /**
      * Resolve the active officer row for the authenticated user.
      * Returns null if the user is not an active officer.
@@ -28,6 +51,21 @@ class ManageController extends Controller
         return DB::table('org_officers')
             ->where('user_id', $req->user()->id)
             ->where('is_active', 1)
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    /**
+     * Resolve active officer organization row for the authenticated user.
+     */
+    private function resolveOfficerOrg(Request $req): ?object
+    {
+        return DB::table('org_officers as oo')
+            ->join('organizations as o', 'oo.org_id', '=', 'o.id')
+            ->where('oo.user_id', $req->user()->id)
+            ->where('oo.is_active', 1)
+            ->orderByDesc('oo.created_at')
+            ->select('oo.org_id', 'o.*')
             ->first();
     }
 
@@ -52,7 +90,7 @@ class ManageController extends Controller
     public function dashboard(Request $req)
     {
         try {
-            $orgRow = $this->resolveOfficer($req);
+            $orgRow = $this->resolveOfficerOrg($req);
             if (!$orgRow) {
                 return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
             }
@@ -62,10 +100,12 @@ class ManageController extends Controller
                 ->where('host_org_id', $orgRow->org_id)
                 ->latest()
                 ->paginate($perPage);
+            $enriched = array_map(fn ($e) => $this->buildEventRow($e), $events->items());
 
             return response()->json([
                 'success' => true,
-                'data'    => EventResource::collection($events),
+                'data'    => EventResource::collection($enriched),
+                'org'     => new OrganizationResource($orgRow),
                 'meta'    => [
                     'total'        => $events->total(),
                     'per_page'     => $events->perPage(),
@@ -81,18 +121,17 @@ class ManageController extends Controller
     public function orgProfile(Request $req)
     {
         try {
-            $orgRow = $this->resolveOfficer($req);
+            $orgRow = $this->resolveOfficerOrg($req);
             if (!$orgRow) {
                 return response()->json(['success' => false, 'error' => 'Org not found.'], 404);
             }
 
-            $org      = DB::table('organizations')->where('id', $orgRow->org_id)->first();
-            $officers = DB::table('org_officers')->where('org_id', $org->id)->get();
+            $officers = DB::table('org_officers')->where('org_id', $orgRow->org_id)->get();
 
             return response()->json([
                 'success' => true,
                 'data'    => [
-                    'org'      => new OrganizationResource($org),
+                    'org'      => new OrganizationResource($orgRow),
                     'officers' => OrgOfficerResource::collection($officers),
                 ],
             ]);
@@ -244,10 +283,13 @@ class ManageController extends Controller
             }
 
             $res = $q->latest('r.created_at')->paginate($perPage);
+            $event = DB::table('events')->where('id', $event_id)->first();
+            $eventMeta = $event ? $this->buildEventRow($event) : null;
 
             return response()->json([
                 'success' => true,
                 'data'    => RegistrationResource::collection($res),
+                'event'   => $eventMeta ? new EventResource($eventMeta) : null,
                 'meta'    => [
                     'total'        => $res->total(),
                     'per_page'     => $res->perPage(),
@@ -458,5 +500,123 @@ class ManageController extends Controller
             DB::rollBack();
             return response()->json(['success' => false, 'error' => 'Sync failed.'], 500);
         }
+    }
+
+    public function members(Request $req)
+    {
+        try {
+            $orgRow = $this->resolveOfficer($req);
+            if (!$orgRow) {
+                return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
+            }
+
+            $rows = DB::table('org_members as m')
+                ->join('users as u', 'm.user_id', '=', 'u.id')
+                ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
+                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
+                ->where('m.org_id', $orgRow->org_id)
+                ->select(
+                    'm.*',
+                    'u.school_id', 'u.first_name', 'u.last_name', 'u.email', 'u.year_level', 'u.section',
+                    'c.code as course_code',
+                    'd.code as dept_code'
+                )
+                ->orderByDesc('m.created_at')
+                ->get();
+
+            $officerUserIds = DB::table('org_officers')
+                ->where('org_id', $orgRow->org_id)
+                ->where('is_active', 1)
+                ->pluck('user_id')
+                ->flip();
+
+            $data = $rows->map(function ($r) use ($officerUserIds) {
+                return [
+                    'id' => $r->id,
+                    'user_id' => $r->user_id,
+                    'org_id' => $r->org_id,
+                    'membership_status' => $r->membership_status,
+                    'paid_membership_fee' => (bool) $r->paid_membership_fee,
+                    'joined_at' => $r->joined_at,
+                    'updated_at' => $r->updated_at,
+                    'school_id' => $r->school_id,
+                    'first_name' => $r->first_name,
+                    'last_name' => $r->last_name,
+                    'email' => $r->email,
+                    'course' => $r->course_code,
+                    'dept' => $r->dept_code,
+                    'year_level' => (int) ($r->year_level ?? 0),
+                    'section' => (int) ($r->section ?? 0),
+                    'is_officer' => isset($officerUserIds[$r->user_id]),
+                ];
+            })->values();
+
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function lookupMember(Request $req)
+    {
+        $schoolId = trim((string) $req->query('school_id', ''));
+        if ($schoolId === '') {
+            return response()->json(['success' => false, 'error' => 'school_id is required.'], 422);
+        }
+
+        $user = DB::table('users as u')
+            ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
+            ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
+            ->where('u.school_id', $schoolId)
+            ->select('u.id', 'u.school_id', 'u.first_name', 'u.last_name', 'u.email', 'u.year_level', 'u.section', 'c.code as course_code', 'd.code as dept_code')
+            ->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'error' => 'No verified account found with that Student ID.'], 404);
+        }
+
+        return response()->json(['success' => true, 'data' => $user]);
+    }
+
+    public function addMember(Request $req)
+    {
+        $req->validate(['user_id' => 'required|uuid']);
+        $orgRow = $this->resolveOfficer($req);
+        if (!$orgRow) return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
+
+        $exists = DB::table('org_members')->where('org_id', $orgRow->org_id)->where('user_id', $req->input('user_id'))->exists();
+        if ($exists) return response()->json(['success' => false, 'error' => 'User is already a member.'], 422);
+
+        $id = (string) Str::uuid();
+        DB::table('org_members')->insert([
+            'id' => $id,
+            'user_id' => $req->input('user_id'),
+            'org_id' => $orgRow->org_id,
+            'membership_status' => 'Active',
+            'paid_membership_fee' => 0,
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'data' => ['id' => $id]], 201);
+    }
+
+    public function updateMember(Request $req, string $id)
+    {
+        $orgRow = $this->resolveOfficer($req);
+        if (!$orgRow) return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
+
+        $member = DB::table('org_members')->where('id', $id)->where('org_id', $orgRow->org_id)->first();
+        if (!$member) return response()->json(['success' => false, 'error' => 'Member not found.'], 404);
+
+        $payload = [];
+        if ($req->has('membership_status')) $payload['membership_status'] = $req->input('membership_status');
+        if ($req->has('paid_membership_fee')) $payload['paid_membership_fee'] = $req->boolean('paid_membership_fee');
+        if (empty($payload)) return response()->json(['success' => false, 'error' => 'Nothing to update.'], 422);
+
+        $payload['updated_at'] = now();
+        DB::table('org_members')->where('id', $id)->update($payload);
+        return response()->json(['success' => true]);
     }
 }
