@@ -53,7 +53,21 @@ class EventController extends Controller
     public function show($id)
     {
         try {
-            $event = DB::table('events')->where('id', $id)->first();
+            $event = DB::table('events as e')
+                ->leftJoin('venues as v', 'e.venue_id', '=', 'v.id')
+                ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')
+                ->leftJoin('organizations as o', 'e.host_org_id', '=', 'o.id')
+                ->leftJoin('org_categories as oc', 'o.category_id', '=', 'oc.id')
+                ->where('e.id', $id)
+                ->select(
+                    'e.*',
+                    'v.name as venue_name',
+                    'ec.name as category_name',
+                    'o.name as organization_name',
+                    'oc.name as organization_category',
+                    DB::raw("(select count(*) from registrations r where r.event_id = e.id) as total_registered")
+                )
+                ->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
             return response()->json(['success' => true, 'data' => new EventResource($event)], 200);
         } catch (\Exception $e) {
@@ -68,8 +82,25 @@ class EventController extends Controller
             $perPage = (int) $req->query('per_page', 15);
             $regs = DB::table('registrations as r')
                 ->join('events as e', 'r.event_id', '=', 'e.id')
+                ->leftJoin('venues as v', 'e.venue_id', '=', 'v.id')
+                ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')
+                ->leftJoin('organizations as o', 'e.host_org_id', '=', 'o.id')
+                ->leftJoin('payment_proofs as pp', 'pp.reg_id', '=', 'r.id')
                 ->where('r.user_id', $user->id)
-                ->select('r.*')
+                ->select(
+                    'r.*',
+                    'e.title as event_title',
+                    'e.status as event_status',
+                    'e.start_date as event_start_date',
+                    'e.end_date as event_end_date',
+                    'e.is_paid as event_is_paid',
+                    'e.fee_amount as event_fee_amount',
+                    'e.banner_url as event_banner_url',
+                    'v.name as venue_name',
+                    'ec.name as category_name',
+                    'o.name as org_name',
+                    'pp.status as proof_status'
+                )
                 ->latest('r.created_at')
                 ->paginate($perPage);
 

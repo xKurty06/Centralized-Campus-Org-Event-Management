@@ -8,6 +8,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
    Types
    ---------------------------------------------------------------- */
 type UploadState = 'idle' | 'uploading' | 'success' | 'error';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 /* ----------------------------------------------------------------
    Page
@@ -24,6 +25,7 @@ export default function PaymentUploadPage() {
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [isDragging, setIsDragging] = useState(false);
   const [notes, setNotes] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   /* -- File selection -- */
@@ -67,12 +69,31 @@ export default function PaymentUploadPage() {
   /* -- Submit -- */
   async function handleSubmit() {
     if (!file) return;
+    const token = window.localStorage.getItem("auth_token") ?? window.sessionStorage.getItem("auth_token");
+    if (!token) {
+      setUploadState('error');
+      setErrorMessage('You are not authenticated.');
+      return;
+    }
     setUploadState('uploading');
-    // TODO: replace with real upload API call
-    await new Promise((r) => setTimeout(r, 1500));
+    setErrorMessage('');
+    const formData = new FormData();
+    formData.append('image', file);
+    if (notes.trim()) formData.append('notes', notes.trim());
+    const res = await fetch(`${API_BASE_URL}/events/${eventId}/payment-upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).catch(() => null);
+    const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
+    if (!res || !res.ok || !payload?.success) {
+      setUploadState('error');
+      setErrorMessage(payload?.error ?? 'Upload failed. Please try again.');
+      return;
+    }
     setUploadState('success');
     await new Promise((r) => setTimeout(r, 800));
-    router.push(`/events/${eventId}/registration-success?method=online`);
+    router.push(`/events/${eventId}/registration-success?method=online&registration=${encodeURIComponent(registrationId || '')}`);
   }
 
   function formatBytes(bytes: number) {
@@ -233,7 +254,7 @@ export default function PaymentUploadPage() {
                 <svg className="w-4 h-4 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <p className="text-[13px] text-red-600 font-medium">Upload failed. Please try again.</p>
+                <p className="text-[13px] text-red-600 font-medium">{errorMessage || 'Upload failed. Please try again.'}</p>
               </div>
             )}
           </div>

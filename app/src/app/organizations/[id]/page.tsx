@@ -30,6 +30,7 @@ interface Organization {
   id: string;
   name: string;
   acronym: string;
+  logoUrl: string;
   category: OrgCategory;
   description: string;
   mission: string;
@@ -91,23 +92,24 @@ export default function OrgProfilePage() {
 
       const mappedEvents: OrgEvent[] = Array.isArray(evPayload?.data)
         ? evPayload.data.map((e, i) => ({
-            id: String(e.id ?? ''),
-            title: e.title ?? 'Untitled Event',
-            category: (e.category_name ?? 'Other') as EventCategory,
-            date: e.start_date ?? new Date().toISOString(),
-            venue: e.venue_name ?? 'TBA',
-            type: Boolean(e.is_paid) ? 'Paid' : 'Free',
-            fee: Number(e.fee_amount ?? 0),
-            capacity: Number(e.capacity ?? 0),
-            registered: Number(e.total_registered ?? 0),
-            bannerColor: banner[i % banner.length],
-          }))
+          id: String(e.id ?? ''),
+          title: e.title ?? 'Untitled Event',
+          category: (e.category_name ?? 'Other') as EventCategory,
+          date: e.start_date ?? new Date().toISOString(),
+          venue: e.venue_name ?? 'TBA',
+          type: Boolean(e.is_paid) ? 'Paid' : 'Free',
+          fee: Number(e.fee_amount ?? 0),
+          capacity: Number(e.capacity ?? 0),
+          registered: Number(e.total_registered ?? 0),
+          bannerColor: banner[i % banner.length],
+        }))
         : [];
 
       setOrg({
         id: String(orgPayload.data.id ?? ''),
         name: orgPayload.data.name ?? 'Organization',
         acronym: String(orgPayload.data.code_name ?? orgPayload.data.name ?? 'ORG').slice(0, 8).toUpperCase(),
+        logoUrl: String(orgPayload.data.logo_url ?? ''),
         category: (orgPayload.data.category_name ?? 'Non-Academic') as OrgCategory,
         description: orgPayload.data.description ?? 'No description provided.',
         mission: 'Mission not published.',
@@ -125,7 +127,7 @@ export default function OrgProfilePage() {
     })();
   }, [id]);
 
-  if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500">Loading organization...</div>;
+  if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500 text-center">Loading organization...</div>;
   if (!org) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500">Organization not found.</div>;
 
   const catMeta = ORG_CATEGORY_META[org.category];
@@ -133,12 +135,37 @@ export default function OrgProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6">
-        <Link href="/organizations" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit">Back to Organizations</Link>
+
+        <Link href="/organizations" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 19l-7-7 7-7"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Back to Organizations
+        </Link>
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className={`h-24 ${org.color.split(' ')[0]} opacity-40`} />
+          <div className={`h-24 ${org.color.split(' ')[0]} opacity-40 relative z-0`} />
           <div className="px-6 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-8 mb-5">
-              <div className={`w-20 h-20 rounded-2xl border-4 border-white shadow-sm flex items-center justify-center text-[20px] font-bold flex-shrink-0 ${org.color}`}>{org.acronym.slice(0, 2)}</div>
+              <div className={`relative z-10 w-20 h-20 rounded-2xl border-4 border-white shadow-sm flex items-center justify-center text-[20px] font-bold flex-shrink-0 overflow-hidden ${org.color}`}>
+                {org.logoUrl ? (
+                  <img
+                    src={org.logoUrl}
+                    alt={`${org.name} logo`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  org.acronym.slice(0, 2)
+                )}
+              </div>
               <div className="flex items-center gap-2 sm:mb-1"><span className={`text-[12px] font-semibold px-3 py-1 rounded-full border ${catMeta.bg} ${catMeta.color}`}>{org.category}</span></div>
             </div>
             <h1 className="text-[24px] font-bold text-gray-900 leading-tight">{org.name}</h1>
@@ -156,7 +183,11 @@ export default function OrgProfilePage() {
         {activeTab === 'officers' && <div className="bg-white rounded-xl border border-gray-200 p-5 text-sm text-gray-500">Officer roster is not publicly available yet.</div>}
         {activeTab === 'events' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {org.events.map((event) => (
+            {org.events.length === 0 ? (
+              <div className="sm:col-span-2 lg:col-span-3 bg-white rounded-xl border border-gray-200 p-5 text-sm text-gray-500">
+                No published events yet.
+              </div>
+            ) : org.events.map((event) => (
               <Link key={event.id} href={`/events/${event.id}`} className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col">
                 <div className={`h-28 ${event.bannerColor} relative flex items-center justify-center`}>
                   <div className="absolute top-2.5 right-2.5">{event.type === 'Free' ? <span className="text-[10px] font-semibold bg-green-700 text-white px-2 py-0.5 rounded-full">Free</span> : <span className="text-[10px] font-semibold bg-amber-500 text-white px-2 py-0.5 rounded-full">PHP {event.fee}</span>}</div>

@@ -114,8 +114,21 @@ export default function AdminOrgDetailPage() {
     // ── Add officer modal
     const [showAddOfficerModal, setShowAddOfficerModal] = useState(false);
     const [addSchoolId, setAddSchoolId] = useState('');
+    const [addLookupState, setAddLookupState] = useState<'idle' | 'loading' | 'found' | 'not_found' | 'error'>('idle');
+    const [addLookupResult, setAddLookupResult] = useState<{
+        userId: string;
+        schoolId: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        course: string;
+        dept: string;
+        yearLevel: number | string;
+        section: number | string;
+    } | null>(null);
     const [addPosition, setAddPosition] = useState('');
     const [addError, setAddError] = useState('');
+    const [addLookupError, setAddLookupError] = useState('');
 
     // ── Edit officer modal
     const [editingOfficer, setEditingOfficer] = useState<Officer | null>(null);
@@ -123,6 +136,8 @@ export default function AdminOrgDetailPage() {
 
     // ── Deactivate officer confirm
     const [deactivatingOfficer, setDeactivatingOfficer] = useState<Officer | null>(null);
+    const [officerRemovalReason, setOfficerRemovalReason] = useState('');
+    const [officerRemovalError, setOfficerRemovalError] = useState('');
 
     // ── Members modal
     const [showMembersModal, setShowMembersModal] = useState(false);
@@ -138,6 +153,30 @@ export default function AdminOrgDetailPage() {
     };
 
     const maxGrowth = Math.max(1, ...memberGrowth.map((m) => m.value));
+
+    function mapGrowthRows(rows: any[]): Array<{ month: string; value: number }> {
+        return rows.map((g: any) => {
+            const monthKey = String(g.month ?? g.month_key ?? '');
+            const monthLabel = monthKey.length >= 7
+                ? new Date(`${monthKey}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'short' })
+                : monthKey || '-';
+            return { month: monthLabel, value: Number(g.joined_count ?? g.value ?? 0) };
+        });
+    }
+
+    async function fetchMemberGrowth(token: string): Promise<Array<{ month: string; value: number }>> {
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}/members/growth`, {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            const payload = await res.json().catch(() => null) as any;
+            if (!res.ok || !payload?.success) return [];
+            const rows = Array.isArray(payload?.data) ? payload.data : [];
+            return mapGrowthRows(rows);
+        } catch {
+            return [];
+        }
+    }
 
     async function fetchOrgDetails(showLoading = true, showRefreshing = false) {
         const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
@@ -198,19 +237,14 @@ export default function AdminOrgDetailPage() {
                 feeStatus: m.paid_membership_fee ? 'Paid' : 'Unpaid',
                 joinedAt: String(m.joined_at ?? m.created_at ?? '').slice(0, 10),
             }));
-            const nextMemberGrowth = rawMemberGrowth.map((g: any) => {
-                const monthKey = String(g.month ?? '');
-                const monthLabel = monthKey.length >= 7
-                    ? new Date(`${monthKey}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'short' })
-                    : monthKey;
-                return { month: monthLabel, value: Number(g.joined_count ?? 0) };
-            });
+            const nextMemberGrowth = mapGrowthRows(rawMemberGrowth);
+            const growthFromEndpoint = await fetchMemberGrowth(token);
 
             setOrg(nextOrg);
             setEditDraft(nextOrg);
             setOfficers(nextOfficers);
             setMembers(nextMembers);
-            setMemberGrowth(nextMemberGrowth);
+            setMemberGrowth(growthFromEndpoint.length > 0 ? growthFromEndpoint : nextMemberGrowth);
         } finally {
             if (showLoading) setIsLoading(false);
             if (showRefreshing) setRefreshing(false);
@@ -299,27 +333,134 @@ export default function AdminOrgDetailPage() {
             setIsSaving(false);
         }
     }
-    function handleAddOfficer() {
+
+    const STUDENT_ID_PATTERN = /^\d{9}$/;
+
+    async function handleLookupOfficer() {
+        const queryId = addSchoolId.trim();
+        if (!queryId) {
+            setAddLookupError('Please enter a Student ID to search.');
+            setAddLookupState('idle');
+            return;
+        }
+        if (!STUDENT_ID_PATTERN.test(queryId)) {
+            setAddLookupError('Student ID must be exactly 9 digits.');
+            setAddLookupState('idle');
+            return;
+        }
+
+        setAddLookupState('loading');
+        setAddLookupError('');
         setAddError('');
-        if (!addSchoolId.trim()) { setAddError('Student ID is required.'); return; }
-        if (!addPosition.trim()) { setAddError('Position is required.'); return; }
-        // Simulate school_id lookup
-        if (addSchoolId === '0000-0-00001') { setAddError('No user found with that Student ID.'); return; }
-        const newOfficer: Officer = {
-            id: `off-${Date.now()}`,
-            userId: `u-new-${Date.now()}`,
-            name: 'Resolved Name', // Replace with API lookup result
-            schoolId: addSchoolId,
-            email: `${addSchoolId.replace(/-/g, '.')}@cvsu.edu.ph`,
-            position: addPosition,
-            isActive: true,
-            joinedAt: new Date().toISOString().slice(0, 10),
-        };
-        setOfficers((prev) => [...prev, newOfficer]);
-        setAddSchoolId('');
-        setAddPosition('');
-        setShowAddOfficerModal(false);
-        // API: POST /api/admin/organizations/:id/officers
+        setAddLookupResult(null);
+
+        try {
+            const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+            if (!token) {
+                throw new Error('You are not authenticated. Please sign in again.');
+            }
+
+            const res = await fetch(`${API_BASE_URL}/admin/users/lookup?school_id=${encodeURIComponent(queryId)}`, {
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                if (res.status === 404) {
+                    setAddLookupState('not_found');
+                    setAddLookupError('No active user found with that Student ID.');
+                    return;
+                }
+
+                const payload = await res.json().catch(() => null) as any;
+                throw new Error(payload?.error || payload?.message || res.statusText || 'Lookup failed.');
+            }
+
+            const payload = await res.json().catch(() => null) as any;
+            const user = payload?.data || payload?.user || payload;
+            if (!user || !(user.user_id || user.id)) {
+                throw new Error('Invalid user data received from the server.');
+            }
+
+            setAddLookupResult({
+                userId: String(user.user_id ?? user.id),
+                schoolId: String(user.school_id ?? ''),
+                firstName: String(user.first_name ?? ''),
+                lastName: String(user.last_name ?? ''),
+                email: String(user.email ?? ''),
+                course: String(user.course ?? user.course_code ?? ''),
+                dept: String(user.dept ?? user.dept_code ?? ''),
+                yearLevel: user.year_level ?? '',
+                section: user.section ?? '',
+            });
+            setAddLookupState('found');
+        } catch (error: any) {
+            setAddLookupState('error');
+            setAddLookupError(error?.message || 'Lookup failed.');
+        }
+    }
+
+    function handleClearOfficerLookup() {
+        setAddLookupState('idle');
+        setAddLookupResult(null);
+        setAddLookupError('');
+        setAddError('');
+    }
+
+    async function handleAddOfficer() {
+        setAddError('');
+        setAddLookupError('');
+        const queryId = addSchoolId.trim();
+        if (!queryId) {
+            setAddError('Please enter a Student ID first.');
+            return;
+        }
+        if (!STUDENT_ID_PATTERN.test(queryId)) {
+            setAddError('Student ID must be exactly 9 digits.');
+            return;
+        }
+        if (!addLookupResult) {
+            setAddError('Look up a student first.');
+            return;
+        }
+        if (!addPosition.trim()) {
+            setAddError('Please enter a position/title.');
+            return;
+        }
+
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) return;
+
+        setIsSaving(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}/officers`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    user_id: addLookupResult.userId,
+                    position: addPosition.trim(),
+                }),
+            });
+            const payload = await res.json().catch(() => null) as any;
+            if (!res.ok || !payload?.success) {
+                setAddError(payload?.error ?? 'Unable to add officer.');
+                return;
+            }
+
+            await fetchOrgDetails(false, true);
+            setAddSchoolId('');
+            setAddPosition('');
+            handleClearOfficerLookup();
+            setShowAddOfficerModal(false);
+        } finally {
+            setIsSaving(false);
+        }
     }
 
     function handleEditOfficer() {
@@ -331,13 +472,43 @@ export default function AdminOrgDetailPage() {
         // API: PATCH /api/admin/organizations/:orgId/officers/:officerId
     }
 
-    function handleDeactivateOfficer() {
+    async function handleDeactivateOfficer() {
         if (!deactivatingOfficer) return;
-        setOfficers((prev) =>
-            prev.map((o) => (o.id === deactivatingOfficer.id ? { ...o, isActive: false } : o))
-        );
-        setDeactivatingOfficer(null);
-        // API: PATCH /api/admin/organizations/:orgId/officers/:officerId/deactivate
+        if (!officerRemovalReason.trim()) {
+            setOfficerRemovalError('Please provide a reason for removing this officer.');
+            return;
+        }
+
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) return;
+
+        setIsSaving(true);
+        setErrorMsg('');
+        setOfficerRemovalError('');
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}/officers/${deactivatingOfficer.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ reason: officerRemovalReason.trim() }),
+            });
+
+            const payload = await res.json().catch(() => null) as any;
+            if (!res.ok || !payload?.success) {
+                setErrorMsg(payload?.error ?? 'Unable to remove officer.');
+                return;
+            }
+
+            await fetchOrgDetails(false, true);
+            setDeactivatingOfficer(null);
+            setOfficerRemovalReason('');
+        } finally {
+            setIsSaving(false);
+        }
     }
 
     return (
@@ -462,7 +633,7 @@ export default function AdminOrgDetailPage() {
                             {activeOfficers.length} active · {inactiveOfficers.length} inactive
                         </p>
                     </div>
-                    <button className="btn btn-primary btn-sm" onClick={() => { setAddSchoolId(''); setAddPosition(''); setAddError(''); setShowAddOfficerModal(true); }}>
+                    <button className="btn btn-primary btn-sm" onClick={() => { setAddSchoolId(''); setAddPosition(''); setAddError(''); handleClearOfficerLookup(); setShowAddOfficerModal(true); }}>
                         <IconPlus /> Add Officer
                     </button>
                 </div>
@@ -624,36 +795,44 @@ export default function AdminOrgDetailPage() {
                                             Membership Growth Trend
                                         </h3>
                                         <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                                            Placeholder chart. Hook this to GET /api/admin/organizations/:id/members/growth.
+                                            Monthly member joins based on organization records.
                                         </p>
                                     </div>
                                     <span className="badge badge-blue">Monthly</span>
                                 </div>
 
-                                <div className="flex items-end gap-3 h-56">
-                                    {memberGrowth.map((item) => {
-                                        const heightPct = (item.value / maxGrowth) * 100;
+                                {memberGrowth.length === 0 ? (
+                                    <div className="h-56 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-2)] flex items-center justify-center text-center px-4">
+                                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                                            No membership growth data yet.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-end gap-3 h-56">
+                                        {memberGrowth.map((item) => {
+                                            const heightPct = (item.value / maxGrowth) * 100;
 
-                                        return (
-                                            <div key={item.month} className="flex-1 flex flex-col items-center gap-2">
-                                                <div className="w-full h-44 flex items-end">
-                                                    <div
-                                                        className="w-full rounded-t-lg bg-[var(--color-primary)]/90"
-                                                        style={{ height: `${heightPct}%` }}
-                                                    />
+                                            return (
+                                                <div key={item.month} className="flex-1 flex flex-col items-center gap-2">
+                                                    <div className="w-full h-44 flex items-end">
+                                                        <div
+                                                            className="w-full rounded-t-lg bg-[var(--color-primary)]/90"
+                                                            style={{ height: `${heightPct}%` }}
+                                                        />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-[11px] font-semibold text-[var(--color-text)]">
+                                                            {item.value}
+                                                        </p>
+                                                        <p className="text-[10px] text-[var(--color-text-muted)]">
+                                                            {item.month}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-center">
-                                                    <p className="text-[11px] font-semibold text-[var(--color-text)]">
-                                                        {item.value}
-                                                    </p>
-                                                    <p className="text-[10px] text-[var(--color-text-muted)]">
-                                                        {item.month}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 min-w-[220px]">
@@ -886,20 +1065,85 @@ export default function AdminOrgDetailPage() {
                 MODAL: Add Officer
             ================================================================ */}
             {showAddOfficerModal && (
-                <Modal title="Add Officer" onClose={() => setShowAddOfficerModal(false)}>
+                <Modal title="Add Officer" onClose={() => { setShowAddOfficerModal(false); handleClearOfficerLookup(); }}>
                     <div className="flex flex-col gap-4">
                         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                             Enter the student's Student ID to look up their account and grant them officer access to this organization.
                         </p>
                         <div className="form-group">
                             <label className="form-label">Student ID</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. 202405123"
-                                value={addSchoolId}
-                                onChange={(e) => setAddSchoolId(e.target.value)}
-                            />
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="e.g. 202405123"
+                                    value={addSchoolId}
+                                    onChange={(e) => {
+                                        const digits = e.target.value.replace(/\D/g, '').slice(0, 9);
+                                        if (addLookupState !== 'idle') {
+                                            handleClearOfficerLookup();
+                                            setAddSchoolId(digits);
+                                            return;
+                                        }
+                                        setAddSchoolId(digits);
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={handleLookupOfficer}
+                                    disabled={addLookupState === 'loading' || !STUDENT_ID_PATTERN.test(addSchoolId)}
+                                    aria-label="Look up student"
+                                    title="Look up student"
+                                >
+                                    {addLookupState === 'loading' ? (
+                                        'Searching...'
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <IconLookup />
+                                            Look up
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                            {addLookupError && <p className="form-error">{addLookupError}</p>}
                         </div>
+
+                        {addLookupState === 'found' && addLookupResult && (
+                            <div
+                                className="rounded-[--radius-md] p-4 flex items-center gap-3 animate-fade-in"
+                                style={{
+                                    background: 'var(--color-primary-muted)',
+                                    border: '1.5px solid var(--color-primary-light)',
+                                }}
+                            >
+                                <div
+                                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                                    style={{ background: 'var(--color-primary-light)', color: '#fff' }}
+                                >
+                                    {`${addLookupResult.firstName?.[0] ?? ''}${addLookupResult.lastName?.[0] ?? ''}`.toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text)' }}>
+                                        {addLookupResult.firstName} {addLookupResult.lastName}
+                                    </p>
+                                    <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                                        {addLookupResult.schoolId} • {addLookupResult.email}
+                                    </p>
+                                    <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
+                                        {addLookupResult.course || 'N/A'} • {addLookupResult.dept || 'N/A'} • Y{addLookupResult.yearLevel || '?'}-{addLookupResult.section || '?'}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm shrink-0"
+                                    onClick={handleClearOfficerLookup}
+                                    style={{ color: 'var(--color-primary)' }}
+                                >
+                                    Change
+                                </button>
+                            </div>
+                        )}
+
                         <div className="form-group">
                             <label className="form-label">Position / Title</label>
                             <input
@@ -907,12 +1151,21 @@ export default function AdminOrgDetailPage() {
                                 placeholder="e.g. President, Secretary, PIO"
                                 value={addPosition}
                                 onChange={(e) => setAddPosition(e.target.value)}
+                                disabled={addLookupState !== 'found'}
                             />
                         </div>
                         {addError && <p className="form-error">{addError}</p>}
                         <div className="flex gap-3 justify-end">
-                            <button className="btn btn-ghost" onClick={() => setShowAddOfficerModal(false)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={handleAddOfficer}>Add Officer</button>
+                            <button className="btn btn-ghost" onClick={() => { setShowAddOfficerModal(false); handleClearOfficerLookup(); }}>
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleAddOfficer}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? 'Adding...' : 'Add Officer'}
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -952,9 +1205,24 @@ export default function AdminOrgDetailPage() {
                         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                             You are about to remove <strong>{deactivatingOfficer.name}</strong> ({deactivatingOfficer.position}) as an officer of this organization. Their access to the management dashboard will be revoked immediately. The record is preserved for audit history.
                         </p>
+                        <div className="form-group">
+                            <label className="form-label">Reason for removal</label>
+                            <textarea
+                                rows={4}
+                                value={officerRemovalReason}
+                                onChange={(e) => { setOfficerRemovalReason(e.target.value); setOfficerRemovalError(''); }}
+                                placeholder="Explain why this officer is being removed"
+                                style={{ resize: 'vertical' }}
+                            />
+                        </div>
+                        {officerRemovalError && <p className="form-error">{officerRemovalError}</p>}
                         <div className="flex gap-3 justify-end">
-                            <button className="btn btn-ghost" onClick={() => setDeactivatingOfficer(null)}>Cancel</button>
-                            <button className="btn btn-danger" onClick={handleDeactivateOfficer}>Yes, Remove Officer</button>
+                            <button className="btn btn-ghost" onClick={() => { setDeactivatingOfficer(null); setOfficerRemovalReason(''); setOfficerRemovalError(''); }}>
+                                Cancel
+                            </button>
+                            <button className="btn btn-danger" onClick={handleDeactivateOfficer} disabled={isSaving}>
+                                {isSaving ? 'Removing...' : 'Yes, Remove Officer'}
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -1058,6 +1326,16 @@ function IconPlus() {
         </svg>
     );
 }
+
+function IconLookup() {
+    return (
+        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="9" cy="9" r="5.5" stroke="currentColor" strokeWidth="1.7" />
+            <path d="M13.2 13.2L17 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        </svg>
+    );
+}
+
 
 
 

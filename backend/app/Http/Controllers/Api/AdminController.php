@@ -337,6 +337,144 @@ class AdminController extends Controller
         }
     }
 
+    public function addOfficer(Request $req, string $id)
+    {
+        try {
+            Gate::authorize('update', \App\Models\Organization::findOrFail($id));
+
+            $data = $req->validate([
+                'user_id' => ['required', 'uuid'],
+                'position' => ['required', 'string', 'max:120'],
+            ]);
+
+            $user = DB::table('users')
+                ->where('id', $data['user_id'])
+                ->where('is_active', 1)
+                ->first();
+            if (!$user) {
+                return response()->json(['success' => false, 'error' => 'User not found or inactive.'], 404);
+            }
+
+            $existing = DB::table('org_officers')
+                ->where('org_id', $id)
+                ->where('user_id', $data['user_id'])
+                ->first();
+
+            if ($existing) {
+                DB::table('org_officers')
+                    ->where('id', $existing->id)
+                    ->update([
+                        'position' => trim((string) $data['position']),
+                        'is_active' => 1,
+                        'updated_at' => now(),
+                    ]);
+                $officerId = $existing->id;
+            } else {
+                $officerId = (string) \Illuminate\Support\Str::uuid();
+                DB::table('org_officers')->insert([
+                    'id' => $officerId,
+                    'org_id' => $id,
+                    'user_id' => $data['user_id'],
+                    'position' => trim((string) $data['position']),
+                    'is_active' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            $targetLabel = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Officer';
+            $meta = json_encode([
+                'org_id' => $id,
+                'position' => trim((string) $data['position']),
+                'user_id' => $data['user_id'],
+                'user_school_id' => $user->school_id ?? null,
+                'user_email' => $user->email ?? null,
+            ]);
+            $this->writeAudit($req, 'Officer', 'Add Officer', $targetLabel, $officerId, $meta);
+
+            return response()->json(['success' => true], 201);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'error' => 'Invalid payload.', 'details' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function removeOfficer(Request $req, string $orgId, string $officerId)
+    {
+        try {
+            Gate::authorize('update', \App\Models\Organization::findOrFail($orgId));
+
+            $officer = DB::table('org_officers as oo')
+                ->leftJoin('users as u', 'oo.user_id', '=', 'u.id')
+                ->leftJoin('organizations as o', 'oo.org_id', '=', 'o.id')
+                ->select(
+                    'oo.id as officer_id',
+                    'oo.org_id',
+                    'oo.user_id',
+                    'oo.position',
+                    'oo.is_active',
+                    'u.first_name',
+                    'u.last_name',
+                    'u.school_id',
+                    'u.email',
+                    'o.name as org_name'
+                )
+                ->where('oo.id', $officerId)
+                ->where('oo.org_id', $orgId)
+                ->first();
+
+            if (!$officer) {
+                return response()->json(['success' => false, 'error' => 'Officer not found.'], 404);
+            }
+
+            if (!$officer->is_active) {
+                return response()->json(['success' => false, 'error' => 'Officer is already removed.'], 400);
+            }
+
+            $reason = trim((string) $req->input('reason', ''));
+            if ($reason === '') {
+                return response()->json(['success' => false, 'error' => 'Removal reason is required.'], 422);
+            }
+
+            DB::table('org_officers')
+                ->where('id', $officerId)
+                ->delete();
+
+            $targetLabel = trim(($officer->first_name ?? '') . ' ' . ($officer->last_name ?? '')) ?: 'Officer';
+            $meta = json_encode([
+                'reason' => $reason,
+                'org_id' => $orgId,
+                'org_name' => $officer->org_name,
+                'position' => $officer->position,
+                'user_id' => $officer->user_id,
+                'user_school_id' => $officer->school_id,
+                'user_email' => $officer->email,
+            ]);
+
+            $this->writeAudit(
+                $req,
+                'Officer',
+                'Remove Officer',
+                $targetLabel,
+                $officerId,
+                $meta,
+            );
+
+            return response()->json(['success' => true]);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
     public function events(Request $req)
     {
         try {

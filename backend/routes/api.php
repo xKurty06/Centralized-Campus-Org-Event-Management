@@ -72,6 +72,8 @@ foreach (['', 'v1'] as $versionPrefix) {
             Route::get('/organizations', [AdminController::class, 'organizations']);
             Route::get('/organizations/{id}', [AdminController::class, 'organization']);
             Route::put('/organizations/{id}/accreditation', [AdminController::class, 'toggleAccreditation']);
+            Route::post('/organizations/{id}/officers', [AdminController::class, 'addOfficer']);
+            Route::delete('/organizations/{orgId}/officers/{officerId}', [AdminController::class, 'removeOfficer']);
             Route::put('/organizations/{id}', [AdminController::class, 'updateOrg']);
             Route::get('/events', [AdminController::class, 'events']);
             Route::delete('/events/{id}', [AdminController::class, 'deleteEvent']);

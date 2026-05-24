@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { IconRefresh } from '@/components/ui/IconRefresh';
 
 type OrgCategory = 'All' | 'Academic' | 'Non-Academic' | 'Religious';
 type OrgStatus = 'Active' | 'Suspended';
@@ -11,6 +12,7 @@ interface Organization {
   id: string;
   name: string;
   acronym: string;
+  logoUrl: string;
   category: Exclude<OrgCategory, 'All'>;
   description: string;
   adviser: string;
@@ -81,7 +83,20 @@ function OrgCard({ org }: { org: Organization }) {
   return (
     <Link href={`/organizations/${org.id}`} className={`group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col ${isSuspended ? 'opacity-60' : ''}`}>
       <div className="px-5 pt-5 pb-4 flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-[13px] font-bold ${org.color}`}>{org.acronym.slice(0, 2)}</div>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-[13px] font-bold overflow-hidden ${org.color}`}>
+          {org.logoUrl ? (
+            <img
+              src={org.logoUrl}
+              alt={`${org.name} logo`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            org.acronym.slice(0, 2)
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-[14px] font-semibold text-gray-900 leading-snug group-hover:text-green-700 transition-colors line-clamp-2">{org.name}</h3>
@@ -116,19 +131,21 @@ function CategoryHeader({ category }: { category: OrgCategory }) {
 export default function OrganizationsPage() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<OrgCategory>('All');
   const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    (async () => {
+  async function loadOrganizations(showLoading = true) {
+    if (showLoading) setLoading(true);
+    else setRefreshing(true);
+    try {
       const res = await fetch(`${API_BASE_URL}/organizations?per_page=500`, { headers: { Accept: 'application/json' } }).catch(() => null);
       const payload = await res?.json().catch(() => null) as { success?: boolean; data?: any[]; error?: string } | null;
       if (!res || !res.ok || !payload?.success || !Array.isArray(payload.data)) {
         setLoadError(payload?.error ?? 'Unable to load organizations.');
         setOrgs([]);
-        setLoading(false);
         return;
       }
       const colorMap: Record<string, string> = {
@@ -140,6 +157,7 @@ export default function OrganizationsPage() {
         id: String(o.id ?? ''),
         name: o.name ?? 'Organization',
         acronym: String(o.code_name ?? o.name ?? 'ORG').slice(0, 8).toUpperCase(),
+        logoUrl: String(o.logo_url ?? ''),
         category: (o.category_name ?? 'Non-Academic') as Exclude<OrgCategory, 'All'>,
         description: o.description ?? '',
         adviser: o.adviser ?? 'N/A',
@@ -149,8 +167,14 @@ export default function OrganizationsPage() {
         color: colorMap[o.category_name ?? 'Non-Academic'] ?? 'bg-gray-100 text-gray-700',
       })));
       setLoadError('');
-      setLoading(false);
-    })();
+    } finally {
+      if (showLoading) setLoading(false);
+      else setRefreshing(false);
+    }
+  }
+
+  useEffect(() => {
+    loadOrganizations(true);
   }, []);
 
   const searchedOrgs = useMemo(() => {
@@ -181,7 +205,8 @@ export default function OrganizationsPage() {
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div><h1 className="text-[26px] font-bold text-gray-900 tracking-tight">Student Organizations</h1><p className="text-[14px] text-gray-500 mt-1">Discover and join accredited CvSU student organizations.</p></div>
-          <div className="flex items-center gap-4 flex-shrink-0"><div className="flex flex-col items-end"><span className="text-[22px] font-bold text-green-700 leading-none">{orgs.filter((o) => o.status === 'Active').length}</span><span className="text-[11px] text-gray-400">Active orgs</span></div><div className="h-8 w-px bg-gray-200" /><div className="flex flex-col items-end"><span className="text-[22px] font-bold text-gray-700 leading-none">{orgs.length}</span><span className="text-[11px] text-gray-400">Total orgs</span></div></div>
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="flex flex-col items-end"><span className="text-[22px] font-bold text-green-700 leading-none">{orgs.filter((o) => o.status === 'Active').length}</span><span className="text-[11px] text-gray-400">Active orgs</span></div><div className="h-8 w-px bg-gray-200" /><div className="flex flex-col items-end"><span className="text-[22px] font-bold text-gray-700 leading-none">{orgs.length}</span><span className="text-[11px] text-gray-400">Total orgs</span></div></div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex flex-col gap-3">
@@ -210,16 +235,34 @@ export default function OrganizationsPage() {
           })}
         </div>
 
-        <CategoryHeader category={activeTab} />
-
-        {loading ? <div className="text-sm text-gray-500">Loading organizations...</div> : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">{filtered.map((org) => <OrgCard key={org.id} org={org} />)}</div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3 text-center"><p className="text-[15px] font-semibold text-gray-700">No organizations found</p><p className="text-[13px] text-gray-400 max-w-xs">No organizations match your current filters.</p><button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:text-green-800 hover:underline cursor-pointer">Clear all filters</button></div>
-        )}
-
-        {!!loadError && <div className="text-sm text-red-600">{loadError}</div>}
-      </main>
+        <div className="flex flex-row items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <CategoryHeader category={activeTab} />
+          </div>
+          <div className="flex mb-4 gap-2 w-8 ml-2">
+          <button
+            type="button"
+            onClick={() => loadOrganizations(false)}
+            disabled={loading || refreshing}
+            className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh organizations"
+            aria-label="Refresh organizations"
+          >
+            <IconRefresh spinning={refreshing} />
+          </button>
+        </div>
     </div>
+
+        {
+    loading ? <div className="text-sm text-gray-500">Loading organizations...</div> : filtered.length > 0 ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">{filtered.map((org) => <OrgCard key={org.id} org={org} />)}</div>
+    ) : (
+      <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3 text-center"><p className="text-[15px] font-semibold text-gray-700">No organizations found</p><p className="text-[13px] text-gray-400 max-w-xs">No organizations match your current filters.</p><button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:text-green-800 hover:underline cursor-pointer">Clear all filters</button></div>
+    )
+  }
+
+  { !!loadError && <div className="text-sm text-red-600">{loadError}</div> }
+      </main >
+    </div >
   );
 }
