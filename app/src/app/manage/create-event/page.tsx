@@ -44,6 +44,7 @@ interface FormErrors {
   description?: string;
   price?: string; // NEW
   payment_instructions?: string;
+  banner_file?: string;
 }
 
 /* ----------------------------------------------------------------
@@ -183,7 +184,18 @@ export default function CreateEventPage() {
 
   function handleBanner(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (!f || !f.type.startsWith('image/') || f.size > 5 * 1024 * 1024) return;
+    if (!f) return;
+    const allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+    const ext = (f.name.split('.').pop() ?? '').toLowerCase();
+    if (!allowedExt.includes(ext)) {
+      setErrors((p) => ({ ...p, banner_file: 'Invalid file type. Use .jpg, .jpeg, .png, .webp, .heic, or .heif.' }));
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      setErrors((p) => ({ ...p, banner_file: 'File is too large. Maximum size is 5MB.' }));
+      return;
+    }
+    setErrors((p) => ({ ...p, banner_file: undefined }));
     update('banner_file', f);
     update('banner_preview', URL.createObjectURL(f));
   }
@@ -215,6 +227,7 @@ export default function CreateEventPage() {
       const payload = new FormData();
       payload.append('venue_id', String(form.venue_id));
       payload.append('category_id', String(categoryId));
+      payload.append('category', String(form.category));
       payload.append('title', form.title.trim());
       payload.append('description', form.description.trim());
       payload.append('start_date', `${form.start_date} ${form.start_time}:00`);
@@ -421,6 +434,9 @@ export default function CreateEventPage() {
                     </div>
                     <p className="text-[12px] text-gray-400">{form.banner_file?.name} · {((form.banner_file?.size ?? 0) / 1024).toFixed(0)} KB</p>
                   </div>
+                )}
+                {errors.banner_file && (
+                  <p className="text-[12px] text-red-500">{errors.banner_file}</p>
                 )}
               </SectionCard>
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -7,7 +7,7 @@ import { IconRefresh } from '@/components/ui/IconRefresh';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
-type EventStatus = 'Upcoming' | 'Open' | 'Full' | 'Closed' | 'Completed' | 'Cancelled';
+type EventStatus = 'Upcoming' | 'Open' | 'Closed' | 'Completed' | 'Cancelled';
 
 interface KpiCardData {
   label: string;
@@ -48,7 +48,6 @@ interface ActivityRow {
 const STATUS_STYLES: Record<EventStatus, string> = {
   Upcoming: 'badge-blue',
   Open: 'badge-green',
-  Full: 'badge-yellow',
   Closed: 'badge-gray',
   Completed: 'badge-gray',
   Cancelled: 'badge-red',
@@ -364,7 +363,7 @@ export default function AdminDashboardPage() {
                   <ActivityIcon type={item.type} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] text-[var(--color-text)] leading-relaxed">{item.target}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} · {item.timestamp}</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} � {item.timestamp}</p>
                   </div>
                 </div>
               ))}

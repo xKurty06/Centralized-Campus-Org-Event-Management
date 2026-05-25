@@ -951,8 +951,7 @@ function MemberRow({
                     </div>
                     <div>
                         <p
-                            className="text-sm font-medium hover:underline"
-                            style={{ color: 'var(--color-text)' }}
+                            className="text-sm font-medium hover:text-primary transition-colors"
                         >
                             {fullName(member)}
                             {member.isOfficer && (

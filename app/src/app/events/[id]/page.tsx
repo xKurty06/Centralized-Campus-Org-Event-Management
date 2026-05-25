@@ -20,8 +20,14 @@ type EventCategory =
 type EventType = 'Free' | 'Paid';
 type RegistrationStatus = 'none' | 'registered' | 'pending';
 type PaymentMethod = 'online' | 'onsite';
-type AudienceType = 'Public' | 'Org_Members_Only';
-type EventStatus = 'Open' | 'Upcoming' | 'Ended';
+type AudienceType = 'Open' | 'CvSU_Only' | 'Org_Members_Only';
+type EventStatus =
+  | 'Upcoming'
+  | 'Open'
+  | 'Full'
+  | 'Closed'
+  | 'Completed'
+  | 'Cancelled';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 let API_ORIGIN = "";
@@ -59,20 +65,35 @@ function getEventStatus(startDate: string, endDate: string): EventStatus {
   const now = new Date();
   const start = new Date(startDate);
   const end = new Date(endDate);
-
   if (now < start) return 'Upcoming';
-  if (now > end) return 'Ended';
+  if (now > end) return 'Completed';
   return 'Open';
+}
+
+function mapApiStatus(value: unknown, startDate: string, endDate: string): EventStatus {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw === 'upcoming') return 'Upcoming';
+  if (raw === 'open') return 'Open';
+  if (raw === 'closed') return 'Closed';
+  if (raw === 'completed') return 'Completed';
+  if (raw === 'cancelled') return 'Cancelled';
+  return getEventStatus(startDate, endDate);
 }
 
 function getStatusBadgeColor(status: EventStatus): string {
   switch (status) {
-    case 'Open':
-      return 'bg-green-100 text-green-700';
     case 'Upcoming':
       return 'bg-blue-100 text-blue-700';
-    case 'Ended':
+    case 'Open':
+      return 'bg-green-100 text-green-700';
+    case 'Full':
+      return 'bg-amber-100 text-amber-700';
+    case 'Closed':
       return 'bg-gray-100 text-gray-600';
+    case 'Completed':
+      return 'bg-purple-100 text-purple-700';
+    case 'Cancelled':
+      return 'bg-red-100 text-red-700';
   }
 }
 
@@ -84,7 +105,8 @@ interface CampusEvent {
   orgId: string;
   host_org_id: string;
   audience_type: AudienceType;
-  is_member: boolean;
+  is_member: boolean | null;
+  is_registered: boolean;
   orgCategory: 'Academic' | 'Non-Academic' | 'Religious';
   date: string;
   time: string;
@@ -230,11 +252,9 @@ export default function EventDetailPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const [isMember, setIsMember] = useState<boolean | null>(null);
-  const [checkingMembership, setCheckingMembership] = useState(false);
-
-  const isLoggedIn = true;
+  const isLoggedIn = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token'));
   const isOrgMembersOnly = currentEvent?.audience_type === 'Org_Members_Only';
+  const isMember = currentEvent ? currentEvent.is_member : null;
   const accessBlocked = Boolean(isOrgMembersOnly && isMember === false);
   const accessPending = Boolean(isOrgMembersOnly && isMember === null);
 
@@ -268,15 +288,16 @@ export default function EventDetailPage() {
         organization: String(e.organization_name ?? 'Organization'),
         orgId: String(e.host_org_id ?? ''),
         host_org_id: String(e.host_org_id ?? ''),
-        audience_type: (e.audience_type ?? 'Public') as AudienceType,
-        is_member: Boolean(e.is_member),
+        audience_type: (e.audience_type ?? 'Open') as AudienceType,
+        is_member: e.is_member === null ? null : Boolean(e.is_member),
+        is_registered: Boolean(e.is_registered),
         orgCategory: (e.organization_category ?? 'Non-Academic') as 'Academic' | 'Non-Academic' | 'Religious',
         date: String(e.start_date ?? new Date().toISOString()),
         time: new Date(e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
         endTime: new Date(e.end_date ?? e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
         startDate: startDate,
         endDate: endDate,
-        status: getEventStatus(startDate, endDate),
+        status: mapApiStatus(e.status, startDate, endDate),
         venue: String(e.venue_name ?? 'TBA'),
         type: Boolean(e.is_paid) ? 'Paid' : 'Free',
         fee: Number(e.fee_amount ?? 0),
@@ -293,17 +314,6 @@ export default function EventDetailPage() {
       setLoading(false);
     })();
   }, [eventId]);
-
-  useEffect(() => {
-    if (!currentEvent) return;
-
-    if (!isOrgMembersOnly) {
-      setIsMember(true);
-      return;
-    }
-
-    setIsMember(currentEvent.is_member);
-  }, [currentEvent, isOrgMembersOnly]);
 
   if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500 text-center">Loading event...</div>;
 
@@ -334,6 +344,7 @@ export default function EventDetailPage() {
 
   const spots = event.capacity - event.registered;
   const isFull = spots <= 0;
+  const displayStatus: EventStatus = isFull ? 'Full' : event.status;
   const fillPct = Math.min((event.registered / event.capacity) * 100, 100);
 
   async function handleRegister() {
@@ -434,8 +445,8 @@ export default function EventDetailPage() {
                 ₱ {event.fee}
               </span>
             )}
-            <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(event.status)}`}>
-              {event.status}
+            <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(displayStatus)}`}>
+              {displayStatus}
             </span>
             {event.audience_type === 'Org_Members_Only' && (
               <span className="text-[12px] font-semibold badge badge-green px-3 py-1 rounded-full">
@@ -607,7 +618,15 @@ export default function EventDetailPage() {
                 </div>
 
                 {status === 'none' &&
-                  (accessBlocked ? (
+                  (event.is_registered ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 bg-green-100 text-green-700 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
+                    >
+                      Already registered
+                    </button>
+                  ) : accessBlocked ? (
                     <div className="group relative">
                       <button
                         type="button"
@@ -620,7 +639,7 @@ export default function EventDetailPage() {
                         This event is exclusive to active members of {event.organization}.
                       </div>
                     </div>
-                  ) : event.status === 'Upcoming' ? (
+                  ) : displayStatus === 'Upcoming' ? (
                     <button
                       type="button"
                       disabled
@@ -628,21 +647,21 @@ export default function EventDetailPage() {
                     >
                       Coming Soon
                     </button>
-                  ) : event.status === 'Ended' ? (
+                  ) : displayStatus === 'Completed' || displayStatus === 'Closed' || displayStatus === 'Cancelled' ? (
                     <button
                       type="button"
                       disabled
                       className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
                     >
-                      Event Ended
+                      {displayStatus === 'Cancelled' ? 'Event Cancelled' : displayStatus === 'Completed' ? 'Event Completed' : 'Registration Closed'}
                     </button>
                   ) : (
                     <button
                       onClick={handleRegister}
-                      disabled={isFull || isRegistering || checkingMembership || accessPending}
+                      disabled={isFull || isRegistering || accessPending}
                       className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[14px] font-semibold py-3 rounded-xl transition-colors cursor-pointer"
                     >
-                      {checkingMembership || accessPending ? (
+                      {accessPending ? (
                         <>
                           <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

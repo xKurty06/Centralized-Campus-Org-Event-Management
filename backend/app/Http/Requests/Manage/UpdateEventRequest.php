@@ -27,7 +27,7 @@ class UpdateEventRequest extends FormRequest
             'is_paid' => 'nullable|boolean',
             'price' => 'nullable|numeric|min:0',
             'payment_instructions' => 'nullable|string',
-            'status' => 'nullable|in:Upcoming,Open,Full,Closed,Completed,Cancelled',
+            'status' => 'nullable|in:Upcoming,Open,Closed,Completed,Cancelled',
         ];
     }
 }

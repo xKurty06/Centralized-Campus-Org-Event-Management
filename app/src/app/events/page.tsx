@@ -15,7 +15,13 @@ type EventCategory =
   | "Other";
 type AudienceType = "Public" | "Org_Members_Only";
 type EventType = "Free" | "Paid";
-type EventStatus = "Open" | "Upcoming" | "Ended";
+type EventStatus =
+  | "Upcoming"
+  | "Open"
+  | "Full"
+  | "Closed"
+  | "Completed"
+  | "Cancelled";
 
 interface CampusEvent {
   id: string;
@@ -91,31 +97,35 @@ function formatDate(iso: string) {
   });
 }
 
-function getEventStatus(startDate: string, endDate: string): EventStatus {
+function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
+  const value = String(raw ?? "").trim().toLowerCase();
+  if (value === "upcoming") return "Upcoming";
+  if (value === "open") return "Open";
+  if (value === "closed") return "Closed";
+  if (value === "completed") return "Completed";
+  if (value === "cancelled") return "Cancelled";
   const now = new Date();
   const start = new Date(startDate);
   const end = new Date(endDate);
   if (now < start) return "Upcoming";
-  if (now > end) return "Ended";
+  if (now > end) return "Completed";
   return "Open";
-}
-
-function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
-  const value = String(raw ?? "").trim().toLowerCase();
-  if (value === "open") return "Open";
-  if (value === "upcoming") return "Upcoming";
-  if (value === "ended") return "Ended";
-  return getEventStatus(startDate, endDate);
 }
 
 function getStatusBadgeColor(status: EventStatus): string {
   switch (status) {
-    case "Open":
-      return "bg-green-100 text-green-700";
     case "Upcoming":
       return "bg-blue-100 text-blue-700";
-    case "Ended":
+    case "Open":
+      return "bg-green-100 text-green-700";
+    case "Full":
+      return "bg-amber-100 text-amber-700";
+    case "Closed":
       return "bg-gray-100 text-gray-600";
+    case "Completed":
+      return "bg-purple-100 text-purple-700";
+    case "Cancelled":
+      return "bg-red-100 text-red-700";
   }
 }
 
@@ -251,6 +261,7 @@ function EventCard({
 }) {
   const spots = event.capacity - event.registered;
   const isFull = spots <= 0;
+  const displayStatus: EventStatus = isFull ? "Full" : event.status;
   return (
     <Link
       href={`/events/${event.id}`}
@@ -320,8 +331,8 @@ function EventCard({
           >
             {event.category}
           </span>
-          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeColor(event.status)}`}>
-            {event.status}
+          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeColor(displayStatus)}`}>
+            {displayStatus}
           </span>
           {isOrgMembersOnly && (
             <span className="text-[11px] font-semibold badge badge-green px-2.5 py-0.5 rounded-full">

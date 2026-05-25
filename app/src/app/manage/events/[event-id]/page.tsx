@@ -11,8 +11,7 @@ import ManageShell from "@/components/ManageShell";
 type EventStatus =
   | "Upcoming"
   | "Open"
-  | "Full"
-  | "Closed"
+    | "Closed"
   | "Completed"
   | "Cancelled";
 type EventCategory =
@@ -64,11 +63,6 @@ const STATUS_CONFIG: Record<
     label: "Open",
     style: "bg-green-50 text-green-700 border-green-200",
     dot: "bg-green-500",
-  },
-  Full: {
-    label: "Full",
-    style: "bg-red-50 text-red-600 border-red-200",
-    dot: "bg-red-400",
   },
   Closed: {
     label: "Closed",

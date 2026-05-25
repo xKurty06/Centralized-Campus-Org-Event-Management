@@ -9,8 +9,7 @@ type AudienceType = "CvSU_Only" | "Org_Members_Only";
 type EventStatus =
   | "Upcoming"
   | "Open"
-  | "Full"
-  | "Closed"
+    | "Closed"
   | "Completed"
   | "Cancelled";
 
@@ -39,6 +38,21 @@ interface AudienceOption {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+
+function normalizeBannerUrl(raw?: string | null) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('//')) return s;
+  let backendOrigin = 'http://localhost:8000';
+  try {
+    backendOrigin = new URL(API_BASE_URL).origin;
+  } catch (e) {
+    // fallback to default
+  }
+  const path = s.startsWith('/') ? s : `/${s}`;
+  return `${backendOrigin}${path}`;
+}
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString("en-PH", {
@@ -102,8 +116,7 @@ const AUDIENCE_OPTIONS: AudienceOption[] = [
 const STATUS_OPTIONS: EventStatus[] = [
   "Upcoming",
   "Open",
-  "Full",
-  "Closed",
+    "Closed",
   "Completed",
   "Cancelled",
 ];
@@ -198,7 +211,6 @@ function StatusBadge({ status }: { status: EventStatus }) {
   const map = {
     Upcoming: "bg-blue-50 text-blue-700 border-blue-200",
     Open: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Full: "bg-amber-50 text-amber-700 border-amber-200",
     Closed: "bg-gray-100 text-gray-600 border-gray-200",
     Completed: "bg-purple-50 text-purple-700 border-purple-200",
     Cancelled: "bg-red-50 text-red-600 border-red-200",
@@ -381,7 +393,7 @@ export default function EditEventPage() {
         status: (e.status ?? "Upcoming") as EventStatus,
         venue_id: Number(e.venue_id ?? 1),
         category_id: Number(e.category_id ?? 8),
-        banner_url: String(e.banner_url ?? ""),
+        banner_url: normalizeBannerUrl(e.banner_url ?? ""),
       };
 
       setForm(loadedData);
@@ -507,7 +519,7 @@ export default function EditEventPage() {
       return;
     }
 
-    const savedBannerUrl = String(payload?.data?.banner_url ?? form.banner_url ?? "");
+    const savedBannerUrl = normalizeBannerUrl(String(payload?.data?.banner_url ?? form.banner_url ?? ""));
     const nextForm = { ...form, banner_url: savedBannerUrl };
     setSaving(false);
     setSaved(true);
@@ -600,7 +612,7 @@ export default function EditEventPage() {
                 )}
               </div>
               <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
-                {fmt(form.start_date)} · Event ID:{" "}
+                {fmt(form.start_date)} Event ID:{" "}
                 <span className="font-mono">{eventId}</span>
               </p>
             </div>

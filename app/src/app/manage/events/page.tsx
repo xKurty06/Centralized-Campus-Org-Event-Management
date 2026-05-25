@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -8,8 +8,7 @@ import { FilterSelect, FilterChip } from "@/components/ui/filter";
 type EventStatus =
   | "Upcoming"
   | "Open"
-  | "Full"
-  | "Closed"
+    | "Closed"
   | "Completed"
   | "Cancelled";
 type EventCategory =
@@ -43,8 +42,7 @@ const API_BASE_URL =
 const ALL_STATUSES: EventStatus[] = [
   "Upcoming",
   "Open",
-  "Full",
-  "Closed",
+    "Closed",
   "Completed",
   "Cancelled",
 ];
@@ -104,7 +102,6 @@ const STATUS_CONFIG: Record<EventStatus, { label: string; style: string }> = {
     style: "bg-blue-50 text-blue-700 border-blue-200",
   },
   Open: { label: "Open", style: "bg-green-50 text-green-700 border-green-200" },
-  Full: { label: "Full", style: "bg-red-50 text-red-600 border-red-200" },
   Closed: {
     label: "Closed",
     style: "bg-gray-100 text-gray-500 border-gray-200",

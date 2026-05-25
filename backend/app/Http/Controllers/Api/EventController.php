@@ -10,6 +10,7 @@ use App\Http\Resources\RegistrationResource;
 use App\Http\Resources\PaymentProofResource;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -71,8 +72,11 @@ class EventController extends Controller
 
     public function show($id)
     {
+        $user = null;
         try {
-            $user = request()->user();
+            $sanctumUser = Auth::guard('sanctum')->user();
+            $webUser = Auth::user();
+            $user = $sanctumUser ?? $webUser;
             $event = DB::table('events as e')
                 ->leftJoin('venues as v', 'e.venue_id', '=', 'v.id')
                 ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')
@@ -87,11 +91,11 @@ class EventController extends Controller
                     'oc.name as organization_category',
                     'o.adviser as adviser',
                     DB::raw("(select count(*) from registrations r where r.event_id = e.id) as total_registered"),
-                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active') as org_members_count")
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active' and COALESCE(m.paid_membership_fee, 0) = 1) as org_members_count")
                 )
                 ->first();
             if (!$event) return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
-            $eventRow = (object) array_merge((array) $event, ['is_member' => false, 'is_registered' => false]);
+            $eventRow = (object) array_merge((array) $event, ['is_member' => null, 'is_registered' => false]);
             if ($user) {
                 $eventRow->is_member = $this->resolveEventMembership($user->id, $event->host_org_id);
                 $eventRow->is_registered = DB::table('registrations')
@@ -103,7 +107,7 @@ class EventController extends Controller
         } catch (\Exception $e) {
             Log::error('EventController::show failed', [
                 'event_id' => $id,
-                'user_id' => request()->user()?->id,
+                'user_id' => $user?->id,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -182,7 +186,7 @@ class EventController extends Controller
             $msg = $e->getMessage();
             Log::warning('EventController::register failed', [
                 'event_id' => $id,
-                'user_id' => $req->user()?->id,
+                'user_id' => $user?->id,
                 'message' => $msg,
             ]);
             return response()->json(['success' => false, 'error' => $msg ?: 'Registration failed.'], 400);
@@ -195,6 +199,7 @@ class EventController extends Controller
             ->where('org_id', $orgId)
             ->where('user_id', $userId)
             ->whereRaw("LOWER(TRIM(membership_status)) = 'active'")
+            ->where('paid_membership_fee', 1)
             ->exists()
             || DB::table('org_officers')
                 ->where('org_id', $orgId)
@@ -245,7 +250,7 @@ class EventController extends Controller
                     'o.code_name',
                     'o.founded_date',
                     'c.name as category_name',
-                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active') as members_count"),
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active' and COALESCE(m.paid_membership_fee, 0) = 1) as members_count"),
                     DB::raw("(select count(*) from events e where e.host_org_id = o.id and year(e.start_date) = year(curdate())) as events_this_year")
                 )
                 ->latest('o.created_at')
@@ -281,7 +286,7 @@ class EventController extends Controller
                     'o.code_name',
                     'o.founded_date',
                     'c.name as category_name',
-                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active') as members_count"),
+                    DB::raw("(select count(*) from org_members m where m.org_id = o.id and LOWER(TRIM(m.membership_status)) = 'active' and COALESCE(m.paid_membership_fee, 0) = 1) as members_count"),
                     DB::raw("(select count(*) from events e where e.host_org_id = o.id and year(e.start_date) = year(curdate())) as events_this_year")
                 )
                 ->first();
@@ -290,7 +295,7 @@ class EventController extends Controller
         } catch (\Exception $e) {
             Log::error('EventController::organization failed', [
                 'org_id' => $id,
-                'user_id' => request()->user()?->id,
+                'user_id' => Auth::guard('sanctum')->user()?->id ?? Auth::user()?->id,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

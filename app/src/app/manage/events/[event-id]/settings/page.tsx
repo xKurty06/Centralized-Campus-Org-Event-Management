@@ -1,4 +1,4 @@
-ï»¿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -8,8 +8,7 @@ import ManageShell from "@/components/ManageShell";
 type EventStatus =
     | "Upcoming"
     | "Open"
-    | "Full"
-    | "Closed"
+        | "Closed"
     | "Completed"
     | "Cancelled";
 
@@ -577,7 +576,7 @@ export default function EventSettingsPage() {
                                         {event.title}
                                     </p>
                                     <p className="text-[12px] text-gray-400">
-                                        {formatDate(event.start_date)} Â· {event.total_registered}{" "}
+                                        {formatDate(event.start_date)} · {event.total_registered}{" "}
                                         registered
                                     </p>
                                 </div>
@@ -704,7 +703,7 @@ export default function EventSettingsPage() {
                                             Delete event permanently
                                         </p>
                                         <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
-                                            Permanently removes this event and all associated data â€”
+                                            Permanently removes this event and all associated data —
                                             registrations, payment proofs, and attendance records.
                                             This action{" "}
                                             <strong className="font-semibold text-gray-700">
@@ -714,7 +713,7 @@ export default function EventSettingsPage() {
                                         </p>
                                         {event.total_registered > 0 && (
                                             <p className="text-[11px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 mt-3 inline-block">
-                                                âš  {event.total_registered} registration records will be
+                                                ? {event.total_registered} registration records will be
                                                 permanently lost
                                             </p>
                                         )}
@@ -798,7 +797,7 @@ export default function EventSettingsPage() {
                             />
                         </svg>
                         <p className="text-[13px] font-semibold text-gray-700">
-                            Processingâ€¦
+                            Processing…
                         </p>
                     </div>
                 </div>

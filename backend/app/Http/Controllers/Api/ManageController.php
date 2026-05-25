@@ -466,7 +466,8 @@ class ManageController extends Controller
                 ->leftJoin('org_members as om', function ($join) use ($eventAccess) {
                     $join->on('om.user_id', '=', 'u.id')
                         ->where('om.org_id', '=', $eventAccess->event->host_org_id)
-                        ->whereRaw("LOWER(TRIM(om.membership_status)) = 'active'");
+                        ->whereRaw("LOWER(TRIM(om.membership_status)) = 'active'")
+                        ->where('om.paid_membership_fee', 1);
                 })
                 ->where('r.event_id', $event_id)
                 ->where(function ($q) use ($query) {

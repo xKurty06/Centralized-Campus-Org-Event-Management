@@ -89,11 +89,15 @@ class AuthController extends Controller
             })
             ->where('m.user_id', $user->id)
             ->select(
+                'm.id as member_id',
                 'm.org_id',
                 'o.name as org_name',
                 'c.name as org_category',
                 'o.accreditation_status',
                 'm.membership_status',
+                'm.paid_membership_fee',
+                'm.created_at',
+                'm.updated_at',
                 'oo.position'
             )
             ->orderByDesc('m.created_at')
@@ -112,7 +116,10 @@ class AuthController extends Controller
                 'org_status' => strtolower(trim((string) ($row->accreditation_status ?? 'Active'))) === 'suspended' ? 'Suspended' : 'Active',
                 'org_color' => $this->resolveOrgColor($category),
                 'position' => trim((string) ($row->position ?? 'Member')) ?: 'Member',
-                'is_active' => strtolower(trim((string) ($row->membership_status ?? 'Active'))) === 'active',
+                'paid_membership_fee' => (int) ($row->paid_membership_fee ?? 0) === 1,
+                'is_active' =>
+                    strtolower(trim((string) ($row->membership_status ?? 'Active'))) === 'active'
+                    && (int) ($row->paid_membership_fee ?? 0) === 1,
             ];
         })->toArray();
     }
