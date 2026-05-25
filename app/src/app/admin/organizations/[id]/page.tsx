@@ -80,6 +80,21 @@ export default function AdminOrgDetailPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+    const API_ORIGIN = (() => {
+        try {
+            return new URL(API_BASE_URL).origin;
+        } catch {
+            return 'http://localhost:8000';
+        }
+    })();
+    const normalizeImageUrl = (raw?: string | null): string => {
+        if (!raw) return '';
+        const value = String(raw).trim();
+        if (!value) return '';
+        if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('//')) return value;
+        const path = value.startsWith('/') ? value : `/${value}`;
+        return `${API_ORIGIN}${path}`;
+    };
     const orgId = String(params?.id ?? '');
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -209,7 +224,7 @@ export default function AdminOrgDetailPage() {
                 id: String(rawOrg.id ?? orgId),
                 name: String(rawOrg.name ?? ''),
                 description: String(rawOrg.description ?? ''),
-                logoUrl: String(rawOrg.logo_url ?? ''),
+                logoUrl: normalizeImageUrl(rawOrg.logo_url ?? ''),
                 adviser: String(rawOrg.adviser ?? 'N/A'),
                 foundedDate: String(rawOrg.founded_date ?? rawOrg.created_at ?? '').slice(0, 10),
                 category: (String(rawOrg.category_name ?? 'Non-Academic') as OrgCategory),

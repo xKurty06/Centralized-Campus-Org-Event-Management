@@ -23,6 +23,22 @@ interface Organization {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_BASE_URL).origin;
+  } catch {
+    return 'http://localhost:8000';
+  }
+})();
+
+function normalizeImageUrl(raw?: string | null): string {
+  if (!raw) return '';
+  const value = String(raw).trim();
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('//')) return value;
+  const path = value.startsWith('/') ? value : `/${value}`;
+  return `${API_ORIGIN}${path}`;
+}
 
 const CATEGORY_TABS: { value: OrgCategory; label: string }[] = [
   { value: 'All', label: 'All' },
@@ -157,7 +173,7 @@ export default function OrganizationsPage() {
         id: String(o.id ?? ''),
         name: o.name ?? 'Organization',
         acronym: String(o.code_name ?? o.name ?? 'ORG').slice(0, 8).toUpperCase(),
-        logoUrl: String(o.logo_url ?? ''),
+        logoUrl: normalizeImageUrl(o.logo_url),
         category: (o.category_name ?? 'Non-Academic') as Exclude<OrgCategory, 'All'>,
         description: o.description ?? '',
         adviser: o.adviser ?? 'N/A',

@@ -96,6 +96,9 @@ function formatDate(iso: string) {
     year: "numeric",
   });
 }
+function formatPrice(value?: number) {
+  return Number(value ?? 0).toLocaleString("en-PH");
+}
 
 function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
   const value = String(raw ?? "").trim().toLowerCase();
@@ -267,97 +270,97 @@ function EventCard({
       href={`/events/${event.id}`}
       className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col"
     >
-      <div
-        className={`h-36 relative flex items-center justify-center overflow-hidden ${event.banner_url ? "bg-gray-100" : BANNER_COLORS[event.id] ?? "bg-gray-100"}`}
-      >
-        {event.banner_url ? (
-          <>
-            <img
-              src={event.banner_url}
-              alt={event.title}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-            <svg
-              className="w-10 h-10 text-gray-300"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <rect
-                x="3"
-                y="4"
-                width="18"
-                height="16"
-                rx="2"
-                stroke="currentColor"
-                strokeWidth="1.5"
+        <div
+          className={`h-36 relative flex items-center justify-center overflow-hidden ${event.banner_url ? "bg-gray-100" : BANNER_COLORS[event.id] ?? "bg-gray-100"}`}
+        >
+          {event.banner_url ? (
+            <>
+              <img
+                src={event.banner_url}
+                alt={event.title}
+                className="absolute inset-0 h-full w-full object-cover"
               />
-              <path
-                d="M8 2v4M16 2v4M3 10h18"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </>
-        )}
-        <div className="absolute top-3 right-3">
-          {event.type === "Free" ? (
-            <span className="text-[11px] font-semibold bg-green-700 text-white px-2.5 py-0.5 rounded-full">
-              Free
-            </span>
+              <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+            </>
           ) : (
-            <span className="text-[11px] font-medium bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
-              ₱ {event.fee ?? 0}
-            </span>
+            <>
+              <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+              <svg
+                className="w-10 h-10 text-gray-300"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <rect
+                  x="3"
+                  y="4"
+                  width="18"
+                  height="16"
+                  rx="2"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M8 2v4M16 2v4M3 10h18"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </>
+          )}
+          <div className="absolute top-3 right-3">
+            {event.type === "Free" ? (
+              <span className="text-[11px] font-semibold bg-green-700 text-white px-2.5 py-0.5 rounded-full">
+                Free
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
+                ₱ {formatPrice(event.fee ?? 0)}
+              </span>
+            )}
+          </div>
+          {isFull && (
+            <div className="absolute top-3 left-3">
+              <span className="text-[11px] font-semibold bg-red-500 text-white px-2.5 py-1 rounded-full">
+                Full
+              </span>
+            </div>
           )}
         </div>
-        {isFull && (
-          <div className="absolute top-3 left-3">
-            <span className="text-[11px] font-semibold bg-red-500 text-white px-2.5 py-1 rounded-full">
-              Full
+        <div className="p-4 flex flex-col gap-2 flex-1">
+          <div className="flex items-center gap-1">
+            <span
+              className={`self-start text-[11px] font-semibold px-2.5 py-0.5 rounded-md ${CATEGORY_COLORS[event.category]}`}
+            >
+              {event.category}
             </span>
-          </div>
-        )}
-      </div>
-      <div className="p-4 flex flex-col gap-2 flex-1">
-        <div className="flex items-center gap-1">
-          <span
-            className={`self-start text-[11px] font-semibold px-2.5 py-0.5 rounded-md ${CATEGORY_COLORS[event.category]}`}
-          >
-            {event.category}
-          </span>
-          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeColor(displayStatus)}`}>
-            {displayStatus}
-          </span>
-          {isOrgMembersOnly && (
-            <span className="text-[11px] font-semibold badge badge-green px-2.5 py-0.5 rounded-full">
-              Exclusive
+            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeColor(displayStatus)}`}>
+              {displayStatus}
             </span>
-          )}
-        </div>
-        <h3 className="text-[14px] font-semibold text-gray-900 leading-snug group-hover:text-green-700 transition-colors line-clamp-2">
-          {event.title}
-        </h3>
-        <div className="flex flex-col gap-1 mt-auto pt-2">
-          <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-            <IconClock />
-            {formatDate(event.date)} · {event.time}
+            {isOrgMembersOnly && (
+              <span className="text-[11px] font-semibold badge badge-green px-2.5 py-0.5 rounded-full">
+                Exclusive
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-            <IconPin />
-            {event.venue}
-          </div>
-          <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-            <IconOrg />
-            {event.organization}
+          <h3 className="text-[14px] font-semibold text-gray-900 leading-snug group-hover:text-green-700 transition-colors line-clamp-2">
+            {event.title}
+          </h3>
+          <div className="flex flex-col gap-1 mt-auto pt-2">
+            <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
+              <IconClock />
+              {formatDate(event.date)} � {event.time}
+            </div>
+            <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
+              <IconPin />
+              {event.venue}
+            </div>
+            <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
+              <IconOrg />
+              {event.organization}
+            </div>
           </div>
         </div>
-      </div>
     </Link>
   );
 }
@@ -742,3 +745,6 @@ function IconOrg() {
     </svg>
   );
 }
+
+
+

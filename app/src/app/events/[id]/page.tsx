@@ -138,6 +138,9 @@ function formatDate(iso: string) {
     year: 'numeric',
   });
 }
+function formatPrice(value?: number) {
+  return Number(value ?? 0).toLocaleString('en-PH');
+}
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
   Workshop: 'bg-blue-50 text-blue-700',
@@ -442,7 +445,7 @@ export default function EventDetailPage() {
               <span className="text-[12px] font-medium bg-green-700 text-white px-3 py-1 rounded-full">Free</span>
             ) : (
               <span className="text-[12px] font-medium bg-amber-500 text-white px-3 py-1 rounded-full">
-                ₱ {event.fee}
+                ₱ {event.fee ? formatPrice(event.fee) : 'N/A'}
               </span>
             )}
             <span className={`text-[12px] font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(displayStatus)}`}>
@@ -494,7 +497,7 @@ export default function EventDetailPage() {
                 {event.registered} / {event.capacity} registered
               </DetailItem>
               <DetailItem icon={<IconTag />} label="Entry">
-                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">PHP {event.fee}</span>}
+                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">PHP {formatPrice(event.fee)}</span>}
               </DetailItem>
               <DetailItem icon={<IconAdviser />} label="Adviser">
                 {event.adviser}
@@ -598,7 +601,7 @@ export default function EventDetailPage() {
                   {event.type === 'Free' ? (
                     <span className="text-[12px] font-semibold text-green-700">Free</span>
                   ) : (
-                    <span className="text-[12px] font-semibold text-amber-600">₱ {event.fee}</span>
+                    <span className="text-[12px] font-semibold text-amber-600">₱ {event.fee ? formatPrice(event.fee) : 'N/A'}</span>
                   )}
                 </div>
 
@@ -625,6 +628,13 @@ export default function EventDetailPage() {
                       className="w-full flex items-center justify-center gap-2 bg-green-100 text-green-700 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
                     >
                       Already registered
+                    </button>
+                  ) : !isLoggedIn ? (
+                    <button
+                      onClick={() => router.push('/')}
+                      className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 text-white text-[14px] font-semibold py-3 rounded-xl transition-colors cursor-pointer"
+                    >
+                      Sign In to Register
                     </button>
                   ) : accessBlocked ? (
                     <div className="group relative">
@@ -909,3 +919,7 @@ function IconAdviser() {
     </svg>
   );
 }
+
+
+
+

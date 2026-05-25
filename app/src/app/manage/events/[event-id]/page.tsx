@@ -112,6 +112,10 @@ function formatTime(iso: string) {
   });
 }
 
+function formatPrice(value?: number) {
+  return Number(value ?? 0).toLocaleString("en-PH");
+}
+
 function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
 }
@@ -941,3 +945,8 @@ function IconInfo() {
     </svg>
   );
 }
+
+
+
+
+

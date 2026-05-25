@@ -6,6 +6,13 @@ import AdminShell from '@/components/AdminShell';
 import { IconRefresh } from '@/components/ui/IconRefresh';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_BASE_URL).origin;
+  } catch {
+    return 'http://localhost:8000';
+  }
+})();
 
 type EventStatus = 'Upcoming' | 'Open' | 'Closed' | 'Completed' | 'Cancelled';
 
@@ -21,6 +28,7 @@ interface KpiCardData {
 interface OrgRow {
   id: string;
   name: string;
+  logoUrl: string | null;
   category: 'Academic' | 'Non-Academic' | 'Religious';
   accreditationStatus: 'Active' | 'Suspended';
   eventCount: number;
@@ -64,6 +72,15 @@ function formatDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return 'N/A';
   return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function normalizeImageUrl(raw?: string | null): string | null {
+  if (!raw) return null;
+  const value = String(raw).trim();
+  if (!value) return null;
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('//')) return value;
+  const path = value.startsWith('/') ? value : `/${value}`;
+  return `${API_ORIGIN}${path}`;
 }
 
 function KpiCard({ card }: { card: KpiCardData }) {
@@ -119,7 +136,7 @@ function ActivityIcon({ type }: { type: ActivityRow['type'] }) {
 }
 
 export default function AdminDashboardPage() {
-  const [_period, setPeriod] = useState<'week' | 'month' | 'all'>('month');
+  const [period, setPeriod] = useState<'week' | 'month' | 'all'>('month');
 
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -148,6 +165,7 @@ export default function AdminDashboardPage() {
   const mapOrgs = (rows: any[]): OrgRow[] => rows.map((o: any) => ({
     id: String(o.id ?? ''),
     name: String(o.name ?? 'Organization'),
+    logoUrl: normalizeImageUrl(o.logo_url ?? o.banner_url ?? null),
     category: (o.category?.name ?? 'Academic') as OrgRow['category'],
     accreditationStatus: (o.accreditation_status ?? 'Active') as OrgRow['accreditationStatus'],
     eventCount: Number(o.total_events ?? 0),
@@ -165,7 +183,7 @@ export default function AdminDashboardPage() {
       type,
       actor: String(a.actor_name ?? 'System'),
       target: String(a.target_label ?? a.action ?? 'Activity'),
-      timestamp: formatDate(String(a.timestamp ?? '')),
+      timestamp: String(a.timestamp ?? ''),
     };
   });
 
@@ -254,6 +272,37 @@ export default function AdminDashboardPage() {
   }, []);
 
   const suspendedOrgs = useMemo(() => orgs.filter((o) => o.accreditationStatus === 'Suspended'), [orgs]);
+  const periodStart = useMemo(() => {
+    if (period === 'all') return null;
+    const now = new Date();
+    if (period === 'week') {
+      const day = now.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diff);
+      monday.setHours(0, 0, 0, 0);
+      return monday;
+    }
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    monthStart.setHours(0, 0, 0, 0);
+    return monthStart;
+  }, [period]);
+
+  const eventsInPeriod = useMemo(() => {
+    if (!periodStart) return events;
+    return events.filter((e) => {
+      const d = new Date(e.startDate);
+      return !Number.isNaN(d.getTime()) && d >= periodStart;
+    });
+  }, [events, periodStart]);
+
+  const activityInPeriod = useMemo(() => {
+    if (!periodStart) return activity;
+    return activity.filter((a) => {
+      const d = new Date(a.timestamp);
+      return !Number.isNaN(d.getTime()) && d >= periodStart;
+    });
+  }, [activity, periodStart]);
 
   const kpiCards: KpiCardData[] = [
     {
@@ -277,12 +326,12 @@ export default function AdminDashboardPage() {
       color: 'text-purple-700', bg: 'bg-purple-100',
     },
     {
-      label: 'Total Events', value: events.length, href: '/admin/events',
+      label: period === 'all' ? 'Total Events' : `Events This ${period === 'week' ? 'Week' : 'Month'}`, value: eventsInPeriod.length, href: '/admin/events',
       icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none"><path d="M8 2v3M16 2v3M3 8h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
       color: 'text-indigo-700', bg: 'bg-indigo-100',
     },
     {
-      label: 'Total Registrations', value: events.reduce((sum, e) => sum + e.registered, 0),
+      label: period === 'all' ? 'Total Registrations' : `Registrations This ${period === 'week' ? 'Week' : 'Month'}`, value: eventsInPeriod.reduce((sum, e) => sum + e.registered, 0),
       icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
       color: 'text-teal-700', bg: 'bg-teal-100',
     },
@@ -299,7 +348,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
             {(['week', 'month', 'all'] as const).map((p) => (
-              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 ${_period === p ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-primary)] hover:text-[var(--color-primary-light)]'}`}>
+              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 ${period === p ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-primary)] hover:text-[var(--color-primary-light)]'}`}>
                 {p === 'all' ? 'All Time' : `This ${p.charAt(0).toUpperCase() + p.slice(1)}`}
               </button>
             ))}
@@ -338,7 +387,7 @@ export default function AdminDashboardPage() {
                   <tr><th>Event</th><th className="hidden sm:table-cell">Organization</th><th className="hidden md:table-cell">Date</th><th>Registrations</th><th>Status</th></tr>
                 </thead>
                 <tbody>
-                  {events.slice(0, 5).map((ev) => (
+                  {eventsInPeriod.slice(0, 5).map((ev) => (
                     <tr key={ev.id}>
                       <td><p className="text-[13px] font-semibold text-[var(--color-text)] truncate max-w-[220px]">{ev.title}</p></td>
                       <td className="hidden sm:table-cell"><p className="text-[12px] text-[var(--color-text-muted)] truncate max-w-[160px]">{ev.orgName}</p></td>
@@ -358,12 +407,12 @@ export default function AdminDashboardPage() {
               <button onClick={refreshActivity} disabled={refreshingActivity} className="p-0 bg-transparent border-0 cursor-pointer inline-flex items-center justify-center text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Refresh admin activity" title="Refresh admin activity"><IconRefresh spinning={refreshingActivity} /></button>
             </div>
             <div className="divide-y divide-[var(--color-border)]">
-              {activity.map((item) => (
+              {activityInPeriod.slice(0, 5).map((item) => (
                 <div key={item.id} className="flex items-start gap-3 px-5 py-4">
                   <ActivityIcon type={item.type} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] text-[var(--color-text)] leading-relaxed">{item.target}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} · {item.timestamp}</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} · {formatDate(item.timestamp)}</p>
                   </div>
                 </div>
               ))}
@@ -387,7 +436,7 @@ export default function AdminDashboardPage() {
               <tbody>
                 {orgs.slice(0, 8).map((org) => (
                   <tr key={org.id}>
-                    <td><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-[11px] font-bold text-white" style={{ backgroundColor: 'var(--color-primary)' }}>{org.name.slice(0, 2).toUpperCase()}</div><p className="text-[13px] font-semibold text-[var(--color-text)] truncate max-w-[220px]">{org.name}</p></div></td>
+                    <td><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-xl overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-2)] flex items-center justify-center flex-shrink-0 text-[11px] font-bold text-white" style={{ backgroundColor: org.logoUrl ? undefined : 'var(--color-primary)' }}>{org.logoUrl ? <img src={org.logoUrl} alt={`${org.name} logo`} className="w-full h-full object-cover" /> : org.name.slice(0, 2).toUpperCase()}</div><p className="text-[13px] font-semibold text-[var(--color-text)] truncate max-w-[220px]">{org.name}</p></div></td>
                     <td><span className={`badge ${CATEGORY_STYLES[org.category]}`}>{org.category}</span></td>
                     <td className="hidden sm:table-cell"><span className="text-[13px] text-[var(--color-text-muted)]">{org.eventCount}</span></td>
                     <td className="hidden md:table-cell"><span className="text-[12px] text-[var(--color-text-muted)]">{formatDate(org.accreditedAt)}</span></td>
@@ -403,4 +452,3 @@ export default function AdminDashboardPage() {
     </AdminShell>
   );
 }
-

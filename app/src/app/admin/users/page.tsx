@@ -291,7 +291,7 @@ export default function AdminUsersPage() {
                         color: "#92610a",
                     }}
                 >
-                    <span className="text-base mt-0.5">!</span>
+                    <span className="text-base">!</span>
                     <div>
                         <strong>Global Role changes are permanent and powerful.</strong>{" "}
                         Granting Overseer access gives full administrative control over all

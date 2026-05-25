@@ -14,6 +14,9 @@ function formatDate(iso: string) {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
 }
+function formatPrice(value?: number) {
+  return Number(value ?? 0).toLocaleString('en-PH');
+}
 
 /* ----------------------------------------------------------------
    Main Content Component (Reads Search Params)
@@ -309,3 +312,6 @@ function IconCalendar() {
 function IconPin() {
   return <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none"><path d="M10 2C7.24 2 5 4.24 5 7c0 4.5 5 11 5 11s5-6.5 5-11c0-2.76-2.24-5-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>;
 }
+
+
+
