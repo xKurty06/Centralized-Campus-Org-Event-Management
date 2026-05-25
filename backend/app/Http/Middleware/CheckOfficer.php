@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\RouteKeyResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,10 @@ class CheckOfficer
         $regId = $request->route('reg_id');
 
         if (!$orgId && $eventId) {
-            $orgId = DB::table('events')->where('id', $eventId)->value('host_org_id');
+            $resolvedEventId = RouteKeyResolver::resolveEventId((string) $eventId);
+            if ($resolvedEventId) {
+                $orgId = DB::table('events')->where('id', $resolvedEventId)->value('host_org_id');
+            }
         }
 
         if (!$orgId && $regId) {

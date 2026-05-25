@@ -37,6 +37,7 @@ class RegistrationResource extends JsonResource
         return [
             'id' => $this->id,
             'event_id' => $this->event_id,
+            'event_slug' => $this->get('event_slug'),
             'user_id' => $this->user_id,
             'reg_date' => $this->reg_date ? (string) $this->reg_date : null,
             'payment_selection' => $this->payment_selection,

@@ -79,6 +79,7 @@ export default function PaymentUploadPage() {
   const router = useRouter();
 
   const eventId = params.id as string;
+  const [eventSlug, setEventSlug] = useState(eventId);
   const registrationId = searchParams.get('registration') ?? '';
 
   const [file, setFile] = useState<File | null>(null);
@@ -102,6 +103,7 @@ export default function PaymentUploadPage() {
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
       if (!res?.ok || !payload?.success || !payload?.data) return;
+      setEventSlug(String(payload.data.slug ?? eventId));
       setPaymentInstructions(String(payload.data.payment_instructions ?? '').trim());
     })();
   }, [eventId]);
@@ -197,7 +199,7 @@ export default function PaymentUploadPage() {
     setUploadState('success');
     await new Promise((r) => setTimeout(r, 800));
     router.push(
-      `/events/${eventId}/registration-success?method=online&registration=${encodeURIComponent(registrationId)}`
+      `/events/${eventSlug}/registration-success?method=online&registration=${encodeURIComponent(registrationId)}`
     );
   }
 
@@ -404,7 +406,7 @@ export default function PaymentUploadPage() {
           {/* ── Card footer ── */}
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
             <Link
-              href={`/events/${eventId}`}
+              href={`/events/${eventSlug}`}
               className="text-[13px] font-medium text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors no-underline"
             >
               ← Back

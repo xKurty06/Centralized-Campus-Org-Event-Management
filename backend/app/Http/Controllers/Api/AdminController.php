@@ -11,6 +11,7 @@ use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\OrgOfficerResource;
+use App\Support\RouteKeyResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -91,6 +92,7 @@ class AdminController extends Controller
                     'id' => $id,
                     'name' => $data['name'],
                     'code_name' => $data['code_name'],
+                    'slug' => RouteKeyResolver::uniqueSlug('organizations', (string) $data['name']),
                     'description' => $data['description'] ?? null,
                     'logo_url' => $logoUrl,
                     'adviser' => $data['adviser'] ?? null,
@@ -202,6 +204,10 @@ class AdminController extends Controller
     public function organization(string $id)
     {
         try {
+            $orgId = RouteKeyResolver::resolveOrganizationId($id);
+            if (!$orgId) {
+                return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+            }
             $org = DB::table('organizations as o')
                 ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
                 ->leftJoin('users as u', 'o.accredited_by', '=', 'u.id')
@@ -210,7 +216,7 @@ class AdminController extends Controller
                     'c.name as category_name',
                     DB::raw("CONCAT(u.first_name, ' ', u.last_name) as accredited_by_name")
                 )
-                ->where('o.id', $id)
+                ->where('o.id', $orgId)
                 ->first();
             if (!$org) {
                 return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
@@ -231,7 +237,7 @@ class AdminController extends Controller
                     'u.school_id',
                     'u.email'
                 )
-                ->where('oo.org_id', $id)
+                ->where('oo.org_id', $orgId)
                 ->orderByDesc('oo.is_active')
                 ->orderBy('u.last_name')
                 ->orderBy('u.first_name')
@@ -252,7 +258,7 @@ class AdminController extends Controller
                     'u.school_id',
                     'u.email'
                 )
-                ->where('om.org_id', $id)
+                ->where('om.org_id', $orgId)
                 ->orderByDesc('om.joined_at')
                 ->get();
 
@@ -261,7 +267,7 @@ class AdminController extends Controller
                     DB::raw("DATE_FORMAT(COALESCE(joined_at, created_at), '%Y-%m') as month_key"),
                     DB::raw('COUNT(*) as joined_count')
                 )
-                ->where('org_id', $id)
+                ->where('org_id', $orgId)
                 ->groupBy('month_key')
                 ->orderBy('month_key')
                 ->limit(12)
@@ -272,7 +278,7 @@ class AdminController extends Controller
                         'joined_count' => (int) $row->joined_count,
                     ];
                 });
-            $events   = DB::table('events')->where('host_org_id', $id)->get();
+            $events   = DB::table('events')->where('host_org_id', $orgId)->get();
 
             return response()->json([
                 'success' => true,
@@ -292,16 +298,20 @@ class AdminController extends Controller
     public function toggleAccreditation(AccreditationRequest $req, string $id)
     {
         try {
+            $orgId = RouteKeyResolver::resolveOrganizationId($id);
+            if (!$orgId) {
+                return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+            }
             // Gate::authorize() works without the AuthorizesRequests trait.
             // Throws AuthorizationException (403) if the policy denies access.
-            Gate::authorize('update', \App\Models\Organization::findOrFail($id));
+            Gate::authorize('update', \App\Models\Organization::findOrFail($orgId));
 
             $status = $req->input('accreditation_status');
 
-            $previousOrg = DB::table('organizations')->where('id', $id)->first();
+            $previousOrg = DB::table('organizations')->where('id', $orgId)->first();
             $reason = $req->input('reason');
 
-            DB::table('organizations')->where('id', $id)->update([
+            DB::table('organizations')->where('id', $orgId)->update([
                 'accreditation_status' => $status,
                 'accredited_by' => $req->user()->id,
                 'accredited_at' => now(),
@@ -316,7 +326,7 @@ class AdminController extends Controller
                     'c.name as category_name',
                     DB::raw("CONCAT(u.first_name, ' ', u.last_name) as accredited_by_name")
                 )
-                ->where('o.id', $id)
+                ->where('o.id', $orgId)
                 ->first();
             $actionLabel = $status === 'Active' ? 'Restore Accreditation' : 'Suspend Organization';
             $meta = json_encode([
@@ -328,7 +338,7 @@ class AdminController extends Controller
                 'Accreditation',
                 $actionLabel,
                 $org->name ?? $previousOrg->name ?? 'Organization',
-                $id,
+                $orgId,
                 $meta,
             );
 
@@ -345,10 +355,14 @@ class AdminController extends Controller
     public function updateOrg(UpdateOrgRequest $req, string $id)
     {
         try {
-            Gate::authorize('update', \App\Models\Organization::findOrFail($id));
+            $orgId = RouteKeyResolver::resolveOrganizationId($id);
+            if (!$orgId) {
+                return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+            }
+            Gate::authorize('update', \App\Models\Organization::findOrFail($orgId));
 
             $data = $req->only(['name', 'description', 'logo_url', 'adviser', 'category_id']);
-            $currentOrg = DB::table('organizations')->select('logo_url')->where('id', $id)->first();
+            $currentOrg = DB::table('organizations')->select('logo_url')->where('id', $orgId)->first();
 
             if ($req->hasFile('logo_file')) {
                 $this->deleteOrganizationLogoFromStorage($currentOrg->logo_url ?? null);
@@ -356,8 +370,11 @@ class AdminController extends Controller
                 $data['logo_url'] = Storage::url($path);
             }
 
+            if ($req->filled('name')) {
+                $data['slug'] = RouteKeyResolver::uniqueSlug('organizations', (string) $req->input('name'), $orgId);
+            }
             DB::table('organizations')
-                ->where('id', $id)
+                ->where('id', $orgId)
                 ->update(array_merge($data, ['updated_at' => now()]));
 
             $org = DB::table('organizations as o')
@@ -368,7 +385,7 @@ class AdminController extends Controller
                     'c.name as category_name',
                     DB::raw("CONCAT(u.first_name, ' ', u.last_name) as accredited_by_name")
                 )
-                ->where('o.id', $id)
+                ->where('o.id', $orgId)
                 ->first();
 
             return response()->json(['success' => true, 'data' => new OrganizationResource($org)]);
@@ -384,7 +401,11 @@ class AdminController extends Controller
     public function addOfficer(Request $req, string $id)
     {
         try {
-            Gate::authorize('update', \App\Models\Organization::findOrFail($id));
+            $orgId = RouteKeyResolver::resolveOrganizationId($id);
+            if (!$orgId) {
+                return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+            }
+            Gate::authorize('update', \App\Models\Organization::findOrFail($orgId));
 
             $data = $req->validate([
                 'user_id' => ['required', 'uuid'],
@@ -400,7 +421,7 @@ class AdminController extends Controller
             }
 
             $existing = DB::table('org_officers')
-                ->where('org_id', $id)
+                ->where('org_id', $orgId)
                 ->where('user_id', $data['user_id'])
                 ->first();
 
@@ -417,7 +438,7 @@ class AdminController extends Controller
                 $officerId = (string) \Illuminate\Support\Str::uuid();
                 DB::table('org_officers')->insert([
                     'id' => $officerId,
-                    'org_id' => $id,
+                    'org_id' => $orgId,
                     'user_id' => $data['user_id'],
                     'position' => trim((string) $data['position']),
                     'is_active' => 1,
@@ -428,7 +449,7 @@ class AdminController extends Controller
 
             $targetLabel = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Officer';
             $meta = json_encode([
-                'org_id' => $id,
+                'org_id' => $orgId,
                 'position' => trim((string) $data['position']),
                 'user_id' => $data['user_id'],
                 'user_school_id' => $user->school_id ?? null,
@@ -451,7 +472,11 @@ class AdminController extends Controller
     public function removeOfficer(Request $req, string $orgId, string $officerId)
     {
         try {
-            Gate::authorize('update', \App\Models\Organization::findOrFail($orgId));
+            $resolvedOrgId = RouteKeyResolver::resolveOrganizationId($orgId);
+            if (!$resolvedOrgId) {
+                return response()->json(['success' => false, 'error' => 'Organization not found.'], 404);
+            }
+            Gate::authorize('update', \App\Models\Organization::findOrFail($resolvedOrgId));
 
             $officer = DB::table('org_officers as oo')
                 ->leftJoin('users as u', 'oo.user_id', '=', 'u.id')
@@ -469,7 +494,7 @@ class AdminController extends Controller
                     'o.name as org_name'
                 )
                 ->where('oo.id', $officerId)
-                ->where('oo.org_id', $orgId)
+                ->where('oo.org_id', $resolvedOrgId)
                 ->first();
 
             if (!$officer) {
@@ -492,7 +517,7 @@ class AdminController extends Controller
             $targetLabel = trim(($officer->first_name ?? '') . ' ' . ($officer->last_name ?? '')) ?: 'Officer';
             $meta = json_encode([
                 'reason' => $reason,
-                'org_id' => $orgId,
+                'org_id' => $resolvedOrgId,
                 'org_name' => $officer->org_name,
                 'position' => $officer->position,
                 'user_id' => $officer->user_id,

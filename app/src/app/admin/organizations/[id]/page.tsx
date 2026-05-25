@@ -37,6 +37,7 @@ interface Member {
 
 interface OrgProfile {
     id: string;
+    slug?: string;
     name: string;
     description: string;
     logoUrl: string;
@@ -228,6 +229,7 @@ export default function AdminOrgDetailPage() {
 
             const nextOrg: OrgProfile = {
                 id: String(rawOrg.id ?? orgId),
+                slug: rawOrg.slug ? String(rawOrg.slug) : String(rawOrg.id ?? orgId),
                 name: String(rawOrg.name ?? ''),
                 description: String(rawOrg.description ?? ''),
                 logoUrl: normalizeImageUrl(rawOrg.logo_url ?? ''),

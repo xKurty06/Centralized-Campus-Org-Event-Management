@@ -38,6 +38,7 @@ function SuccessContent() {
 
   const [event, setEvent] = useState({
     id: String(eventId ?? ''),
+    slug: String(eventId ?? ''),
     title: 'Event',
     date: new Date().toISOString(),
     endDate: new Date().toISOString(),
@@ -73,6 +74,7 @@ function SuccessContent() {
 
         setEvent({
           id: String(e.id ?? eventId),
+          slug: String(e.slug ?? eventId ?? ''),
           title: String(e.title ?? 'Event'),
           date: startDate,
           endDate: endDate,

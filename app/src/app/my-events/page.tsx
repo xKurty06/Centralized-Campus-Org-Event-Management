@@ -27,6 +27,7 @@ type EventCategory =
 interface MyRegistration {
   id: string;
   event_id: string;
+  event_slug?: string;
   reg_date: string;
   payment_selection: PaymentSelection;
   payment_status: PaymentStatus;
@@ -224,7 +225,7 @@ function RegistrationCard({
           </div>
 
           <Link
-            href={`/events/${reg.event_id}`}
+            href={`/events/${reg.event_slug ?? reg.event_id}`}
             className="text-[15px] font-semibold text-gray-900 hover:text-green-700 no-underline line-clamp-1"
           >
             {reg.event_title}
@@ -246,14 +247,14 @@ function RegistrationCard({
         {/* ── Actions column ── */}
         <div className="flex sm:flex-col items-center justify-end gap-2 px-4 pb-4 sm:py-4 border-t sm:border-t-0 sm:border-l border-gray-100 min-w-[120px]">
           <Link
-            href={`/events/${reg.event_id}`}
+            href={`/events/${reg.event_slug ?? reg.event_id}`}
             className="w-full text-center text-[12px] font-semibold text-green-700 border border-green-200 hover:bg-green-50 px-3 py-2 rounded-lg no-underline"
           >
             View event
           </Link>
           {showUpload && (
             <Link
-              href={`/events/${reg.event_id}/payment-upload?registration=${reg.id}`}
+              href={`/events/${reg.event_slug ?? reg.event_id}/payment-upload?registration=${reg.id}`}
               className="w-full text-center text-[12px] font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-2 rounded-lg no-underline"
             >
               {reg.proof_status === "Rejected" ? "Reupload" : "Upload proof"}
@@ -300,6 +301,7 @@ export default function MyEventsPage() {
         data.map((r: any) => ({
           id: String(r.id ?? ""),
           event_id: String(r.event_id ?? ""),
+          event_slug: r.event_slug ? String(r.event_slug) : String(r.event_id ?? ""),
           reg_date: String(r.reg_date ?? r.created_at ?? new Date().toISOString()),
           payment_selection: (r.payment_selection ?? "N/A") as PaymentSelection,
           payment_status: (r.payment_status ?? "Pending") as PaymentStatus,

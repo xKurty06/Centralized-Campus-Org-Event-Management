@@ -23,6 +23,7 @@ type EventCategory =
 
 interface ManagedEvent {
   id: string;
+  slug?: string;
   title: string;
   category: EventCategory;
   start_date: string;
@@ -137,7 +138,7 @@ function EventRow({ event }: { event: ManagedEvent }) {
 
   return (
     <Link
-      href={`/manage/events/${event.id}`}
+      href={`/manage/events/${event.slug ?? event.id}`}
       className="group flex flex-col sm:flex-row sm:items-center gap-3 bg-white border border-gray-200 hover:border-green-300 hover:bg-green-50/30 rounded-xl px-5 py-4 transition-all no-underline"
     >
       <div className="flex-1 min-w-0 flex flex-col gap-1.5">
@@ -274,6 +275,7 @@ export default function ManageEventsPage() {
       setEvents(
         payload.data.map((e) => ({
           id: String(e.id ?? ""),
+          slug: e.slug ? String(e.slug) : String(e.id ?? ""),
           title: String(e.title ?? "Untitled Event"),
           category: (e.category_name ?? "Other") as EventCategory,
           start_date: String(e.start_date ?? new Date().toISOString()),

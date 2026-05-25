@@ -13,6 +13,7 @@ use App\Http\Resources\EventResource;
 use App\Http\Resources\OrgOfficerResource;
 use App\Http\Resources\RegistrationResource;
 use App\Services\NotificationService;
+use App\Support\RouteKeyResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -69,6 +70,7 @@ class ManageController extends Controller
         return (object) array_merge((array) $event, [
             'venue_name' => $venueName,
             'category_name' => $categoryName,
+            'organization_slug' => DB::table('organizations')->where('id', $event->host_org_id)->value('slug'),
             'total_registered' => $totalRegistered,
             'total_paid' => $totalPaid,
             'total_pending' => $totalPending,
@@ -112,8 +114,13 @@ class ManageController extends Controller
             return null;
         }
 
+        $resolvedEventId = RouteKeyResolver::resolveEventId($eventId);
+        if (!$resolvedEventId) {
+            return null;
+        }
+
         $event = DB::table('events')
-            ->where('id', $eventId)
+            ->where('id', $resolvedEventId)
             ->where('host_org_id', $orgRow->org_id)
             ->first();
 
@@ -188,6 +195,9 @@ class ManageController extends Controller
 
             $currentOrg = DB::table('organizations')->select('logo_url')->where('id', $orgRow->org_id)->first();
             $data = $req->only(['name', 'description', 'logo_url', 'adviser']);
+            if ($req->filled('name')) {
+                $data['slug'] = RouteKeyResolver::uniqueSlug('organizations', (string) $req->input('name'), $orgRow->org_id);
+            }
             if ($req->hasFile('logo_file')) {
                 $this->deletePublicManagedImage($currentOrg->logo_url ?? null, 'organization_logos');
                 $path = $req->file('logo_file')->storePublicly('organization_logos', 'public');
@@ -240,6 +250,10 @@ class ManageController extends Controller
                 ]),
                 [
                     'id'           => $id,
+                    'slug'         => RouteKeyResolver::uniqueSlug(
+                        'events',
+                        trim((string) $req->input('title')) . ' ' . trim((string) $req->input('start_date'))
+                    ),
                     'host_org_id'  => $orgRow->org_id,
                     'banner_url'   => $bannerUrl,
                     'fee_amount'   => $feeAmount,
@@ -279,7 +293,12 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
             }
 
-            $event = DB::table('events')->where('id', $id)->first();
+            $resolvedEventId = RouteKeyResolver::resolveEventId($id);
+            if (!$resolvedEventId) {
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+
+            $event = DB::table('events')->where('id', $resolvedEventId)->first();
             if (!$event) {
                 return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
             }
@@ -300,6 +319,15 @@ class ManageController extends Controller
                 'is_paid', 'payment_instructions', 'status',
             ]);
             $data['banner_url'] = $bannerUrl;
+            if ($req->filled('title') || $req->filled('start_date')) {
+                $slugTitle = trim((string) ($req->input('title') ?? $event->title ?? 'event'));
+                $slugStartDate = trim((string) ($req->input('start_date') ?? $event->start_date ?? ''));
+                $data['slug'] = RouteKeyResolver::uniqueSlug(
+                    'events',
+                    $slugTitle . ' ' . $slugStartDate,
+                    $event->id
+                );
+            }
 
             if ($req->filled('price')) {
                 $data['fee_amount'] = (float) $req->input('price');
@@ -308,13 +336,13 @@ class ManageController extends Controller
             }
 
             DB::table('events')
-                ->where('id', $id)
+                ->where('id', $resolvedEventId)
                 ->update(array_merge($data, ['updated_at' => now()]));
 
             $nextStatus = $data['status'] ?? null;
             if ($nextStatus === 'Cancelled' && ($event->status ?? null) !== 'Cancelled') {
                 $userIds = DB::table('registrations')
-                    ->where('event_id', $id)
+                    ->where('event_id', $resolvedEventId)
                     ->pluck('user_id');
 
                 $notification = new NotificationService();
@@ -322,13 +350,13 @@ class ManageController extends Controller
                     $notification->notify(
                         (string) $userId,
                         'Event_Cancelled',
-                        $id,
+                        $resolvedEventId,
                         'An event you registered for has been cancelled: ' . ($event->title ?? 'Untitled Event')
                     );
                 }
             }
 
-            $updated = DB::table('events')->where('id', $id)->first();
+            $updated = DB::table('events')->where('id', $resolvedEventId)->first();
 
             return response()->json(['success' => true, 'data' => new EventResource($updated)]);
         } catch (\Exception $e) {
@@ -346,7 +374,13 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
             }
 
-            $event = DB::table('events')->where('id', $id)->first();
+            $resolvedEventId = RouteKeyResolver::resolveEventId($id);
+            if (!$resolvedEventId) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+
+            $event = DB::table('events')->where('id', $resolvedEventId)->first();
             if (!$event) {
                 DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
@@ -356,8 +390,8 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
 
-            DB::table('notifications')->where('reference_id', $id)->delete();
-            DB::table('events')->where('id', $id)->delete();
+            DB::table('notifications')->where('reference_id', $resolvedEventId)->delete();
+            DB::table('events')->where('id', $resolvedEventId)->delete();
 
             DB::commit();
             return response()->json(['success' => true]);
@@ -370,18 +404,11 @@ class ManageController extends Controller
     public function participants(Request $req, string $event_id)
     {
         try {
-            $orgRow = $this->resolveOfficer($req);
-            if (!$orgRow) {
-                return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
-            }
-
-            $event = DB::table('events')->where('id', $event_id)->first();
-            if (!$event) {
-                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
-            }
-            if ($event->host_org_id !== $orgRow->org_id) {
+            $eventAccess = $this->resolveOfficerEvent($req, $event_id);
+            if (!$eventAccess) {
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $resolvedEventId = (string) $eventAccess->event->id;
 
             $perPage = (int) $req->query('per_page', 15);
             $filter  = $req->query('filter', 'all');
@@ -390,7 +417,7 @@ class ManageController extends Controller
                 ->join('users as u', 'r.user_id', '=', 'u.id')
                 ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
                 ->leftJoin('payment_proofs as p', 'r.id', '=', 'p.reg_id')
-                ->where('r.event_id', $event_id)
+                ->where('r.event_id', $resolvedEventId)
                 ->select(
                     'r.*',
                     'u.school_id',
@@ -410,7 +437,7 @@ class ManageController extends Controller
             }
 
             $res = $q->latest('r.created_at')->paginate($perPage);
-            $event = DB::table('events')->where('id', $event_id)->first();
+            $event = DB::table('events')->where('id', $resolvedEventId)->first();
             $eventMeta = $event ? $this->buildEventRow($event) : null;
 
             return response()->json([
@@ -491,6 +518,7 @@ class ManageController extends Controller
             if (!$eventAccess) {
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $resolvedEventId = (string) $eventAccess->event->id;
 
             $query = $req->input('query');
 
@@ -504,7 +532,7 @@ class ManageController extends Controller
                         ->whereRaw("LOWER(TRIM(om.membership_status)) = 'active'")
                         ->where('om.paid_membership_fee', 1);
                 })
-                ->where('r.event_id', $event_id)
+                ->where('r.event_id', $resolvedEventId)
                 ->where(function ($q) use ($query) {
                     $q->where('u.school_id', $query)
                       ->orWhere('u.first_name', 'like', "%$query%")
@@ -549,10 +577,11 @@ class ManageController extends Controller
                 DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $resolvedEventId = (string) $eventAccess->event->id;
 
             $registration = DB::table('registrations')
                 ->where('id', $reg_id)
-                ->where('event_id', $event_id)
+                ->where('event_id', $resolvedEventId)
                 ->first();
             if (!$registration) {
                 DB::rollBack();
@@ -582,10 +611,11 @@ class ManageController extends Controller
             if (!$eventAccess) {
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $resolvedEventId = (string) $eventAccess->event->id;
 
             $registration = DB::table('registrations')
                 ->where('id', $reg_id)
-                ->where('event_id', $event_id)
+                ->where('event_id', $resolvedEventId)
                 ->first();
             if (!$registration) {
                 return response()->json(['success' => false, 'error' => 'Registration not found.'], 404);
@@ -616,6 +646,7 @@ class ManageController extends Controller
                 DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $resolvedEventId = (string) $eventAccess->event->id;
 
             foreach ($items as $it) {
                 $queueId = $it['id'] ?? null;
@@ -628,7 +659,7 @@ class ManageController extends Controller
 
                 $regExists = DB::table('registrations')
                     ->where('id', $regId)
-                    ->where('event_id', $event_id)
+                    ->where('event_id', $resolvedEventId)
                     ->exists();
                 if (!$regExists) {
                     continue;

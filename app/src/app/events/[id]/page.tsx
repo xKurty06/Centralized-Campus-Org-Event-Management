@@ -99,10 +99,12 @@ function getStatusBadgeColor(status: EventStatus): string {
 
 interface CampusEvent {
   id: string;
+  slug?: string;
   title: string;
   category: EventCategory;
   organization: string;
   orgId: string;
+  orgSlug?: string;
   host_org_id: string;
   audience_type: AudienceType;
   is_member: boolean | null;
@@ -254,6 +256,7 @@ export default function EventDetailPage() {
 
   const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [currentEvent, setCurrentEvent] = useState<CampusEvent | null>(null);
+  const currentRouteKey = currentEvent?.slug ?? eventId;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -293,10 +296,12 @@ export default function EventDetailPage() {
       const endDate = String(e.end_date ?? startDate);
       setCurrentEvent({
         id: String(e.id ?? ''),
+        slug: e.slug ? String(e.slug) : String(e.id ?? ''),
         title: String(e.title ?? 'Untitled Event'),
         category: (e.category_name ?? 'Other') as EventCategory,
         organization: String(e.organization_name ?? 'Organization'),
         orgId: String(e.host_org_id ?? ''),
+        orgSlug: e.organization_slug ? String(e.organization_slug) : String(e.host_org_id ?? ''),
         host_org_id: String(e.host_org_id ?? ''),
         audience_type: (e.audience_type ?? 'Open') as AudienceType,
         is_member: e.is_member === null ? null : Boolean(e.is_member),
@@ -383,7 +388,7 @@ export default function EventDetailPage() {
     }
     setIsRegistering(false);
     setStatus('registered');
-    router.push(`/events/${event.id}/registration-success`);
+    router.push(`/events/${currentRouteKey}/registration-success`);
   }
 
   async function handleConfirmPayment() {
@@ -407,9 +412,9 @@ export default function EventDetailPage() {
       return;
     }
     if (paymentMethod === 'online') {
-      router.push(`/events/${event.id}/payment-upload?registration=reg_mock_001`);
+      router.push(`/events/${currentRouteKey}/payment-upload?registration=reg_mock_001`);
     } else {
-      router.push(`/events/${event.id}/registration-success?method=onsite`);
+      router.push(`/events/${currentRouteKey}/registration-success?method=onsite`);
     }
     setStatus('pending');
   }
@@ -566,7 +571,7 @@ export default function EventDetailPage() {
                   </div>
                 </div>
                 <Link
-                  href={`/organizations/${event.orgId}`}
+                  href={`/organizations/${event.orgSlug ?? event.orgId}`}
                   className="text-[13px] font-semibold text-green-700 hover:text-green-800 border border-green-200 hover:border-green-400 px-3 py-1.5 rounded-lg transition-all no-underline whitespace-nowrap"
                 >
                   View profile

@@ -15,6 +15,7 @@ type EventStatus =
 
 interface EventForm {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   start_date: string;
@@ -340,6 +341,7 @@ export default function EditEventPage() {
   
   const [initialForm, setInitialForm] = useState<EventForm | null>(null);
   const [form, setForm] = useState<EventForm | null>(null);
+  const eventRouteKey = form?.slug ?? initialForm?.slug ?? eventId;
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -379,6 +381,7 @@ export default function EditEventPage() {
       
       const loadedData: EventForm = {
         id: String(e.id ?? eventId),
+        slug: e.slug ? String(e.slug) : String(e.id ?? eventId),
         title: String(e.title ?? ""),
         description: String(e.description ?? ""),
         start_date: toLocalDatetimeInput(e.start_date),
@@ -576,7 +579,7 @@ export default function EditEventPage() {
             </svg>
             {/* Kept locked to the loaded/saved title so it doesn't shift when typing */}
             <Link
-              href={`/manage/events/${form.id}`}
+              href={`/manage/events/${eventRouteKey}`}
               className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
             >
               {initialForm?.title || "Event"}
@@ -613,7 +616,7 @@ export default function EditEventPage() {
               </div>
               <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
                 {fmt(form.start_date)} Event ID:{" "}
-                <span className="font-mono">{eventId}</span>
+                <span className="font-mono">{eventRouteKey}</span>
               </p>
             </div>
           </div>

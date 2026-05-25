@@ -26,6 +26,7 @@ type EventCategory =
 
 interface ManagedEvent {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   category: EventCategory;
@@ -138,6 +139,7 @@ function getAuthToken(): string | null {
 function normalizeEvent(e: Record<string, unknown>): ManagedEvent {
   return {
     id: String(e.id ?? ""),
+    slug: e.slug ? String(e.slug) : String(e.id ?? ""),
     title: String(e.title ?? "Untitled Event"),
     description: String(e.description ?? ""),
     category: (e.category_name ?? "Other") as EventCategory,
@@ -529,7 +531,7 @@ export default function EventDashboardPage() {
 
                 {/* Edit shortcut */}
                 <Link
-                  href={`/manage/events/${event.id}/edit`}
+                  href={`/manage/events/${event.slug ?? event.id}/edit`}
                   className="flex items-center gap-2 text-[13px] font-semibold text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 px-3 py-2 rounded-lg transition-all no-underline flex-shrink-0"
                 >
                   <IconEdit />
@@ -577,7 +579,7 @@ export default function EventDashboardPage() {
                   {event.proofs_pending_review} payment proof
                   {event.proofs_pending_review > 1 ? "s" : ""} awaiting review –{" "}
                   <Link
-                    href={`/manage/events/${event.id}/participants`}
+                    href={`/manage/events/${event.slug ?? event.id}/participants`}
                     className="underline text-blue-700"
                   >
                     review in participants
@@ -717,28 +719,28 @@ export default function EventDashboardPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <ActionCard
-                  href={`/manage/events/${event.id}/participants`}
+                  href={`/manage/events/${event.slug ?? event.id}/participants`}
                   icon={<IconUsers />}
                   label="Participants & masterlist"
                   desc="View registrations, manage payment status"
                   variant="default"
                 />
                 <ActionCard
-                  href={`/manage/events/${event.id}/verify`}
+                  href={`/manage/events/${event.slug ?? event.id}/verify`}
                   icon={<IconScan />}
                   label="Entrance verification"
                   desc="Scan QR codes at the door"
                   variant="primary"
                 />
                 <ActionCard
-                  href={`/manage/events/${event.id}/edit`}
+                  href={`/manage/events/${event.slug ?? event.id}/edit`}
                   icon={<IconEdit />}
                   label="Edit event details"
                   desc="Update title, schedule, venue, capacity"
                   variant="default"
                 />
                 <ActionCard
-                  href={`/manage/events/${event.id}/settings`}
+                  href={`/manage/events/${event.slug ?? event.id}/settings`}
                   icon={<IconSettings />}
                   label="Event settings"
                   desc="Archive or delete this event"

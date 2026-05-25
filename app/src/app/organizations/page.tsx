@@ -10,6 +10,7 @@ type OrgStatus = 'Active' | 'Suspended';
 
 interface Organization {
   id: string;
+  slug?: string;
   name: string;
   acronym: string;
   logoUrl: string;
@@ -97,7 +98,7 @@ function FilterDropdown({ placeholder, options, value, onChange, icon, counts }:
 function OrgCard({ org }: { org: Organization }) {
   const isSuspended = org.status === 'Suspended';
   return (
-    <Link href={`/organizations/${org.id}`} className={`group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col ${isSuspended ? 'opacity-60' : ''}`}>
+    <Link href={`/organizations/${org.slug ?? org.id}`} className={`group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col ${isSuspended ? 'opacity-60' : ''}`}>
       <div className="px-5 pt-5 pb-4 flex items-start gap-4">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-[13px] font-bold overflow-hidden ${org.color}`}>
           {org.logoUrl ? (
@@ -171,6 +172,7 @@ export default function OrganizationsPage() {
       };
       setOrgs(payload.data.map((o) => ({
         id: String(o.id ?? ''),
+        slug: o.slug ? String(o.slug) : String(o.id ?? ''),
         name: o.name ?? 'Organization',
         acronym: String(o.code_name ?? o.name ?? 'ORG').slice(0, 8).toUpperCase(),
         logoUrl: normalizeImageUrl(o.logo_url),

@@ -42,6 +42,7 @@ interface PaymentProof {
 }
 interface EventMeta {
     id: string;
+    slug?: string;
     title: string;
     start_date: string;
     capacity: number;
@@ -180,6 +181,7 @@ export default function ParticipantsPage() {
     const [registrants, setRegistrants] = useState<Registrant[]>([]);
     const [proofs, setProofs] = useState<PaymentProof[]>([]);
     const [event, setEvent] = useState<EventMeta | null>(null);
+    const eventRouteKey = event?.slug ?? eventId;
     const [search, setSearch] = useState("");
     const [isOnline] = useState(true);
     const [loading, setLoading] = useState(true);
@@ -263,6 +265,7 @@ export default function ParticipantsPage() {
         if (payload?.event)
             setEvent({
                 id: String(payload.event.id ?? eventId),
+                slug: payload.event.slug ? String(payload.event.slug) : String(payload.event.id ?? eventId),
                 title: String(payload.event.title ?? "Event"),
                 start_date: String(
                     payload.event.start_date ?? new Date().toISOString(),
@@ -507,7 +510,7 @@ export default function ParticipantsPage() {
                                         />
                                     </svg>
                                     <Link
-                                        href={`/manage/events/${event?.id ?? eventId}`}
+                                        href={`/manage/events/${eventRouteKey}`}
                                         className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
                                     >
                                         {event?.title ?? "Event"}
@@ -537,7 +540,7 @@ export default function ParticipantsPage() {
                                     </h1>
                                     <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
                                         {fmt(event?.start_date ?? new Date().toISOString())} · Event
-                                        ID: <span className="font-mono">{eventId}</span>
+                                        Slug: <span className="font-mono">{eventRouteKey}</span>
                                     </p>
                                 </div>
                                 {/* Online status badge relocated to the top right of header controls */}

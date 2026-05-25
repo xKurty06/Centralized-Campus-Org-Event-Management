@@ -12,7 +12,7 @@ class Event extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id','title','description','start_date','end_date','venue_id','category_id','capacity','audience_type','is_paid','host_org_id','status','banner_url','payment_instructions'
+        'id','title','slug','description','start_date','end_date','venue_id','category_id','capacity','audience_type','is_paid','host_org_id','status','banner_url','payment_instructions'
     ];
 
     protected $casts = [

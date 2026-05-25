@@ -57,6 +57,7 @@ interface RecentActivity {
 
 interface EventInfo {
   id: string;
+  slug?: string;
   title: string;
   venue: string;
   startDate: string;
@@ -825,7 +826,7 @@ export default function EntrancePanelPage() {
             <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
               <Link href="/manage/events" className="hover:text-[var(--color-primary)] transition-colors no-underline">Events</Link>
               <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <Link href={`/manage/events/${event.id}`} className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs">{event.title}</Link>
+              <Link href={`/manage/events/${event.slug ?? event.id}`} className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs">{event.title}</Link>
               <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               <span className="text-[var(--color-text)] font-semibold">Entrance Panel</span>
             </nav>
@@ -955,7 +956,7 @@ export default function EntrancePanelPage() {
               <RecentActivityFeed activities={recentActivity} />
 
               <Link
-                href={`/manage/events/${event.id}/participants`}
+                href={`/manage/events/${event.slug ?? event.id}/participants`}
                 className="flex items-center justify-center gap-2 text-[13px] font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] bg-[var(--color-primary-muted)] rounded-xl px-4 py-3 transition-colors no-underline"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>

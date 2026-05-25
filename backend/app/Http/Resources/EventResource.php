@@ -68,6 +68,7 @@ class EventResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'slug' => $this->slug ?? null,
             'title' => $this->title,
             'description' => $this->description,
             'banner_url' => $this->normalizeUrl($this->banner_url ?? null),
@@ -81,6 +82,7 @@ class EventResource extends JsonResource
             'fee_amount' => isset($this->fee_amount) ? (float) $this->fee_amount : null,
             'payment_instructions' => $this->payment_instructions ?? null,
             'host_org_id' => $this->host_org_id,
+            'organization_slug' => $this->organization_slug ?? null,
             'organization_name' => $this->organization_name ?? null,
             'organization_category' => $this->organization_category ?? null,
             'adviser' => $this->adviser ?? null,

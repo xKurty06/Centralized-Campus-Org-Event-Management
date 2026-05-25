@@ -11,7 +11,7 @@ class Organization extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id','name','category_id','description','logo_url','adviser','is_accredited'
+        'id','name','slug','category_id','description','logo_url','adviser','is_accredited'
     ];
 
     protected $casts = [

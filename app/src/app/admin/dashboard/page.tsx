@@ -27,6 +27,7 @@ interface KpiCardData {
 
 interface OrgRow {
   id: string;
+  slug?: string;
   name: string;
   logoUrl: string | null;
   category: 'Academic' | 'Non-Academic' | 'Religious';
@@ -37,6 +38,7 @@ interface OrgRow {
 
 interface EventRow {
   id: string;
+  slug?: string;
   title: string;
   orgName: string;
   status: EventStatus;
@@ -441,7 +443,7 @@ export default function AdminDashboardPage() {
                     <td className="hidden sm:table-cell"><span className="text-[13px] text-[var(--color-text-muted)]">{org.eventCount}</span></td>
                     <td className="hidden md:table-cell"><span className="text-[12px] text-[var(--color-text-muted)]">{formatDate(org.accreditedAt)}</span></td>
                     <td><span className={`badge ${org.accreditationStatus === 'Active' ? 'badge-green' : 'badge-red'}`}>{org.accreditationStatus}</span></td>
-                    <td><Link href={`/admin/organizations/${org.id}`} className="text-[12px] font-medium text-[var(--color-primary)] no-underline hover:underline">View</Link></td>
+                    <td><Link href={`/admin/organizations/${org.slug ?? org.id}`} className="text-[12px] font-medium text-[var(--color-primary)] no-underline hover:underline">View</Link></td>
                   </tr>
                 ))}
               </tbody>

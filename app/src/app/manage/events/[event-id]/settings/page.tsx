@@ -14,6 +14,7 @@ type EventStatus =
 
 interface EventDetail {
     id: string;
+    slug?: string;
     title: string;
     status: EventStatus;
     start_date: string;
@@ -270,6 +271,7 @@ export default function EventSettingsPage() {
     const [toast, setToast] = useState("");
     const [reasonInput, setReasonInput] = useState("");
     const [newStatus, setNewStatus] = useState<"Upcoming" | "Open">("Upcoming");
+    const eventRouteKey = event?.slug ?? eventId;
 
     const isCompleted = event?.status === "Completed";
     const isCancelled = event?.status === "Cancelled";
@@ -314,6 +316,7 @@ export default function EventSettingsPage() {
         const e = payload.data;
         setEvent({
             id: String(e.id ?? eventId),
+            slug: e.slug ? String(e.slug) : String(e.id ?? eventId),
             title: String(e.title ?? "Untitled Event"),
             status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
             start_date: String(e.start_date ?? new Date().toISOString()),
@@ -516,7 +519,7 @@ export default function EventSettingsPage() {
                                     />
                                 </svg>
                                 <Link
-                                    href={`/manage/events/${event.id}`}
+                                    href={`/manage/events/${event.slug ?? event.id}`}
                                     className="hover:text-[var(--color-primary)] transition-colors no-underline truncate max-w-[180px] sm:max-w-xs"
                                 >
                                     {event.title}
@@ -548,7 +551,7 @@ export default function EventSettingsPage() {
                                     </p>
                                 </div>
                                 <Link
-                                    href={`/manage/events/${eventId}`}
+                                    href={`/manage/events/${eventRouteKey}`}
                                     className="flex-shrink-0 flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-all no-underline"
                                 >
                                     <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
