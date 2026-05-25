@@ -41,6 +41,7 @@ interface EventRow {
   slug?: string;
   title: string;
   orgName: string;
+  orgCode: string;
   status: EventStatus;
   startDate: string;
   registered: number;
@@ -134,7 +135,7 @@ function ActivityIcon({ type }: { type: ActivityRow['type'] }) {
     },
   };
   const { bg, icon } = map[type];
-  return <div className={`w-7 h-7 rounded-full ${bg} flex items-center justify-center flex-shrink-0`}>{icon}</div>;
+  return <div className={`w-7 h-7 rounded-full ${bg} flex items-center justify-center flex-shrink-0 mt-1.5`}>{icon}</div>;
 }
 
 export default function AdminDashboardPage() {
@@ -158,6 +159,7 @@ export default function AdminDashboardPage() {
     id: String(e.id ?? ''),
     title: String(e.title ?? 'Untitled Event'),
     orgName: String(e.host_org_name ?? e.host_org?.name ?? 'Organization'),
+    orgCode: String(e.host_org_code ?? e.host_org?.code ?? 'ORG'),
     status: (e.effective_status ?? e.status ?? 'Upcoming') as EventStatus,
     startDate: String(e.start_date ?? ''),
     registered: Number(e.total_registered ?? 0),
@@ -166,12 +168,13 @@ export default function AdminDashboardPage() {
 
   const mapOrgs = (rows: any[]): OrgRow[] => rows.map((o: any) => ({
     id: String(o.id ?? ''),
+    slug: o.slug ? String(o.slug) : String(o.id ?? ''),
     name: String(o.name ?? 'Organization'),
     logoUrl: normalizeImageUrl(o.logo_url ?? o.banner_url ?? null),
     category: (o.category?.name ?? 'Academic') as OrgRow['category'],
     accreditationStatus: (o.accreditation_status ?? 'Active') as OrgRow['accreditationStatus'],
-    eventCount: Number(o.total_events ?? 0),
-    accreditedAt: String(o.accredited_at ?? ''),
+    eventCount: Number(o.total_events ?? o.events_this_year ?? 0),
+    accreditedAt: String(o.updated_at ?? o.created_at ?? ''),
   }));
 
   const mapActivity = (rows: any[]): ActivityRow[] => rows.slice(0, 5).map((a: any) => {
@@ -392,7 +395,7 @@ export default function AdminDashboardPage() {
                   {eventsInPeriod.slice(0, 5).map((ev) => (
                     <tr key={ev.id}>
                       <td><p className="text-[13px] font-semibold text-[var(--color-text)] truncate max-w-[220px]">{ev.title}</p></td>
-                      <td className="hidden sm:table-cell"><p className="text-[12px] text-[var(--color-text-muted)] truncate max-w-[160px]">{ev.orgName}</p></td>
+                      <td className="hidden sm:table-cell"><p className="text-[12px] text-[var(--color-text-muted)] truncate max-w-[160px]">{ev.orgCode}</p></td>
                       <td className="hidden md:table-cell"><p className="text-[12px] text-[var(--color-text-muted)]">{formatDate(ev.startDate)}</p></td>
                       <td><div className="w-[120px]"><StatusMiniBar registered={ev.registered} capacity={ev.capacity} /></div></td>
                       <td><span className={`badge ${STATUS_STYLES[ev.status]}`}>{ev.status}</span></td>
@@ -412,8 +415,8 @@ export default function AdminDashboardPage() {
               {activityInPeriod.slice(0, 5).map((item) => (
                 <div key={item.id} className="flex items-start gap-3 px-5 py-4">
                   <ActivityIcon type={item.type} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] text-[var(--color-text)] leading-relaxed">{item.target}</p>
+                  <div className="flex-row min-w-0">
+                    <span className="text-[12px] text-[var(--color-text)] leading-relaxed text-[var(--color-text-muted)]">Target:</span> <span className="text-[12px] text-[var(--color-text)] leading-relaxed">{item.target}</span>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} · {formatDate(item.timestamp)}</p>
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { IconRefresh } from "@/components/ui/IconRefresh";
 
 type PaymentSelection = "Online" | "On-site" | "N/A";
 type PaymentStatus = "Pending" | "Paid";
@@ -271,18 +272,29 @@ export default function MyEventsPage() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [rows, setRows] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      const token =
-        window.localStorage.getItem("auth_token") ??
-        window.sessionStorage.getItem("auth_token");
-      if (!token) {
-        setError("You are not authenticated.");
-        setLoading(false);
-        return;
-      }
+  async function loadRegistrations(showLoading = false) {
+    const token =
+      window.localStorage.getItem("auth_token") ??
+      window.sessionStorage.getItem("auth_token");
+    if (!token) {
+      setError("You are not authenticated.");
+      setRows([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    if (showLoading) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+    setError("");
+
+    try {
       const res = await fetch(`${API_BASE_URL}/my-events?per_page=300`, {
         headers: {
           Accept: "application/json",
@@ -293,7 +305,6 @@ export default function MyEventsPage() {
       if (!res || !res.ok || !payload?.success) {
         setError(payload?.error ?? "Unable to load your events.");
         setRows([]);
-        setLoading(false);
         return;
       }
       const data = Array.isArray(payload?.data) ? payload.data : [];
@@ -320,8 +331,17 @@ export default function MyEventsPage() {
         })),
       );
       setError("");
-      setLoading(false);
-    })();
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      } else {
+        setRefreshing(false);
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadRegistrations(true);
   }, []);
 
   const upcomingRegs = useMemo(
@@ -381,29 +401,41 @@ export default function MyEventsPage() {
             )}
 
             {/* Tab switcher */}
-            <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit">
-              {(
-                [
-                  { key: "upcoming", label: "Upcoming", count: upcomingRegs.length },
-                  { key: "past", label: "Past", count: pastRegs.length },
-                ] as const
-              ).map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-medium transition-colors
-                    ${activeTab === tab.key
-                      ? "bg-green-700 text-white"
-                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                    }`}
-                >
-                  {tab.label}
-                  <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full
-                    ${activeTab === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
+                {(
+                  [
+                    { key: "upcoming", label: "Upcoming", count: upcomingRegs.length },
+                    { key: "past", label: "Past", count: pastRegs.length },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-medium transition-colors
+                      ${activeTab === tab.key
+                        ? "bg-green-700 text-white"
+                        : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                      }`}
+                  >
+                    {tab.label}
+                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full
+                      ${activeTab === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => loadRegistrations(false)}
+                disabled={refreshing || loading}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl text-primary hover:text-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-2"
+                aria-label="Refresh registrations"
+                title="Refresh registrations"
+              >
+                <IconRefresh spinning={refreshing} />
+              </button>
             </div>
 
             {/* List */}

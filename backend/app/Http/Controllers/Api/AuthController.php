@@ -91,6 +91,7 @@ class AuthController extends Controller
             ->select(
                 'm.id as member_id',
                 'm.org_id',
+                'o.slug as org_slug',
                 'o.name as org_name',
                 'c.name as org_category',
                 'o.accreditation_status',
@@ -111,6 +112,7 @@ class AuthController extends Controller
 
             return [
                 'org_id' => $row->org_id,
+                'org_slug' => $row->org_slug ?: $row->org_id,
                 'org_name' => $row->org_name,
                 'org_category' => $category,
                 'org_status' => strtolower(trim((string) ($row->accreditation_status ?? 'Active'))) === 'suspended' ? 'Suspended' : 'Active',

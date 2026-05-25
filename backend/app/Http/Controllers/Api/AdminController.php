@@ -182,7 +182,11 @@ class AdminController extends Controller
             $perPage = (int) $req->query('per_page', 15);
             $orgs    = DB::table('organizations as o')
                 ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
-                ->select('o.*', 'c.name as category_name')
+                ->select(
+                    'o.*',
+                    'c.name as category_name',
+                    DB::raw('(select count(*) from events e where e.host_org_id = o.id) as total_events')
+                )
                 ->latest('o.created_at')
                 ->paginate($perPage);
 
@@ -557,6 +561,7 @@ class AdminController extends Controller
                     'ec.name as category_name',
                     'v.name as venue_name',
                     'o.name as organization_name',
+                    'o.code_name as host_org_code',
                     DB::raw('(select count(*) from registrations r where r.event_id = e.id) as total_registered')
                 )
                 ->latest('e.created_at');

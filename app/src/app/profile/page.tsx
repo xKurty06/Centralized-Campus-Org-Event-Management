@@ -88,6 +88,7 @@ export default function ProfilePage() {
         if (Array.isArray(u.memberships)) {
           setMemberships(u.memberships.map((m: any) => ({
             org_id: String(m.org_id ?? ''),
+            org_slug: m.org_slug ? String(m.org_slug) : String(m.org_id ?? ''),
             org_name: m.org_name ?? 'Unknown Organization',
             org_category: m.org_category === 'Academic' || m.org_category === 'Non-Academic' || m.org_category === 'Religious' ? m.org_category : 'Non-Academic',
             org_status: m.org_status === 'Suspended' ? 'Suspended' : 'Active',

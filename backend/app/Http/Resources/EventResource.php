@@ -84,6 +84,7 @@ class EventResource extends JsonResource
             'host_org_id' => $this->host_org_id,
             'organization_slug' => $this->organization_slug ?? null,
             'organization_name' => $this->organization_name ?? null,
+            'host_org_code' => $this->host_org_code ?? null,
             'organization_category' => $this->organization_category ?? null,
             'adviser' => $this->adviser ?? null,
             'org_members_count' => isset($this->org_members_count) ? (int) $this->org_members_count : 0,
