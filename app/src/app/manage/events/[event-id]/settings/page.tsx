@@ -576,7 +576,7 @@ export default function EventSettingsPage() {
                                         {event.title}
                                     </p>
                                     <p className="text-[12px] text-gray-400">
-                                        {formatDate(event.start_date)} · {event.total_registered}{" "}
+                                        {formatDate(event.start_date)} Â· {event.total_registered}{" "}
                                         registered
                                     </p>
                                 </div>
@@ -703,8 +703,7 @@ export default function EventSettingsPage() {
                                             Delete event permanently
                                         </p>
                                         <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
-                                            Permanently removes this event and all associated data —
-                                            registrations, payment proofs, and attendance records.
+                                            Permanently removes this event and all associated data with registrations, payment proofs, and attendance records.
                                             This action{" "}
                                             <strong className="font-semibold text-gray-700">
                                                 cannot be undone
@@ -797,7 +796,7 @@ export default function EventSettingsPage() {
                             />
                         </svg>
                         <p className="text-[13px] font-semibold text-gray-700">
-                            Processing…
+                            Processingï¿½
                         </p>
                     </div>
                 </div>

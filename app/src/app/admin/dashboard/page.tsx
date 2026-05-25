@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -363,7 +363,7 @@ export default function AdminDashboardPage() {
                   <ActivityIcon type={item.type} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] text-[var(--color-text)] leading-relaxed">{item.target}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} � {item.timestamp}</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{item.actor} · {item.timestamp}</p>
                   </div>
                 </div>
               ))}

@@ -219,7 +219,7 @@ function Sidebar({
 
     return (
         <aside
-            className={`sidebar fixed top-0 left-0 z-40 flex h-screen flex-col ${isMounted ? 'transition-all duration-300' : ''
+            className={`sidebar fixed top-0 left-0 z-20 flex h-screen flex-col ${isMounted ? 'transition-all duration-300' : ''
                 }`}
             style={{
                 width: collapsed

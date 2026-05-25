@@ -40,30 +40,7 @@ export default function RootLayout({
 
         <RootShell>{children}</RootShell>
 
-        <footer className="border-t border-gray-200 bg-white mt-auto">
-          <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <Link href="/" className="text-xs font-medium text-[var(--color-text-muted)] hover:text-green-500 transition-colors">
-              &copy; Cavite State University · SALIKOP
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/privacy-policy"
-                className="text-xs text-[var(--color-text-muted)] hover:text-green-500 transition-colors"
-              >
-                Privacy Policy
-              </Link>
-
-              <Link
-                href="/support"
-                className="text-xs text-[var(--color-text-muted)] hover:text-green-500 transition-colors"
-              >
-                Contact Support
-              </Link>
-
-              <span className="text-xs text-gray-500">v1.0 · 2026</span>
-            </div>
-          </div>
-        </footer>
+        {/* Footer moved into RootShell so it can be conditionally hidden on shell pages */}
       </body>
     </html>
   );

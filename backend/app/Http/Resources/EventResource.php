@@ -7,6 +7,17 @@ use Illuminate\Support\Carbon;
 
 class EventResource extends JsonResource
 {
+    private function normalizeUrl($value): ?string
+    {
+        if (!$value) return null;
+        $url = trim((string) $value);
+        if ($url === '') return null;
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://') || str_starts_with($url, '//')) {
+            return $url;
+        }
+        return url($url);
+    }
+
     private function normalizeDate($value): ?string
     {
         if (!$value) return null;
@@ -25,7 +36,7 @@ class EventResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
-            'banner_url' => $this->banner_url ?? null,
+            'banner_url' => $this->normalizeUrl($this->banner_url ?? null),
             'start_date' => $this->start_date ? (string) $this->start_date : null,
             'end_date' => $this->end_date ? (string) $this->end_date : null,
             'capacity' => (int) $this->capacity,

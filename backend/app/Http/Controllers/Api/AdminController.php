@@ -489,7 +489,20 @@ class AdminController extends Controller
     {
         try {
             $perPage = (int) $req->query('per_page', 15);
-            $events  = DB::table('events')->latest()->paginate($perPage);
+            $query = DB::table('events as e')
+                ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')
+                ->leftJoin('venues as v', 'e.venue_id', '=', 'v.id')
+                ->leftJoin('organizations as o', 'e.host_org_id', '=', 'o.id')
+                ->select(
+                    'e.*',
+                    'ec.name as category_name',
+                    'v.name as venue_name',
+                    'o.name as organization_name',
+                    DB::raw('(select count(*) from registrations r where r.event_id = e.id) as total_registered')
+                )
+                ->latest('e.created_at');
+
+            $events = $query->paginate($perPage);
 
             return response()->json([
                 'success' => true,
@@ -513,11 +526,27 @@ class AdminController extends Controller
             if (!$event) {
                 return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
             }
+            $reason = trim((string) $req->input('reason', ''));
+            if ($reason === '') {
+                return response()->json(['success' => false, 'error' => 'Removal reason is required.'], 422);
+            }
 
             // Pass a real Eloquent model so the policy receives a properly typed instance.
             Gate::authorize('delete', \App\Models\Event::findOrFail($id));
 
             DB::table('events')->where('id', $id)->delete();
+            $this->writeAudit(
+                $req,
+                'Event',
+                'Remove Event',
+                (string) ($event->title ?? 'Untitled Event'),
+                (string) $id,
+                json_encode([
+                    'reason' => $reason,
+                    'status' => $event->status ?? null,
+                    'host_org_id' => $event->host_org_id ?? null,
+                ])
+            );
 
             return response()->json(['success' => true]);
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
