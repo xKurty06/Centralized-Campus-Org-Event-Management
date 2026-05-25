@@ -268,7 +268,7 @@ export default function ParticipantsPage() {
                     payload.event.start_date ?? new Date().toISOString(),
                 ),
                 capacity: Number(payload.event.capacity ?? 0),
-                status: String(payload.event.status ?? "Upcoming"),
+                status: String(payload.event.effective_status ?? payload.event.status ?? "Upcoming"),
             });
         setError("");
         setLoading(false);

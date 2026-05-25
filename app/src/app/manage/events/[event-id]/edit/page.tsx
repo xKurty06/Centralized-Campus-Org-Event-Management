@@ -390,7 +390,7 @@ export default function EditEventPage() {
             : "CvSU_Only",
         is_paid: Boolean(e.is_paid),
         payment_instructions: String(e.payment_instructions ?? ""),
-        status: (e.status ?? "Upcoming") as EventStatus,
+        status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
         venue_id: Number(e.venue_id ?? 1),
         category_id: Number(e.category_id ?? 8),
         banner_url: normalizeBannerUrl(e.banner_url ?? ""),

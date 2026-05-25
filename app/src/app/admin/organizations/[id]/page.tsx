@@ -120,6 +120,12 @@ export default function AdminOrgDetailPage() {
     // ── Edit profile modal
     const [showEditModal, setShowEditModal] = useState(false);
     const [editDraft, setEditDraft] = useState<OrgProfile>(org);
+    const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+    const [editLogoPreviewUrl, setEditLogoPreviewUrl] = useState('');
+    const [logoFileError, setLogoFileError] = useState('');
+    const [selectedLogoName, setSelectedLogoName] = useState('');
+    const [selectedLogoSize, setSelectedLogoSize] = useState('');
+    const [selectedLogoDimensions, setSelectedLogoDimensions] = useState('');
 
     // ── Accreditation confirm modal
     const [showAccredModal, setShowAccredModal] = useState(false);
@@ -290,26 +296,108 @@ export default function AdminOrgDetailPage() {
         setIsSaving(true);
         setErrorMsg('');
         try {
-            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}`, {
+            const hasNewLogoFile = Boolean(editLogoFile);
+            const payload = hasNewLogoFile ? new FormData() : null;
+
+            if (hasNewLogoFile && payload instanceof FormData) {
+                payload.append('logo_file', editLogoFile as File);
+            }
+
+            if (payload instanceof FormData) {
+                payload.append('name', editDraft.name);
+                payload.append('description', editDraft.description);
+                payload.append('adviser', editDraft.adviser);
+            }
+
+            const requestOptions: RequestInit = {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: payload instanceof FormData ? payload : JSON.stringify({
                     name: editDraft.name,
                     description: editDraft.description,
                     logo_url: editDraft.logoUrl,
                     adviser: editDraft.adviser,
                 }),
-            });
-            const payload = await res.json().catch(() => null) as any;
-            if (!res.ok || !payload?.success) {
-                setErrorMsg(payload?.error ?? 'Unable to save organization profile.');
+            };
+
+            if (!(payload instanceof FormData)) {
+                requestOptions.headers = {
+                    ...requestOptions.headers,
+                    'Content-Type': 'application/json',
+                };
+            }
+
+            const res = await fetch(`${API_BASE_URL}/admin/organizations/${orgId}`, requestOptions);
+            const payloadData = await res.json().catch(() => null) as any;
+            if (!res.ok || !payloadData?.success) {
+                setErrorMsg(payloadData?.error ?? 'Unable to save organization profile.');
                 return;
             }
-            setOrg(editDraft);
+            if (hasNewLogoFile) {
+                await fetchOrgDetails(false, false);
+            } else {
+                setOrg(editDraft);
+            }
             setShowEditModal(false);
         } finally {
             setIsSaving(false);
         }
+    }
+
+    function handleLogoFileChange(file: File | null) {
+        setLogoFileError('');
+        if (!file) {
+            setEditLogoFile(null);
+            setSelectedLogoName('');
+            setSelectedLogoSize('');
+            setSelectedLogoDimensions('');
+            return;
+        }
+
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        const extOk = /\.(jpg|jpeg|png|webp)$/i.test(file.name);
+        if (!allowed.includes(file.type) || !extOk) {
+            setEditLogoFile(null);
+            setSelectedLogoName('');
+            setSelectedLogoSize('');
+            setSelectedLogoDimensions('');
+            setLogoFileError('Invalid file type. Please upload JPG, JPEG, PNG, or WEBP only.');
+            return;
+        }
+
+        const maxBytes = 5 * 1024 * 1024;
+        if (file.size > maxBytes) {
+            setEditLogoFile(null);
+            setSelectedLogoName('');
+            setSelectedLogoSize('');
+            setSelectedLogoDimensions('');
+            setLogoFileError('File is too large. Maximum allowed size is 5MB.');
+            return;
+        }
+
+        setEditLogoFile(file);
+        setSelectedLogoName(file.name);
+        setSelectedLogoSize(file.size < 1024 * 1024
+            ? `${Math.max(1, Math.round(file.size / 1024))} KB`
+            : `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+        );
+
+        const previewUrl = URL.createObjectURL(file);
+        setEditLogoPreviewUrl(previewUrl);
+
+        const img = new Image();
+        img.onload = () => {
+            setSelectedLogoDimensions(`${img.naturalWidth}x${img.naturalHeight}px`);
+            URL.revokeObjectURL(previewUrl);
+        };
+        img.onerror = () => {
+            setSelectedLogoDimensions('');
+            URL.revokeObjectURL(previewUrl);
+        };
+        img.src = previewUrl;
     }
 
     async function handleToggleAccreditation() {
@@ -595,7 +683,19 @@ export default function AdminOrgDetailPage() {
                                 </p>
                             </div>
                         </div>
-                        <button className="btn btn-outline btn-sm" onClick={() => { setEditDraft(org); setShowEditModal(true); }}>
+                                        <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => {
+                                setEditDraft(org);
+                                setEditLogoFile(null);
+                                setEditLogoPreviewUrl('');
+                                setLogoFileError('');
+                                setSelectedLogoName('');
+                                setSelectedLogoSize('');
+                                setSelectedLogoDimensions('');
+                                setShowEditModal(true);
+                            }}
+                        >
                             <IconEdit /> Edit Profile
                         </button>
                     </div>
@@ -989,8 +1089,81 @@ export default function AdminOrgDetailPage() {
                             <input type="text" value={editDraft.adviser} onChange={(e) => setEditDraft((p) => ({ ...p, adviser: e.target.value }))} />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Logo URL</label>
-                            <input type="text" value={editDraft.logoUrl} placeholder="https://..." onChange={(e) => setEditDraft((p) => ({ ...p, logoUrl: e.target.value }))} />
+                            <label htmlFor="logoFile" className="form-label">
+                                Organization Logo
+                            </label>
+                            <input
+                                id="logoFile"
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                onChange={(e) => handleLogoFileChange(e.target.files?.[0] ?? null)}
+                                className="sr-only"
+                            />
+                            <label
+                                htmlFor="logoFile"
+                                className="mt-1 w-[180px] h-[180px] rounded-[--radius-md] border-2 border-dashed p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors relative overflow-hidden"
+                                style={{
+                                    borderColor: 'var(--color-border)',
+                                    background: 'var(--color-surface-2)',
+                                }}
+                            >
+                                {editDraft.logoUrl && (
+                                    <span
+                                        className="absolute bottom-0.5 item-center text-xs px-2 py-0.5 cursor-pointer bg-black/50 text-white hover:opacity-100 transition-opacity"
+                                        title="Click to replace logo"
+                                    >
+                                        Click to replace
+                                    </span>
+                                )}
+
+                                {(editLogoPreviewUrl || editDraft.logoUrl) ? (
+                                    <img
+                                        src={editLogoPreviewUrl || editDraft.logoUrl}
+                                        alt="Selected organization logo"
+                                        className="w-full h-full object-cover rounded-[--radius-sm]"
+                                    />
+                                ) : (
+                                    <>
+                                        <svg
+                                            width="26"
+                                            height="26"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        >
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        <p className="text-sm font-medium text-center" style={{ color: 'var(--color-text)' }}>
+                                            Drag file here or{' '}
+                                            <span style={{ color: 'var(--color-primary)' }}>
+                                                Browse image
+                                            </span>
+                                        </p>
+                                        <p className="text-xs text-center" style={{ color: 'var(--color-text-muted)' }}>
+                                            JPG, JPEG, PNG, WEBP up to 5MB
+                                        </p>
+                                    </>
+                                )}
+                            </label>
+                            <p className="form-hint">
+                                Optional. Allowed: JPG, JPEG, PNG, WEBP. Max size: 5MB.
+                            </p>
+                            {selectedLogoName && (
+                                <p className="form-hint">
+                                    Selected: <strong>{selectedLogoName}</strong>
+                                    {selectedLogoSize ? ` (${selectedLogoSize})` : ''}
+                                    {selectedLogoDimensions ? ` - ${selectedLogoDimensions}` : ''}
+                                </p>
+                            )}
+                            {logoFileError && (
+                                <div className="text-sm text-red-600" role="alert">
+                                    {logoFileError}
+                                </div>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="form-group">

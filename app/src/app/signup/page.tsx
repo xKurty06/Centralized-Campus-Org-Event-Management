@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // ─── Types ─────────────────────────────────────────────────────
@@ -743,6 +744,7 @@ const INITIAL: FormData = {
 };
 
 export default function SignupPage() {
+    const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const [step, setStep] = useState<Step>(1);
     const [formData, setFormData] = useState<FormData>(INITIAL);
@@ -754,6 +756,11 @@ export default function SignupPage() {
     const [catalogError, setCatalogError] = useState('');
 
     useEffect(() => { setMounted(true); }, []);
+
+    useEffect(() => {
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (token) router.replace('/events');
+    }, [router]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -956,3 +963,4 @@ export default function SignupPage() {
         </div>
     );
 }
+

@@ -2,9 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { APP_VERSION_LABEL } from '@/components/appVersion';
 
 // ─── Types ────────────────────────────────────────────────────
 type FormState = 'idle' | 'loading' | 'error' | 'success';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const RESET_VERIFIED_KEY = 'password_reset_verified';
+const OTP_STORAGE_KEY = 'password_reset_otp';
+const RESET_EMAIL_KEY = 'password_reset_email';
 
 // ─────────────────────────────────────────────────────────────
 // Shared sub-components
@@ -12,11 +17,13 @@ type FormState = 'idle' | 'loading' | 'error' | 'success';
 
 function BrandLogo({ size = 40 }: { size?: number }) {
     return (
-        <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-            <path d="M20 2L34.64 10.5V27.5L20 36L5.36 27.5V10.5L20 2Z" fill="#22a050" />
-            <path d="M20 6L31.07 12.25V24.75L20 31L8.93 24.75V12.25L20 6Z" fill="#1a7a3c" />
-            <path d="M14 20.5L18 24.5L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <img
+            src="/Salikop_logo.png"
+            alt="Salikop logo"
+            width={size}
+            height={size}
+            className="object-contain"
+        />
     );
 }
 
@@ -155,6 +162,12 @@ export default function ResetPasswordPage() {
     const [countdown, setCountdown] = useState(3);
 
     useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        const isVerified = sessionStorage.getItem(RESET_VERIFIED_KEY) === 'true';
+        if (!isVerified) {
+            router.replace('/forgot-password');
+        }
+    }, [router]);
 
     // Countdown after success
     useEffect(() => {
@@ -173,8 +186,33 @@ export default function ResetPasswordPage() {
         if (newPass !== confirmPass) { setErrorMsg('Passwords do not match.'); return; }
 
         setFormState('loading');
-        // TODO: call POST /api/auth/reset-password { token: <from URL or session>, newPassword: newPass }
-        await new Promise(r => setTimeout(r, 1400));
+        const otp = sessionStorage.getItem(OTP_STORAGE_KEY);
+        const email = sessionStorage.getItem(RESET_EMAIL_KEY);
+        if (!otp || !email) {
+            setFormState('error');
+            setErrorMsg('Reset session expired. Please request a new OTP.');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+                email,
+                token: otp,
+                password: newPass,
+                password_confirmation: confirmPass,
+            }),
+        }).catch(() => null);
+        const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
+        if (!res || !res.ok || !payload?.success) {
+            setFormState('error');
+            setErrorMsg(payload?.error ?? 'Unable to reset password right now.');
+            return;
+        }
+        sessionStorage.removeItem(RESET_VERIFIED_KEY);
+        sessionStorage.removeItem(OTP_STORAGE_KEY);
+        sessionStorage.removeItem(RESET_EMAIL_KEY);
         setFormState('success');
     }
 
@@ -334,10 +372,19 @@ export default function ResetPasswordPage() {
                                     </div>
                                     {/* Match indicator */}
                                     {confirmPass && (
-                                        <p className="form-hint animate-fade-in" style={{
+                                        <p className="form-hint animate-fade-in flex items-center gap-1.5" style={{
                                             color: confirmPass === newPass ? 'var(--color-success)' : 'var(--color-error)',
                                         }}>
-                                            {confirmPass === newPass ? '✓ Passwords match' : '✗ Passwords do not match'}
+                                            {confirmPass === newPass ? (
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                    <path d="M4 10.5l4 4L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                    <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                                </svg>
+                                            )}
+                                            {confirmPass === newPass ? 'Passwords match' : 'Passwords do not match'}
                                         </p>
                                     )}
                                 </div>
@@ -364,9 +411,10 @@ export default function ResetPasswordPage() {
                     Contact your administrator for account issues.
                 </p>
                 <p className="text-center mt-2 text-[11px] tracking-wide" style={{ color: 'gray' }}>
-                    Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
+                    Salikop {APP_VERSION_LABEL} &nbsp;·&nbsp; {new Date().getFullYear()}
                 </p>
             </div>
         </div>
     );
 }
+

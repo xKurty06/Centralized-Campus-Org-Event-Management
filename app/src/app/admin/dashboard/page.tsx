@@ -156,7 +156,7 @@ export default function AdminDashboardPage() {
     id: String(e.id ?? ''),
     title: String(e.title ?? 'Untitled Event'),
     orgName: String(e.host_org_name ?? e.host_org?.name ?? 'Organization'),
-    status: (e.status ?? 'Upcoming') as EventStatus,
+    status: (e.effective_status ?? e.status ?? 'Upcoming') as EventStatus,
     startDate: String(e.start_date ?? ''),
     registered: Number(e.total_registered ?? 0),
     capacity: Number(e.capacity ?? 0),

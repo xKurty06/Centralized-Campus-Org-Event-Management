@@ -19,6 +19,37 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
+    private function deleteOrganizationLogoFromStorage(?string $logoUrl): void
+    {
+        if (!$logoUrl) {
+            return;
+        }
+
+        $path = parse_url($logoUrl, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return;
+        }
+
+        $storagePrefix = '/storage/';
+        $prefixPos = strpos($path, $storagePrefix);
+        if ($prefixPos === false) {
+            return;
+        }
+
+        $relativePath = substr($path, $prefixPos + strlen($storagePrefix));
+        if (!is_string($relativePath) || $relativePath === '') {
+            return;
+        }
+
+        if (!str_starts_with($relativePath, 'organization_logos/')) {
+            return;
+        }
+
+        if (Storage::disk('public')->exists($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
+        }
+    }
+
     private function writeAudit(
         Request $req,
         string $category,
@@ -317,7 +348,10 @@ class AdminController extends Controller
             Gate::authorize('update', \App\Models\Organization::findOrFail($id));
 
             $data = $req->only(['name', 'description', 'logo_url', 'adviser', 'category_id']);
+            $currentOrg = DB::table('organizations')->select('logo_url')->where('id', $id)->first();
+
             if ($req->hasFile('logo_file')) {
+                $this->deleteOrganizationLogoFromStorage($currentOrg->logo_url ?? null);
                 $path = $req->file('logo_file')->storePublicly('organization_logos', 'public');
                 $data['logo_url'] = Storage::url($path);
             }

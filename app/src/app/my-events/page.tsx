@@ -77,6 +77,13 @@ function formatTime(iso: string) {
     hour12: true,
   });
 }
+function formatDateTimeRange(startIso: string, endIso?: string) {
+  const start = new Date(startIso);
+  const end = new Date(endIso ?? startIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) return `${formatDate(startIso)} · ${formatTime(startIso)} - ${formatTime(end.toISOString())}`;
+  return `${formatDate(startIso)} ${formatTime(startIso)} - ${formatDate(end.toISOString())} ${formatTime(end.toISOString())}`;
+}
 function daysUntil(iso: string): string | null {
   const diff = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
   if (diff < 0) return null;
@@ -225,7 +232,7 @@ function RegistrationCard({
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500">
             <span>
-              {formatDate(reg.event_start_date)} · {formatTime(reg.event_start_date)} – {formatTime(reg.event_end_date)}
+              {formatDateTimeRange(reg.event_start_date, reg.event_end_date)}
             </span>
             <span>{reg.venue_name || "TBA"}</span>
             <span>{reg.org_name || "Organization"}</span>

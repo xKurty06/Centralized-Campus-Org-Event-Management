@@ -138,6 +138,13 @@ function formatDate(iso: string) {
     year: 'numeric',
   });
 }
+function formatDateRange(startIso: string, endIso?: string) {
+  const start = new Date(startIso);
+  const end = new Date(endIso ?? startIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) return formatDate(startIso);
+  return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
+}
 function formatPrice(value?: number) {
   return Number(value ?? 0).toLocaleString('en-PH');
 }
@@ -300,7 +307,7 @@ export default function EventDetailPage() {
         endTime: new Date(e.end_date ?? e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
         startDate: startDate,
         endDate: endDate,
-        status: mapApiStatus(e.status, startDate, endDate),
+        status: mapApiStatus(e.effective_status ?? e.status, startDate, endDate),
         venue: String(e.venue_name ?? 'TBA'),
         type: Boolean(e.is_paid) ? 'Paid' : 'Free',
         fee: Number(e.fee_amount ?? 0),
@@ -485,7 +492,7 @@ export default function EventDetailPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DetailItem icon={<IconCalendar />} label="Date">
-                {formatDate(event.date)}
+                {formatDateRange(event.startDate, event.endDate)}
               </DetailItem>
               <DetailItem icon={<IconClock />} label="Time">
                 {event.time} - {event.endTime}

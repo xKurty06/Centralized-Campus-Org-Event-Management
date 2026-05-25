@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { IconRefresh } from "@/components/ui/IconRefresh";
+import { EventsPageSkeleton } from "@/components/skeletons";
 
 type EventCategory =
   | "Workshop"
@@ -13,7 +14,7 @@ type EventCategory =
   | "Cultural"
   | "Activity"
   | "Other";
-type AudienceType = "Public" | "Org_Members_Only";
+type AudienceType = "CvSU_Only" | "Org_Members_Only";
 type EventType = "Free" | "Paid";
 type EventStatus =
   | "Upcoming"
@@ -25,6 +26,7 @@ type EventStatus =
 
 interface CampusEvent {
   id: string;
+  slug?: string;
   title: string;
   category: EventCategory;
   organization: string;
@@ -32,6 +34,7 @@ interface CampusEvent {
   audience_type: AudienceType;
   is_member: boolean;
   date: string;
+  endDate: string;
   time: string;
   venue: string;
   type: EventType;
@@ -88,30 +91,51 @@ const CATEGORIES: (EventCategory | "")[] = [
   "Other",
 ];
 const TYPES = ["", "Free", "Paid"];
+const DATE_FILTERS = ["", "Today", "Upcoming", "This Week", "This Month", "Past"];
+const PH_TIMEZONE = "Asia/Manila";
+
+function parseEventDate(value: string): Date {
+  const s = String(value ?? "").trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes("T") ? s : s.replace(" ", "T");
+  return new Date(`${normalized}+08:00`);
+}
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-PH", {
+  return parseEventDate(iso).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: PH_TIMEZONE,
   });
+}
+function formatDateTimeRange(startIso: string, endIso?: string) {
+  const start = parseEventDate(startIso);
+  const end = parseEventDate(endIso ?? startIso);
+  const startTime = start.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: PH_TIMEZONE });
+  const endTime = end.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: PH_TIMEZONE });
+  return {
+    start: `${formatDate(startIso)} ${startTime}`,
+    end: `${formatDate(end.toISOString())} ${endTime}`,
+  };
 }
 function formatPrice(value?: number) {
   return Number(value ?? 0).toLocaleString("en-PH");
 }
 
 function normalizeEventStatus(raw: unknown, startDate: string, endDate: string): EventStatus {
+  const now = new Date();
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate);
+  if (now > end) return "Completed";
   const value = String(raw ?? "").trim().toLowerCase();
   if (value === "upcoming") return "Upcoming";
   if (value === "open") return "Open";
   if (value === "closed") return "Closed";
   if (value === "completed") return "Completed";
   if (value === "cancelled") return "Cancelled";
-  const now = new Date();
-  const start = new Date(startDate);
-  const end = new Date(endDate);
   if (now < start) return "Upcoming";
-  if (now > end) return "Completed";
   return "Open";
 }
 
@@ -265,13 +289,18 @@ function EventCard({
   const spots = event.capacity - event.registered;
   const isFull = spots <= 0;
   const displayStatus: EventStatus = isFull ? "Full" : event.status;
+  const isCompleted = displayStatus === "Completed";
   return (
     <Link
-      href={`/events/${event.id}`}
-      className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 no-underline flex flex-col"
+      href={`/events/${event.slug ?? event.id}`}
+      className={`group rounded-xl border overflow-hidden transition-all duration-200 no-underline flex flex-col ${
+        isCompleted
+          ? "bg-gray-50 border-gray-200 opacity-75"
+          : "bg-white border-gray-200 hover:shadow-md hover:-translate-y-0.5"
+      }`}
     >
         <div
-          className={`h-36 relative flex items-center justify-center overflow-hidden ${event.banner_url ? "bg-gray-100" : BANNER_COLORS[event.id] ?? "bg-gray-100"}`}
+          className={`h-36 relative flex items-center justify-center overflow-hidden ${event.banner_url ? "bg-gray-100" : BANNER_COLORS[event.id] ?? "bg-gray-100"} ${isCompleted ? "grayscale" : ""}`}
         >
           {event.banner_url ? (
             <>
@@ -343,13 +372,16 @@ function EventCard({
               </span>
             )}
           </div>
-          <h3 className="text-[14px] font-semibold text-gray-900 leading-snug group-hover:text-green-700 transition-colors line-clamp-2">
+          <h3 className={`text-[14px] font-semibold leading-snug transition-colors line-clamp-2 ${isCompleted ? "text-gray-600" : "text-gray-900 group-hover:text-green-700"}`}>
             {event.title}
           </h3>
           <div className="flex flex-col gap-1 mt-auto pt-2">
             <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
               <IconClock />
-              {formatDate(event.date)} � {event.time}
+              <span className="flex flex-col leading-snug">
+                <span>{formatDateTimeRange(event.date, event.endDate).start}</span>
+                <span>{formatDateTimeRange(event.date, event.endDate).end}</span>
+              </span>
             </div>
             <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
               <IconPin />
@@ -365,6 +397,124 @@ function EventCard({
   );
 }
 
+function EventListRow({
+  event,
+  isOrgMembersOnly,
+}: {
+  event: CampusEvent;
+  isOrgMembersOnly?: boolean;
+}) {
+  const spots = event.capacity - event.registered;
+  const isFull = spots <= 0;
+  const fill = event.capacity > 0 ? Math.min(Math.round((event.registered / event.capacity) * 100), 100) : 0;
+  const displayStatus: EventStatus = isFull ? "Full" : event.status;
+  const range = formatDateTimeRange(event.date, event.endDate);
+  const isCompleted = displayStatus === "Completed";
+
+  return (
+    <Link
+      href={`/events/${event.slug ?? event.id}`}
+      className={`group rounded-xl border transition-all no-underline overflow-hidden ${
+        isCompleted
+          ? "bg-gray-50 border-gray-200 opacity-75"
+          : "bg-white border-gray-200 hover:border-green-300 hover:shadow-sm"
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row">
+        <div
+          className={`relative h-28 sm:h-auto sm:w-36 flex-shrink-0 overflow-hidden ${event.banner_url ? "bg-gray-100" : BANNER_COLORS[event.id] ?? "bg-gray-100"} ${isCompleted ? "grayscale" : ""}`}
+        >
+          {event.banner_url ? (
+            <img
+              src={event.banner_url}
+              alt={event.title}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+              <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M8 2v4M16 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+          <span
+            className={`absolute left-2.5 top-2.5 text-[11px] px-2.5 py-0.5 rounded-full shadow-sm ${
+              event.type === "Free"
+                ? "font-semibold bg-green-700 text-white"
+                : "font-medium bg-amber-500 text-white"
+            }`}
+          >
+            {event.type === "Free" ? "Free" : `₱ ${formatPrice(event.fee ?? 0)}`}
+          </span>
+        </div>
+
+        <div className="flex-1 min-w-0 p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${CATEGORY_COLORS[event.category]}`}>
+                  {event.category}
+                </span>
+                <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeColor(displayStatus)}`}>
+                  {displayStatus}
+                </span>
+                {isOrgMembersOnly && (
+                  <span className="text-[11px] font-semibold badge badge-green px-2.5 py-0.5 rounded-full">
+                    Exclusive
+                  </span>
+                )}
+              </div>
+              <p className={`text-[15px] font-semibold transition-colors truncate ${isCompleted ? "text-gray-600" : "text-gray-900 group-hover:text-green-700"}`}>
+                {event.title}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500">
+                <span className="inline-flex items-center gap-1.5 min-w-0">
+                  <IconOrg />
+                  <span className="truncate">{event.organization}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 min-w-0">
+                  <IconPin />
+                  <span className="truncate">{event.venue}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_140px] gap-3 lg:w-[430px]">
+              <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 text-[12px] text-gray-600">
+                <div className="flex items-center gap-1.5">
+                  <IconClock />
+                  <div className="min-w-0 leading-snug">
+                    <p><span className="font-semibold text-gray-700">Start</span> {range.start}</p>
+                    <p><span className="font-semibold text-gray-700">End</span> {range.end}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 text-[12px] text-gray-600">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-gray-800">
+                    {event.registered}/{event.capacity}
+                  </span>
+                  <span className={`text-[11px] font-semibold ${isCompleted ? "text-gray-500" : isFull ? "text-red-500" : "text-green-700"}`}>
+                    {isCompleted ? "Event ended" : isFull ? "Full" : `${spots} left`}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${isFull ? "bg-red-400" : "bg-green-600"}`}
+                    style={{ width: `${fill}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<CampusEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -376,6 +526,8 @@ export default function EventsPage() {
   const [organization, setOrganization] = useState("");
   const [venue, setVenue] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   async function loadEvents(showRefresh = false) {
     if (showRefresh) setRefreshing(true);
@@ -417,6 +569,7 @@ export default function EventsPage() {
 
         return {
           id: String(e.id ?? ""),
+          slug: e.slug ? String(e.slug) : String(e.id ?? ""),
           title: e.title ?? "Untitled Event",
           category: normalizedCategory,
           organization: e.organization_name ?? "Organization",
@@ -424,19 +577,21 @@ export default function EventsPage() {
             | "Academic"
             | "Non-Academic"
             | "Religious",
-          audience_type: (e.audience_type ?? "Public") as AudienceType,
+          audience_type: (e.audience_type ?? "CvSU_Only") as AudienceType,
           is_member: Boolean(e.is_member ?? false),
           date: startDate,
+          endDate: endDate,
           time: startDate
-            ? new Date(startDate).toLocaleTimeString("en-PH", {
+            ? parseEventDate(startDate).toLocaleTimeString("en-PH", {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
+              timeZone: PH_TIMEZONE,
             })
             : "-",
           venue: e.venue_name ?? "TBA",
           type: Boolean(e.is_paid) ? "Paid" : "Free",
-          status: normalizeEventStatus(e.status, startDate, endDate),
+          status: normalizeEventStatus(e.effective_status ?? e.status, startDate, endDate),
           fee: Number(e.fee_amount ?? 0),
           capacity: Number(e.capacity ?? 0),
           registered: Number(e.total_registered ?? 0),
@@ -455,6 +610,17 @@ export default function EventsPage() {
     loadEvents(false);
   }, []);
 
+  useEffect(() => {
+    const saved = window.sessionStorage.getItem("events_view_mode");
+    if (saved === "list") {
+      setViewMode("list");
+    }
+  }, []);
+
+  useEffect(() => {
+    window.sessionStorage.setItem("events_view_mode", viewMode);
+  }, [viewMode]);
+
   const ORGANIZATIONS = useMemo(
     () => ["", ...new Set(events.map((e) => e.organization))],
     [events],
@@ -466,8 +632,33 @@ export default function EventsPage() {
 
   const filtered = useMemo(
     () =>
-      events.filter((e) => {
+      events
+      .filter((e) => {
         const q = search.toLowerCase();
+        const now = new Date();
+        const start = parseEventDate(e.date);
+        const end = parseEventDate(e.endDate);
+        const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+        const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+        const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+        const weekStartDay = weekStart.getTime();
+        const weekEndDay = weekEnd.getTime();
+        const isSameMonth = start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth();
+
+        const isOngoingNow = start.getTime() <= now.getTime() && end.getTime() >= now.getTime();
+        const isLaterToday = startDay === todayDay && start.getTime() > now.getTime();
+
+        const matchDate =
+          !dateFilter ||
+          (dateFilter === "Today" && (isOngoingNow || isLaterToday)) ||
+          (dateFilter === "Upcoming" && start.getTime() >= now.getTime()) ||
+          (dateFilter === "This Week" && startDay >= weekStartDay && startDay <= weekEndDay) ||
+          (dateFilter === "This Month" && isSameMonth) ||
+          (dateFilter === "Past" && end.getTime() < now.getTime());
+
         return (
           (!search ||
             e.title.toLowerCase().includes(q) ||
@@ -475,13 +666,20 @@ export default function EventsPage() {
           (!category || e.category === category) &&
           (!organization || e.organization === organization) &&
           (!venue || e.venue === venue) &&
-          (!typeFilter || e.type === typeFilter)
+          (!typeFilter || e.type === typeFilter) &&
+          matchDate
         );
+      })
+      .sort((a, b) => {
+        const aCompleted = a.status === "Completed";
+        const bCompleted = b.status === "Completed";
+        if (aCompleted === bCompleted) return 0;
+        return aCompleted ? 1 : -1;
       }),
-    [events, search, category, organization, venue, typeFilter],
+    [events, search, category, organization, venue, typeFilter, dateFilter],
   );
 
-  const activeFilters = [category, organization, venue, typeFilter].filter(
+  const activeFilters = [category, organization, venue, typeFilter, dateFilter].filter(
     Boolean,
   ).length;
 
@@ -491,6 +689,7 @@ export default function EventsPage() {
     setOrganization("");
     setVenue("");
     setTypeFilter("");
+    setDateFilter("");
   };
 
   const categoryCounts = useMemo(
@@ -525,6 +724,33 @@ export default function EventsPage() {
       }, {}),
     [events],
   );
+  const dateCounts = useMemo(() => {
+    const now = new Date();
+    const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+    const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+    const weekStartDay = weekStart.getTime();
+    const weekEndDay = weekEnd.getTime();
+    const counts: Record<string, number> = {};
+
+    for (const e of events) {
+      const start = parseEventDate(e.date);
+      const end = parseEventDate(e.endDate);
+      const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+      const isSameMonth = start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth();
+      const isOngoingNow = start.getTime() <= now.getTime() && end.getTime() >= now.getTime();
+      const isLaterToday = startDay === todayDay && start.getTime() > now.getTime();
+      if (isOngoingNow || isLaterToday) counts["Today"] = (counts["Today"] ?? 0) + 1;
+      if (start.getTime() >= now.getTime()) counts["Upcoming"] = (counts["Upcoming"] ?? 0) + 1;
+      if (startDay >= weekStartDay && startDay <= weekEndDay) counts["This Week"] = (counts["This Week"] ?? 0) + 1;
+      if (isSameMonth) counts["This Month"] = (counts["This Month"] ?? 0) + 1;
+      if (parseEventDate(e.endDate).getTime() < now.getTime()) counts["Past"] = (counts["Past"] ?? 0) + 1;
+    }
+
+    return counts;
+  }, [events]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -577,6 +803,21 @@ export default function EventsPage() {
             <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-400 mr-1">
               Filters
             </div>
+            <FilterDropdown
+              icon={
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
+                  <path d="M6 2v3M14 2v3M3 8h14M5 5h10a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              }
+              placeholder="Date"
+              value={dateFilter}
+              onChange={setDateFilter}
+              counts={dateCounts}
+              options={DATE_FILTERS.map((d) => ({
+                value: d,
+                label: d || "All Dates",
+              }))}
+            />
             <FilterDropdown
               icon={
                 <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
@@ -665,6 +906,33 @@ export default function EventsPage() {
                 Clear {activeFilters > 1 ? `(${activeFilters})` : ""}
               </button>
             )}
+            <div className="flex h-[37px] items-center rounded-lg border border-gray-200 overflow-hidden ml-2">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                title="Grid view"
+                className={`h-full w-10 inline-flex items-center justify-center transition-colors ${viewMode === "grid" ? "bg-green-700 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                  <rect x="2.5" y="2.5" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="11.5" y="2.5" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="2.5" y="11.5" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="11.5" y="11.5" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                title="List view"
+                className={`h-full w-10 inline-flex items-center justify-center transition-colors border-l border-gray-200 ${viewMode === "list" ? "bg-green-700 text-white border-l-green-700" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 5.5h12M4 10h12M4 14.5h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
             <span className="ml-auto text-[12px] text-gray-400">
               {filtered.length} {filtered.length === 1 ? "event" : "events"}{" "}
               found
@@ -673,19 +941,31 @@ export default function EventsPage() {
         </div>
         {!!error && <div className="text-sm text-red-600">{error}</div>}
         {loading ? (
-          <div className="text-sm text-gray-500 text-center">Loading events...</div>
+          <EventsPageSkeleton view={viewMode} />
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filtered.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                isOrgMembersOnly={event.audience_type === "Org_Members_Only"}
-              />
-            ))}
-          </div>
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-content-reveal">
+              {filtered.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isOrgMembersOnly={event.audience_type === "Org_Members_Only"}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 animate-content-reveal">
+              {filtered.map((event) => (
+                <EventListRow
+                  key={event.id}
+                  event={event}
+                  isOrgMembersOnly={event.audience_type === "Org_Members_Only"}
+                />
+              ))}
+            </div>
+          )
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3 text-center animate-content-reveal">
             <p className="text-[15px] font-semibold text-gray-700">
               No events found
             </p>

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────
 type FormState = 'idle' | 'loading' | 'error';
@@ -425,10 +425,16 @@ function GuestAccess() {
 // Page Root
 // ─────────────────────────────────────────────────────────────
 export default function LoginPage() {
+  const router = useRouter();
   const [tab, setTab]         = useState<Tab>('login');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+    if (token) router.replace('/events');
+  }, [router]);
 
   return (
     <div
@@ -537,3 +543,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

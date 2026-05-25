@@ -21,6 +21,37 @@ use Illuminate\Support\Str;
 
 class ManageController extends Controller
 {
+    private function deletePublicManagedImage(?string $url, string $expectedPrefix): void
+    {
+        if (!$url) {
+            return;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return;
+        }
+
+        $storagePrefix = '/storage/';
+        $prefixPos = strpos($path, $storagePrefix);
+        if ($prefixPos === false) {
+            return;
+        }
+
+        $relativePath = substr($path, $prefixPos + strlen($storagePrefix));
+        if (!is_string($relativePath) || $relativePath === '') {
+            return;
+        }
+
+        if (!str_starts_with($relativePath, $expectedPrefix . '/')) {
+            return;
+        }
+
+        if (Storage::disk('public')->exists($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
+        }
+    }
+
     private function buildEventRow(object $event): object
     {
         $paidStatuses = ['Paid', 'Confirmed'];
@@ -155,11 +186,14 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Org not found.'], 404);
             }
 
+            $currentOrg = DB::table('organizations')->select('logo_url')->where('id', $orgRow->org_id)->first();
             $data = $req->only(['name', 'description', 'logo_url', 'adviser']);
             if ($req->hasFile('logo_file')) {
+                $this->deletePublicManagedImage($currentOrg->logo_url ?? null, 'organization_logos');
                 $path = $req->file('logo_file')->storePublicly('organization_logos', 'public');
                 $data['logo_url'] = Storage::url($path);
             } elseif ($req->boolean('remove_logo')) {
+                $this->deletePublicManagedImage($currentOrg->logo_url ?? null, 'organization_logos');
                 $data['logo_url'] = null;
             }
             DB::table('organizations')
@@ -185,6 +219,7 @@ class ManageController extends Controller
             $id      = (string) Str::uuid();
             $bannerUrl = $req->input('banner_url');
             if ($req->hasFile('banner_file')) {
+                $this->deletePublicManagedImage($event->banner_url ?? null, 'event_banners');
                 $file = $req->file('banner_file');
                 $path = $file->storePublicly('event_banners', 'public');
                 $bannerUrl = Storage::url($path);

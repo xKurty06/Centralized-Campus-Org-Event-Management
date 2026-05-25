@@ -234,7 +234,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
               )}
             </div>
           ) : (
-            <Link href="/" className="text-[13px] font-semibold bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors duration-150 no-underline">
+            <Link href="/" className="text-[13px] font-semibold bg-green-700 text-white px-4 py-1.5 rounded-lg hover:bg-green-800 transition-colors duration-150 no-underline">
               Log in
             </Link>
           )}

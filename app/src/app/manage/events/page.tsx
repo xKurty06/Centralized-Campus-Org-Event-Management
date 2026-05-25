@@ -80,6 +80,13 @@ function formatTime(iso: string) {
     hour12: true,
   });
 }
+function formatDateTimeRange(startIso: string, endIso?: string) {
+  const start = new Date(startIso);
+  const end = new Date(endIso ?? startIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) return `${formatDate(startIso)} - ${formatTime(startIso)} to ${formatTime(end.toISOString())}`;
+  return `${formatDate(startIso)} ${formatTime(startIso)} - ${formatDate(end.toISOString())} ${formatTime(end.toISOString())}`;
+}
 
 function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
@@ -164,7 +171,7 @@ function EventRow({ event }: { event: ManagedEvent }) {
         <div className="flex flex-wrap gap-x-4 gap-y-0.5">
           <span className="flex items-center gap-1 text-[12px] text-gray-400">
             <IconCalendar />
-            {formatDate(event.start_date)} - {formatTime(event.start_date)}
+            {formatDateTimeRange(event.start_date, event.end_date)}
           </span>
           <span className="flex items-center gap-1 text-[12px] text-gray-400">
             <IconPin />
@@ -274,7 +281,7 @@ export default function ManageEventsPage() {
             e.end_date ?? e.start_date ?? new Date().toISOString(),
           ),
           venue_name: String(e.venue_name ?? "TBA"),
-          status: (e.status ?? "Upcoming") as EventStatus,
+          status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
           is_paid: Boolean(e.is_paid),
           capacity: Number(e.capacity ?? 0),
           total_registered: Number(e.total_registered ?? 0),
@@ -314,6 +321,13 @@ export default function ManageEventsPage() {
         );
       if (sort === "title_asc") return a.title.localeCompare(b.title);
       return b.total_registered - a.total_registered;
+    });
+    // Keep completed events at the bottom regardless of selected sort.
+    result.sort((a, b) => {
+      const aCompleted = a.status === "Completed";
+      const bCompleted = b.status === "Completed";
+      if (aCompleted === bCompleted) return 0;
+      return aCompleted ? 1 : -1;
     });
     return result;
   }, [events, search, statusFilter, categoryFilter, sort]);

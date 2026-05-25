@@ -17,6 +17,7 @@ interface EventDetail {
     title: string;
     status: EventStatus;
     start_date: string;
+    end_date: string;
     total_registered: number;
     total_paid: number;
 }
@@ -30,6 +31,13 @@ function formatDate(iso: string) {
         day: "numeric",
         year: "numeric",
     });
+}
+function formatDateRange(startIso: string, endIso?: string) {
+    const start = new Date(startIso);
+    const end = new Date(endIso ?? startIso);
+    const sameDay = start.toDateString() === end.toDateString();
+    if (sameDay) return formatDate(startIso);
+    return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
 }
 
 interface DangerCardProps {
@@ -307,8 +315,9 @@ export default function EventSettingsPage() {
         setEvent({
             id: String(e.id ?? eventId),
             title: String(e.title ?? "Untitled Event"),
-            status: (e.status ?? "Upcoming") as EventStatus,
+            status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
             start_date: String(e.start_date ?? new Date().toISOString()),
+            end_date: String(e.end_date ?? e.start_date ?? new Date().toISOString()),
             total_registered: Number(e.total_registered ?? 0),
             total_paid: Number(e.total_paid ?? 0),
         });
@@ -576,7 +585,7 @@ export default function EventSettingsPage() {
                                         {event.title}
                                     </p>
                                     <p className="text-[12px] text-gray-400">
-                                        {formatDate(event.start_date)} · {event.total_registered}{" "}
+                                        {formatDateRange(event.start_date, event.end_date)} · {event.total_registered}{" "}
                                         registered
                                     </p>
                                 </div>

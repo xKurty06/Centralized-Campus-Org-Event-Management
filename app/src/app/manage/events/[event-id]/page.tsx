@@ -115,6 +115,13 @@ function formatTime(iso: string) {
 function formatPrice(value?: number) {
   return Number(value ?? 0).toLocaleString("en-PH");
 }
+function formatDateRange(startIso: string, endIso?: string) {
+  const start = new Date(startIso);
+  const end = new Date(endIso ?? startIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) return formatDate(startIso);
+  return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
+}
 
 function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
@@ -137,7 +144,7 @@ function normalizeEvent(e: Record<string, unknown>): ManagedEvent {
     start_date: String(e.start_date ?? new Date().toISOString()),
     end_date: String(e.end_date ?? e.start_date ?? new Date().toISOString()),
     venue_name: String(e.venue_name ?? "TBA"),
-    status: (e.status ?? "Upcoming") as EventStatus,
+    status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
     is_paid: Boolean(e.is_paid),
     fee_amount: e.fee_amount != null ? Number(e.fee_amount) : undefined,
     capacity: Number(e.capacity ?? 0),
@@ -534,7 +541,7 @@ export default function EventDashboardPage() {
               <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 border-t border-gray-100">
                 <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
                   <IconCalendar />
-                  {formatDate(event.start_date)}
+                  {formatDateRange(event.start_date, event.end_date)}
                 </span>
                 <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
                   <IconClock />

@@ -14,6 +14,13 @@ function formatDate(iso: string) {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
 }
+function formatDateRange(startIso: string, endIso?: string) {
+  const start = new Date(startIso);
+  const end = new Date(endIso ?? startIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) return formatDate(startIso);
+  return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
+}
 function formatPrice(value?: number) {
   return Number(value ?? 0).toLocaleString('en-PH');
 }
@@ -33,6 +40,7 @@ function SuccessContent() {
     id: String(eventId ?? ''),
     title: 'Event',
     date: new Date().toISOString(),
+    endDate: new Date().toISOString(),
     time: '-',
     endTime: '-',
     venue: 'TBA',
@@ -67,6 +75,7 @@ function SuccessContent() {
           id: String(e.id ?? eventId),
           title: String(e.title ?? 'Event'),
           date: startDate,
+          endDate: endDate,
           time: new Date(startDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
           endTime: new Date(endDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
           venue: String(e.venue_name ?? 'TBA'),
@@ -169,7 +178,7 @@ function SuccessContent() {
 
           <div className="flex flex-col gap-2.5">
             <SummaryRow icon={<IconTitle />} label={event.title} sublabel={event.organization} />
-            <SummaryRow icon={<IconCalendar />} label={formatDate(event.date)} sublabel={`${event.time} – ${event.endTime}`} />
+            <SummaryRow icon={<IconCalendar />} label={formatDateRange(event.date, event.endDate)} sublabel={`${event.time} - ${event.endTime}`} />
             <SummaryRow icon={<IconPin />} label={event.venue} />
           </div>
         </div>

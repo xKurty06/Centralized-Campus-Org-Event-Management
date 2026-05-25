@@ -1,18 +1,45 @@
 'use client';
 
-/*
-NOTE FOR AI AGENT: FOR SENDING OTP, USE gooey-toaster npm, DO NOT USE EMAIL SEND FUNCTION IN THIS CODE. POSITION THE TOASTER ON TOP CENTER.
-*/
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { APP_VERSION_LABEL } from '@/components/appVersion';
 
 // ─── Types ────────────────────────────────────────────────────
 type Step = 'email' | 'otp';
 type FormState = 'idle' | 'loading' | 'error' | 'success';
+type ToastMessage = { title: string; description: string };
 
 const EMAIL_REGEX = /^[^\s@]+@cvsu\.edu\.ph$/i;
 const OTP_LENGTH = 6;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const OTP_STORAGE_KEY = 'password_reset_otp';
+const RESET_EMAIL_KEY = 'password_reset_email';
+const RESET_VERIFIED_KEY = 'password_reset_verified';
+type ApiResponse<T> = { success: boolean; data?: T; error?: string };
+type ForgotPasswordPayload = { email: string; expires_at: string };
+
+async function requestPasswordReset(email: string): Promise<ForgotPasswordPayload | null> {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const payload = (await res.json().catch(() => null)) as ApiResponse<ForgotPasswordPayload> | null;
+    if (!res.ok || !payload?.success) return null;
+    return payload.data ?? { email, expires_at: '' };
+}
+
+async function verifyResetOtp(email: string, token: string): Promise<string | null> {
+    const res = await fetch(`${API_BASE_URL}/auth/verify-reset-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email, token }),
+    });
+    const payload = (await res.json().catch(() => null)) as ApiResponse<unknown> | null;
+    if (res.ok && payload?.success) return null;
+    return payload?.error ?? 'Invalid OTP. Please try again.';
+}
 
 // ─────────────────────────────────────────────────────────────
 // Shared sub-components (mirrored from login page)
@@ -20,11 +47,13 @@ const OTP_LENGTH = 6;
 
 function BrandLogo({ size = 40 }: { size?: number }) {
     return (
-        <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-            <path d="M20 2L34.64 10.5V27.5L20 36L5.36 27.5V10.5L20 2Z" fill="#22a050" />
-            <path d="M20 6L31.07 12.25V24.75L20 31L8.93 24.75V12.25L20 6Z" fill="#1a7a3c" />
-            <path d="M14 20.5L18 24.5L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <img
+            src="/Salikop_logo.png"
+            alt="Salikop logo"
+            width={size}
+            height={size}
+            className="object-contain"
+        />
     );
 }
 
@@ -68,10 +97,48 @@ function AlertBanner({ msg }: { msg: string }) {
     );
 }
 
+function ArrowLeftIcon() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+        </svg>
+    );
+}
+
+function InlineToast({ message }: { message: ToastMessage }) {
+    return (
+        <div className="fixed top-4 left-1/2 z-[100] w-[min(92vw,420px)] -translate-x-1/2 animate-fade-in">
+            <div
+                className="rounded-[--radius-md] border px-4 py-3 shadow-lg"
+                style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'rgba(34,160,80,.2)',
+                    boxShadow: 'var(--shadow-green)',
+                }}
+                role="status"
+                aria-live="polite"
+            >
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-primary-dark)' }}>
+                    {message.title}
+                </p>
+                <p className="mt-1 text-sm leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+                    {message.description}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Step 1 — Email Form
 // ─────────────────────────────────────────────────────────────
-function EmailStep({ onSuccess }: { onSuccess: (email: string) => void }) {
+function EmailStep({
+    onSuccess,
+    onToast,
+}: {
+    onSuccess: (email: string) => void;
+    onToast: (message: ToastMessage) => void;
+}) {
     const [email, setEmail] = useState('');
     const [formState, setFormState] = useState<FormState>('idle');
     const [errorMsg, setErrorMsg] = useState('');
@@ -80,17 +147,26 @@ function EmailStep({ onSuccess }: { onSuccess: (email: string) => void }) {
         e.preventDefault();
         setErrorMsg('');
 
-        if (!email) { setErrorMsg('Email address is required.'); return; }
-        if (!EMAIL_REGEX.test(email)) {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail) { setErrorMsg('Email address is required.'); return; }
+        if (!EMAIL_REGEX.test(normalizedEmail)) {
             setErrorMsg('Only @cvsu.edu.ph email addresses are accepted.');
             return;
         }
-
         setFormState('loading');
-        // TODO: call POST /api/auth/forgot-password { email }
+        const reset = await requestPasswordReset(normalizedEmail).catch(() => null);
+        if (!reset) {
+            setFormState('idle');
+            setErrorMsg('No account found for this email address.');
+            return;
+        }
+        sessionStorage.removeItem(OTP_STORAGE_KEY);
+        sessionStorage.setItem(RESET_EMAIL_KEY, reset.email);
+        sessionStorage.removeItem(RESET_VERIFIED_KEY);
         await new Promise(r => setTimeout(r, 1200));
         setFormState('idle');
-        onSuccess(email);
+        onToast({ title: 'OTP Sent', description: `A reset code was sent to ${reset.email}.` });
+        onSuccess(normalizedEmail);
     }
 
     const isLoading = formState === 'loading';
@@ -126,7 +202,9 @@ function EmailStep({ onSuccess }: { onSuccess: (email: string) => void }) {
                     </span>
                     <input
                         id="email"
+                        name="email"
                         type="email"
+                        required
                         className="input-has-left-icon"
                         placeholder="yourname.lastname@cvsu.edu.ph"
                         value={email}
@@ -163,7 +241,15 @@ function EmailStep({ onSuccess }: { onSuccess: (email: string) => void }) {
 // ─────────────────────────────────────────────────────────────
 // Step 2 — OTP Verification Form
 // ─────────────────────────────────────────────────────────────
-function OtpStep({ email, onVerified }: { email: string; onVerified: () => void }) {
+function OtpStep({
+    email,
+    onVerified,
+    onToast,
+}: {
+    email: string;
+    onVerified: () => void;
+    onToast: (message: ToastMessage) => void;
+}) {
     const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
     const [formState, setFormState] = useState<FormState>('idle');
     const [errorMsg, setErrorMsg] = useState('');
@@ -220,10 +306,25 @@ function OtpStep({ email, onVerified }: { email: string; onVerified: () => void 
         }
 
         setFormState('loading');
-        // TODO: call POST /api/auth/verify-otp { email, otp: code }
+        const storedEmail = sessionStorage.getItem(RESET_EMAIL_KEY);
         await new Promise(r => setTimeout(r, 1200));
+        if (!storedEmail || storedEmail !== email) {
+            setFormState('idle');
+            setErrorMsg('Session expired. Please request a new OTP.');
+            return;
+        }
+
+        const verifyError = await verifyResetOtp(email, code).catch(() => 'Unable to verify OTP. Please try again.');
+        if (verifyError) {
+            setFormState('idle');
+            setErrorMsg(verifyError);
+            return;
+        }
+
         setFormState('idle');
-        // On success: store token / session and navigate
+        sessionStorage.setItem(OTP_STORAGE_KEY, code);
+        sessionStorage.setItem(RESET_VERIFIED_KEY, 'true');
+        onVerified();
         router.push('/reset-password');
     }
 
@@ -233,8 +334,15 @@ function OtpStep({ email, onVerified }: { email: string; onVerified: () => void 
         setErrorMsg('');
         setOtp(Array(OTP_LENGTH).fill(''));
         inputRefs.current[0]?.focus();
-        // TODO: call POST /api/auth/forgot-password { email } again
+        const reset = await requestPasswordReset(email).catch(() => null);
+        if (!reset) {
+            setErrorMsg('Unable to resend OTP. Please try again.');
+            return;
+        }
+        sessionStorage.removeItem(OTP_STORAGE_KEY);
+        sessionStorage.setItem(RESET_EMAIL_KEY, reset.email);
         await new Promise(r => setTimeout(r, 800));
+        onToast({ title: 'OTP Resent', description: `A new reset code was sent to ${reset.email}.` });
     }
 
     const isLoading = formState === 'loading';
@@ -329,8 +437,14 @@ export default function ForgotPasswordPage() {
     const [step, setStep] = useState<Step>('email');
     const [email, setEmail] = useState('');
     const [mounted, setMounted] = useState(false);
+    const [toastMessage, setToastMessage] = useState<ToastMessage | null>(null);
 
     useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        if (!toastMessage) return;
+        const timeout = setTimeout(() => setToastMessage(null), 4500);
+        return () => clearTimeout(timeout);
+    }, [toastMessage]);
 
     const stepMeta = {
         email: { num: 1, label: 'Enter Email' },
@@ -340,12 +454,23 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="page-shell relative flex items-center justify-center px-4 py-8" style={{ minHeight: '100vh' }}>
+            {toastMessage && <InlineToast message={toastMessage} />}
             <BackgroundPattern />
 
             <div
                 className="relative z-10 w-full max-w-[440px] transition-all duration-300"
                 style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(12px)' }}
             >
+                <div className="mb-6">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 text-sm font-medium transition-colors duration-150"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                        <ArrowLeftIcon />
+                        Back to Log In
+                    </Link>
+                </div>
                 {/* ── Brand ── */}
                 <div className="flex flex-col items-center text-center mb-8">
                     <div className="flex items-center gap-3 mb-5">
@@ -405,8 +530,8 @@ export default function ForgotPasswordPage() {
                 <div className="card" style={{ boxShadow: 'var(--shadow-lg)' }}>
                     <div className="card-body">
                         {step === 'email'
-                            ? <EmailStep onSuccess={em => { setEmail(em); setStep('otp'); }} />
-                            : <OtpStep email={email} onVerified={() => { }} />
+                            ? <EmailStep onSuccess={em => { setEmail(em); setStep('otp'); }} onToast={setToastMessage} />
+                            : <OtpStep email={email} onVerified={() => { }} onToast={setToastMessage} />
                         }
                     </div>
                 </div>
@@ -417,9 +542,10 @@ export default function ForgotPasswordPage() {
                     Contact your administrator for account issues.
                 </p>
                 <p className="text-center mt-2 text-[11px] tracking-wide" style={{ color: 'gray' }}>
-                    Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
+                    Salikop {APP_VERSION_LABEL} &nbsp;·&nbsp; {new Date().getFullYear()}
                 </p>
             </div>
         </div>
     );
 }
+
