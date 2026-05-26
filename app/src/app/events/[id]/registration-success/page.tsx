@@ -5,18 +5,28 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const PH_TIMEZONE = 'Asia/Manila';
 
 /* ----------------------------------------------------------------
    Helpers
    ---------------------------------------------------------------- */
+function parseEventDate(value?: string | null): Date {
+  const s = String(value ?? '').trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes('T') ? s : s.replace(' ', 'T');
+  return new Date(`${normalized}+08:00`);
+}
+
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-PH', {
+  return parseEventDate(iso).toLocaleDateString('en-PH', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+    timeZone: PH_TIMEZONE,
   });
 }
 function formatDateRange(startIso: string, endIso?: string) {
-  const start = new Date(startIso);
-  const end = new Date(endIso ?? startIso);
+  const start = parseEventDate(startIso);
+  const end = parseEventDate(endIso ?? startIso);
   const sameDay = start.toDateString() === end.toDateString();
   if (sameDay) return formatDate(startIso);
   return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
@@ -78,8 +88,8 @@ function SuccessContent() {
           title: String(e.title ?? 'Event'),
           date: startDate,
           endDate: endDate,
-          time: new Date(startDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
-          endTime: new Date(endDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          time: parseEventDate(startDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: PH_TIMEZONE }),
+          endTime: parseEventDate(endDate).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: PH_TIMEZONE }),
           venue: String(e.venue_name ?? 'TBA'),
           type: Boolean(e.is_paid) ? 'Paid' : 'Free',
           fee: Number(e.fee_amount ?? 0),

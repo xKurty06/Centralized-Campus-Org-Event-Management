@@ -6,6 +6,7 @@ import AdminShell from '@/components/AdminShell';
 import { IconRefresh } from '@/components/ui/IconRefresh';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const PH_TIMEZONE = 'Asia/Manila';
 const API_ORIGIN = (() => {
   try {
     return new URL(API_BASE_URL).origin;
@@ -70,11 +71,34 @@ const CATEGORY_STYLES: Record<OrgRow['category'], string> = {
   Religious: 'badge-green',
 };
 
+function parseEventDate(value?: string | null): Date {
+  const s = String(value ?? '').trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes('T') ? s : s.replace(' ', 'T');
+  return new Date(`${normalized}+08:00`);
+}
+
+function normalizeStatus(rawStatus?: string | null, startDate?: string | null, endDate?: string | null): EventStatus {
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate ?? startDate);
+  const now = Date.now();
+  if (!Number.isNaN(end.getTime()) && now > end.getTime()) return 'Completed';
+  const s = String(rawStatus ?? '').trim().toLowerCase();
+  if (s === 'cancelled') return 'Cancelled';
+  if (s === 'completed') return 'Completed';
+  if (s === 'closed') return 'Closed';
+  if (s === 'open') return 'Open';
+  if (s === 'upcoming') return 'Upcoming';
+  if (!Number.isNaN(start.getTime()) && now < start.getTime()) return 'Upcoming';
+  return 'Open';
+}
+
 function formatDate(iso: string) {
   if (!iso) return 'N/A';
-  const d = new Date(iso);
+  const d = parseEventDate(iso);
   if (Number.isNaN(d.getTime())) return 'N/A';
-  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: PH_TIMEZONE });
 }
 
 function normalizeImageUrl(raw?: string | null): string | null {
@@ -160,7 +184,7 @@ export default function AdminDashboardPage() {
     title: String(e.title ?? 'Untitled Event'),
     orgName: String(e.host_org_name ?? e.host_org?.name ?? 'Organization'),
     orgCode: String(e.host_org_code ?? e.host_org?.code ?? 'ORG'),
-    status: (e.effective_status ?? e.status ?? 'Upcoming') as EventStatus,
+    status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
     startDate: String(e.start_date ?? ''),
     registered: Number(e.total_registered ?? 0),
     capacity: Number(e.capacity ?? 0),
@@ -393,10 +417,10 @@ export default function AdminDashboardPage() {
                 </thead>
                 <tbody>
                   {eventsInPeriod.slice(0, 5).map((ev) => (
-                    <tr key={ev.id}>
-                      <td><p className="text-[13px] font-semibold text-[var(--color-text)] truncate max-w-[220px]">{ev.title}</p></td>
-                      <td className="hidden sm:table-cell"><p className="text-[12px] text-[var(--color-text-muted)] truncate max-w-[160px]">{ev.orgCode}</p></td>
-                      <td className="hidden md:table-cell"><p className="text-[12px] text-[var(--color-text-muted)]">{formatDate(ev.startDate)}</p></td>
+                    <tr key={ev.id} className={ev.status === 'Completed' ? 'bg-gray-50 text-gray-400' : undefined}>
+                      <td><p className={`text-[13px] font-semibold truncate max-w-[220px] ${ev.status === 'Completed' ? 'text-gray-500' : 'text-[var(--color-text)]'}`}>{ev.title}</p></td>
+                      <td className="hidden sm:table-cell"><p className={`text-[12px] truncate max-w-[160px] ${ev.status === 'Completed' ? 'text-gray-400' : 'text-[var(--color-text-muted)]'}`}>{ev.orgCode}</p></td>
+                      <td className="hidden md:table-cell"><p className={`text-[12px] ${ev.status === 'Completed' ? 'text-gray-400' : 'text-[var(--color-text-muted)]'}`}>{formatDate(ev.startDate)}</p></td>
                       <td><div className="w-[120px]"><StatusMiniBar registered={ev.registered} capacity={ev.capacity} /></div></td>
                       <td><span className={`badge ${STATUS_STYLES[ev.status]}`}>{ev.status}</span></td>
                     </tr>

@@ -29,6 +29,15 @@ type EventStatus =
   | 'Completed'
   | 'Cancelled';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = 'Asia/Manila';
+
+function parseEventDate(value: string): Date {
+  const s = String(value ?? '').trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes('T') ? s : s.replace(' ', 'T');
+  return new Date(`${normalized}+08:00`);
+}
 
 let API_ORIGIN = "";
 try {
@@ -63,21 +72,23 @@ function normalizeBannerUrl(raw?: string | null) {
 
 function getEventStatus(startDate: string, endDate: string): EventStatus {
   const now = new Date();
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate);
   if (now < start) return 'Upcoming';
   if (now > end) return 'Completed';
   return 'Open';
 }
 
 function mapApiStatus(value: unknown, startDate: string, endDate: string): EventStatus {
+  const derived = getEventStatus(startDate, endDate);
+  if (derived === 'Completed') return 'Completed';
   const raw = String(value ?? '').trim().toLowerCase();
   if (raw === 'upcoming') return 'Upcoming';
   if (raw === 'open') return 'Open';
   if (raw === 'closed') return 'Closed';
   if (raw === 'completed') return 'Completed';
   if (raw === 'cancelled') return 'Cancelled';
-  return getEventStatus(startDate, endDate);
+  return derived;
 }
 
 function getStatusBadgeColor(status: EventStatus): string {
@@ -134,16 +145,17 @@ interface CampusEvent {
    Helpers
    ---------------------------------------------------------------- */
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-PH', {
+  return parseEventDate(iso).toLocaleDateString('en-PH', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: PH_TIMEZONE,
   });
 }
 function formatDateRange(startIso: string, endIso?: string) {
-  const start = new Date(startIso);
-  const end = new Date(endIso ?? startIso);
+  const start = parseEventDate(startIso);
+  const end = parseEventDate(endIso ?? startIso);
   const sameDay = start.toDateString() === end.toDateString();
   if (sameDay) return formatDate(startIso);
   return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
@@ -313,8 +325,8 @@ export default function EventDetailPage() {
             : (e.payment_status === 'Pending' || e.payment_status === 'Paid' ? e.payment_status : null),
         orgCategory: (e.organization_category ?? 'Non-Academic') as 'Academic' | 'Non-Academic' | 'Religious',
         date: String(e.start_date ?? new Date().toISOString()),
-        time: new Date(e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        endTime: new Date(e.end_date ?? e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        time: parseEventDate(String(e.start_date ?? new Date().toISOString())).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: PH_TIMEZONE }),
+        endTime: parseEventDate(String(e.end_date ?? e.start_date ?? new Date().toISOString())).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: PH_TIMEZONE }),
         startDate: startDate,
         endDate: endDate,
         status: mapApiStatus(e.effective_status ?? e.status, startDate, endDate),
@@ -334,6 +346,23 @@ export default function EventDetailPage() {
       setLoading(false);
     })();
   }, [eventId]);
+
+  useEffect(() => {
+    if (!currentEvent) return;
+    if (currentEvent.status === 'Completed' || currentEvent.status === 'Cancelled') return;
+
+    const syncCompletedStatus = () => {
+      setCurrentEvent((prev) => {
+        if (!prev) return prev;
+        const resolvedStatus = mapApiStatus(prev.status, prev.startDate, prev.endDate);
+        return resolvedStatus === prev.status ? prev : { ...prev, status: resolvedStatus };
+      });
+    };
+
+    syncCompletedStatus();
+    const intervalId = window.setInterval(syncCompletedStatus, 30000);
+    return () => window.clearInterval(intervalId);
+  }, [currentEvent]);
 
   if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500 text-center">Loading event...</div>;
 
@@ -645,6 +674,14 @@ export default function EventDetailPage() {
                     >
                       Sign In to Register
                     </button>
+                  ) : displayStatus === 'Completed' || displayStatus === 'Closed' || displayStatus === 'Cancelled' ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
+                    >
+                      {displayStatus === 'Cancelled' ? 'Event Cancelled' : displayStatus === 'Completed' ? 'Event Completed' : 'Registration Closed'}
+                    </button>
                   ) : event.is_registered ? (
                     <button
                       type="button"
@@ -679,14 +716,6 @@ export default function EventDetailPage() {
                       className="w-full flex items-center justify-center gap-2 bg-blue-100 text-blue-600 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
                     >
                       Coming Soon
-                    </button>
-                  ) : displayStatus === 'Completed' || displayStatus === 'Closed' || displayStatus === 'Cancelled' ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-500 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
-                    >
-                      {displayStatus === 'Cancelled' ? 'Event Cancelled' : displayStatus === 'Completed' ? 'Event Completed' : 'Registration Closed'}
                     </button>
                   ) : (
                     <button

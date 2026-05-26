@@ -38,6 +38,7 @@ interface MyRegistration {
   event_start_date: string;
   event_end_date: string;
   event_is_paid: boolean;
+  event_fee_amount: number;
   venue_name: string;
   category_name: EventCategory;
   org_name: string;
@@ -112,6 +113,9 @@ function getEventWindowBadge(startIso: string, endIso: string): string | null {
   if (Number.isNaN(startMs) || Number.isNaN(endMs)) return null;
   if (startMs <= nowMs && nowMs <= endMs) return "Ongoing";
   return daysUntil(startIso);
+}
+function formatPrice(value?: number) {
+  return Number(value ?? 0).toLocaleString("en-PH");
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
@@ -207,13 +211,14 @@ function RegistrationCard({
   const statusPill = getStatusPill(reg);
   const countdown = isUpcomingTab ? getEventWindowBadge(reg.event_start_date, reg.event_end_date) : null;
   const showUpload = needsUpload(reg);
+  const isCompleted = reg.event_status === "Completed";
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className={`rounded-xl border overflow-hidden ${isCompleted ? "bg-gray-50 border-gray-200 opacity-75" : "bg-white border-gray-200"}`}>
       <div className="flex flex-col sm:flex-row">
 
         {/* ── Banner column ── */}
-        <div className="relative sm:w-[110px] h-36 sm:h-auto flex-shrink-0 overflow-hidden bg-gray-100">
+        <div className={`relative sm:w-[110px] h-36 sm:h-auto flex-shrink-0 overflow-hidden bg-gray-100 ${isCompleted ? "grayscale" : ""}`}>
           <EventBanner
             bannerUrl={reg.banner_url}
             category={reg.category_name}
@@ -240,7 +245,7 @@ function RegistrationCard({
               {reg.category_name}
             </span>
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${reg.event_is_paid ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"}`}>
-              {reg.event_is_paid ? "Paid" : "Free"}
+              {reg.event_is_paid ? `₱ ${formatPrice(reg.event_fee_amount)}` : "Free"}
             </span>
             <span className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusPill.style}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${statusPill.dot}`} />
@@ -250,7 +255,7 @@ function RegistrationCard({
 
           <Link
             href={`/events/${reg.event_slug ?? reg.event_id}`}
-            className="text-[15px] font-semibold text-gray-900 hover:text-green-700 no-underline line-clamp-1"
+            className={`text-[15px] font-semibold no-underline line-clamp-1 ${isCompleted ? "text-gray-600" : "text-gray-900 hover:text-green-700"}`}
           >
             {reg.event_title}
           </Link>
@@ -345,6 +350,7 @@ export default function MyEventsPage() {
           event_start_date: String(r.event_start_date ?? new Date().toISOString()),
           event_end_date: String(r.event_end_date ?? r.event_start_date ?? new Date().toISOString()),
           event_is_paid: Boolean(r.event_is_paid),
+          event_fee_amount: Number(r.event_fee_amount ?? 0),
           venue_name: String(r.venue_name ?? "TBA"),
           category_name: (r.category_name ?? "Other") as EventCategory,
           org_name: String(r.org_name ?? ""),
@@ -378,7 +384,7 @@ export default function MyEventsPage() {
 
   const displayed = activeTab === "upcoming" ? upcomingRegs : pastRegs;
   const totalConfirmed = rows.filter((r) => !r.event_is_paid || r.payment_status === "Paid").length;
-  const totalPending = rows.filter((r) => r.event_is_paid && r.payment_status === "Pending").length;
+  const totalPending = rows.filter((r) => r.event_is_paid && r.payment_status === "Pending" && isUpcoming(r)).length;
   const totalNeedAction = rows.filter(needsUpload).length;
   const totalCheckedIn = rows.filter((r) => r.attendance_status === "Checked_In").length;
 
@@ -412,7 +418,7 @@ export default function MyEventsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Stat value={rows.length} label="Total registered" />
               <Stat value={totalConfirmed} label="Confirmed" color="text-green-700" bg="bg-green-50 border-green-200" />
-              <Stat value={totalPending} label="Pending payment" color="text-amber-700" bg="bg-amber-50 border-amber-200" />
+              <Stat value={totalPending} label="Pending Payments" color="text-amber-700" bg="bg-amber-50 border-amber-200" />
               <Stat value={totalCheckedIn} label="Attended" color="text-blue-700" bg="bg-blue-50 border-blue-200" />
             </div>
 

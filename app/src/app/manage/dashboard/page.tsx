@@ -60,6 +60,7 @@ const RECENT_LIMIT = 4;
 /* ----------------------------------------------------------------
    Helpers
    ---------------------------------------------------------------- */
+<<<<<<< HEAD
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 const PH_TIMEZONE = "Asia/Manila";
@@ -69,6 +70,16 @@ function parseEventDate(value: string): Date {
   if (!s) return new Date(NaN);
   if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
   const normalized = s.includes("T") ? s : s.replace(" ", "T");
+=======
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+const PH_TIMEZONE = 'Asia/Manila';
+
+function parseEventDate(value: string): Date {
+  const s = String(value ?? '').trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes('T') ? s : s.replace(' ', 'T');
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
   return new Date(`${normalized}+08:00`);
 }
 const API_ORIGIN = (() => {
@@ -94,6 +105,7 @@ function normalizeImageUrl(raw?: string | null): string | null {
 }
 
 function formatDate(iso: string) {
+<<<<<<< HEAD
   return parseEventDate(iso).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
@@ -108,6 +120,12 @@ function formatTime(iso: string) {
     hour12: true,
     timeZone: PH_TIMEZONE,
   });
+=======
+  return parseEventDate(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: PH_TIMEZONE });
+}
+function formatTime(iso: string) {
+  return parseEventDate(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: PH_TIMEZONE });
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
 }
 function formatDateTimeRange(startIso: string, endIso?: string) {
   const start = parseEventDate(startIso);
@@ -155,6 +173,7 @@ const STATUS_CONFIG: Record<EventStatus, { label: string; style: string }> = {
   },
 };
 
+<<<<<<< HEAD
 function normalizeStatus(
   rawStatus: unknown,
   startDate: string,
@@ -176,6 +195,22 @@ function normalizeStatus(
   if (!Number.isNaN(start.getTime()) && now < start.getTime())
     return "Upcoming";
   return "Open";
+=======
+function normalizeStatus(rawStatus: unknown, startDate: string, endDate?: string): EventStatus {
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate ?? startDate);
+  const now = Date.now();
+  if (!Number.isNaN(end.getTime()) && now > end.getTime()) return 'Completed';
+
+  const value = String(rawStatus ?? '').trim().toLowerCase();
+  if (value === 'cancelled') return 'Cancelled';
+  if (value === 'completed') return 'Completed';
+  if (value === 'closed') return 'Closed';
+  if (value === 'open') return 'Open';
+  if (value === 'upcoming') return 'Upcoming';
+  if (!Number.isNaN(start.getTime()) && now < start.getTime()) return 'Upcoming';
+  return 'Open';
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
 }
 
 /* ----------------------------------------------------------------
@@ -235,6 +270,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
   const isFull = fill >= 100;
   const days = daysUntil(event.start_date);
   const status = STATUS_CONFIG[event.status];
+<<<<<<< HEAD
   const isCompleted = event.status === "Completed";
 
   return (
@@ -242,6 +278,14 @@ function EventCard({ event }: { event: ManagedEvent }) {
     <div
       className={`rounded-xl border p-5 flex flex-col gap-3 transition-shadow ${isCompleted ? "bg-gray-50 border-gray-200 opacity-75" : "bg-white border-gray-200 hover:shadow-sm"}`}
     >
+=======
+  const isCompleted = event.status === 'Completed';
+
+  return (
+    /* Title row clicks through to event overview */
+    <div className={`rounded-xl border p-5 flex flex-col gap-3 transition-shadow ${isCompleted ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-gray-200 hover:shadow-sm'}`}>
+
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
       {/* Badges + countdown */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -275,7 +319,11 @@ function EventCard({ event }: { event: ManagedEvent }) {
       {/* Title — links to event overview */}
       <Link
         href={`/manage/events/${event.slug ?? event.id}`}
+<<<<<<< HEAD
         className={`text-[15px] font-bold leading-snug transition-colors no-underline ${isCompleted ? "text-gray-600" : "text-gray-900 hover:text-green-700"}`}
+=======
+        className={`text-[15px] font-bold leading-snug transition-colors no-underline ${isCompleted ? 'text-gray-600' : 'text-gray-900 hover:text-green-700'}`}
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
       >
         {event.title}
       </Link>
@@ -444,6 +492,7 @@ export default function ManageDashboardPage() {
         });
       }
 
+<<<<<<< HEAD
       setEvents(
         eventsData.map((e: any) => ({
           id: e.id,
@@ -479,6 +528,25 @@ export default function ManageDashboardPage() {
           ? activeMembersFromMembersApi
           : Number(orgData?.active_member_count ?? orgData?.members_count ?? 0),
       );
+=======
+      setEvents(eventsData.map((e: any) => ({
+        id: e.id,
+        slug: e.slug ?? e.id,
+        title: e.title ?? 'Untitled Event',
+        category: e.category_name ?? 'Other',
+        start_date: e.start_date,
+        end_date: e.end_date ?? e.start_date,
+        venue_name: e.venue_name ?? 'TBA',
+        status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
+        is_paid: Boolean(e.is_paid),
+        capacity: Number(e.capacity ?? 0),
+        total_registered: Number(e.total_registered ?? 0),
+        total_paid: Number(e.total_paid ?? 0),
+        total_pending: Number(e.total_pending ?? 0),
+        proofs_pending_review: Number(e.proofs_pending_review ?? 0),
+      })));
+      setActiveMembers(Number(orgData?.active_member_count ?? 0));
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
       setIsLoading(false);
     })();
   }, []);
@@ -498,6 +566,7 @@ export default function ManageDashboardPage() {
         data?: any[];
       } | null;
       const eventsData = Array.isArray(payload?.data) ? payload.data : [];
+<<<<<<< HEAD
       setEvents(
         eventsData.map((e: any) => ({
           id: e.id,
@@ -520,6 +589,24 @@ export default function ManageDashboardPage() {
           proofs_pending_review: Number(e.proofs_pending_review ?? 0),
         })),
       );
+=======
+      setEvents(eventsData.map((e: any) => ({
+        id: e.id,
+        slug: e.slug ?? e.id,
+        title: e.title ?? 'Untitled Event',
+        category: e.category_name ?? 'Other',
+        start_date: e.start_date,
+        end_date: e.end_date ?? e.start_date,
+        venue_name: e.venue_name ?? 'TBA',
+        status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
+        is_paid: Boolean(e.is_paid),
+        capacity: Number(e.capacity ?? 0),
+        total_registered: Number(e.total_registered ?? 0),
+        total_paid: Number(e.total_paid ?? 0),
+        total_pending: Number(e.total_pending ?? 0),
+        proofs_pending_review: Number(e.proofs_pending_review ?? 0),
+      })));
+>>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
     } finally {
       setRefreshingRecent(false);
     }

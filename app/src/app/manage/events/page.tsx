@@ -40,6 +40,7 @@ interface ManagedEvent {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = "Asia/Manila";
 const ALL_STATUSES: EventStatus[] = [
   "Upcoming",
   "Open",
@@ -66,38 +67,63 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "registered_desc", label: "Most registered" },
 ];
 
+function parseEventDate(value?: string | null): Date {
+  const s = String(value ?? "").trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes("T") ? s : s.replace(" ", "T");
+  return new Date(`${normalized}+08:00`);
+}
+
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-PH", {
+  return parseEventDate(iso).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: PH_TIMEZONE,
   });
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-PH", {
+  return parseEventDate(iso).toLocaleTimeString("en-PH", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: PH_TIMEZONE,
   });
 }
 function formatDateTimeRange(startIso: string, endIso?: string) {
-  const start = new Date(startIso);
-  const end = new Date(endIso ?? startIso);
+  const start = parseEventDate(startIso);
+  const end = parseEventDate(endIso ?? startIso);
   const sameDay = start.toDateString() === end.toDateString();
   if (sameDay) return `${formatDate(startIso)} - ${formatTime(startIso)} to ${formatTime(end.toISOString())}`;
   return `${formatDate(startIso)} ${formatTime(startIso)} - ${formatDate(end.toISOString())} ${formatTime(end.toISOString())}`;
 }
 
 function daysUntil(iso: string) {
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  return Math.ceil((parseEventDate(iso).getTime() - Date.now()) / 86400000);
 }
 
 function isOngoing(startIso: string, endIso: string) {
   const now = Date.now();
-  const start = new Date(startIso).getTime();
-  const end = new Date(endIso).getTime();
+  const start = parseEventDate(startIso).getTime();
+  const end = parseEventDate(endIso).getTime();
   return start <= now && now <= end;
+}
+
+function normalizeStatus(rawStatus?: string | null, startDate?: string | null, endDate?: string | null): EventStatus {
+  const s = String(rawStatus ?? "").trim().toLowerCase();
+  if (s === "upcoming") return "Upcoming";
+  if (s === "open") return "Open";
+  if (s === "closed" || s === "full") return "Closed";
+  if (s === "completed") return "Completed";
+  if (s === "cancelled") return "Cancelled";
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate ?? startDate);
+  const now = Date.now();
+  if (!Number.isNaN(end.getTime()) && now > end.getTime()) return "Completed";
+  if (!Number.isNaN(start.getTime()) && now < start.getTime()) return "Upcoming";
+  return "Open";
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
@@ -143,11 +169,16 @@ function EventRow({ event }: { event: ManagedEvent }) {
   const days = daysUntil(event.start_date);
   const status = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.Upcoming;
   const ongoing = isOngoing(event.start_date, event.end_date);
+  const isCompleted = event.status === "Completed";
 
   return (
     <Link
       href={`/manage/events/${event.slug ?? event.id}`}
-      className="group flex flex-col sm:flex-row sm:items-center gap-3 bg-white border border-gray-200 hover:border-green-300 hover:bg-green-50/30 rounded-xl px-5 py-4 transition-all no-underline"
+      className={`group flex flex-col sm:flex-row sm:items-center gap-3 border rounded-xl px-5 py-4 transition-all no-underline ${
+        isCompleted
+          ? "bg-gray-50 border-gray-200 opacity-75"
+          : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50/30"
+      }`}
     >
       <div className="flex-1 min-w-0 flex flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -176,7 +207,7 @@ function EventRow({ event }: { event: ManagedEvent }) {
           )}
         </div>
 
-        <p className="text-[14px] font-bold text-gray-900 group-hover:text-green-800 transition-colors truncate">
+        <p className={`text-[14px] font-bold transition-colors truncate ${isCompleted ? "text-gray-600" : "text-gray-900 group-hover:text-green-800"}`}>
           {event.title}
         </p>
 
@@ -294,7 +325,7 @@ export default function ManageEventsPage() {
             e.end_date ?? e.start_date ?? new Date().toISOString(),
           ),
           venue_name: String(e.venue_name ?? "TBA"),
-          status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
+          status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
           is_paid: Boolean(e.is_paid),
           capacity: Number(e.capacity ?? 0),
           total_registered: Number(e.total_registered ?? 0),
@@ -326,11 +357,11 @@ export default function ManageEventsPage() {
     result.sort((a, b) => {
       if (sort === "date_asc")
         return (
-          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+          parseEventDate(a.start_date).getTime() - parseEventDate(b.start_date).getTime()
         );
       if (sort === "date_desc")
         return (
-          new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+          parseEventDate(b.start_date).getTime() - parseEventDate(a.start_date).getTime()
         );
       if (sort === "title_asc") return a.title.localeCompare(b.title);
       return b.total_registered - a.total_registered;

@@ -39,6 +39,30 @@ interface AudienceOption {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = "Asia/Manila";
+
+function parseEventDate(value?: string | null): Date {
+  const s = String(value ?? "").trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes("T") ? s : s.replace(" ", "T");
+  return new Date(`${normalized}+08:00`);
+}
+
+function normalizeStatus(rawStatus?: string | null, startDate?: string | null, endDate?: string | null): EventStatus {
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate ?? startDate);
+  const now = Date.now();
+  if (!Number.isNaN(end.getTime()) && now > end.getTime()) return "Completed";
+  const s = String(rawStatus ?? "").trim().toLowerCase();
+  if (s === "cancelled") return "Cancelled";
+  if (s === "completed") return "Completed";
+  if (s === "closed") return "Closed";
+  if (s === "open") return "Open";
+  if (s === "upcoming") return "Upcoming";
+  if (!Number.isNaN(start.getTime()) && now < start.getTime()) return "Upcoming";
+  return "Open";
+}
 
 function normalizeBannerUrl(raw?: string | null) {
   if (!raw) return '';
@@ -56,16 +80,17 @@ function normalizeBannerUrl(raw?: string | null) {
 }
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString("en-PH", {
+  return parseEventDate(iso).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: PH_TIMEZONE,
   });
 }
 
 function toLocalDatetimeInput(value?: string | null): string {
   if (!value) return "";
-  const d = new Date(value);
+  const d = parseEventDate(value);
   if (Number.isNaN(d.getTime())) return "";
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -393,7 +418,7 @@ export default function EditEventPage() {
             : "CvSU_Only",
         is_paid: Boolean(e.is_paid),
         payment_instructions: String(e.payment_instructions ?? ""),
-        status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
+        status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
         venue_id: Number(e.venue_id ?? 1),
         category_id: Number(e.category_id ?? 8),
         banner_url: normalizeBannerUrl(e.banner_url ?? ""),

@@ -51,6 +51,26 @@ interface EventMeta {
 
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = "Asia/Manila";
+
+function parseEventDate(value?: string | null): Date {
+    const s = String(value ?? "").trim();
+    if (!s) return new Date(NaN);
+    if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+    const normalized = s.includes("T") ? s : s.replace(" ", "T");
+    return new Date(`${normalized}+08:00`);
+}
+
+function normalizeStatus(rawStatus?: string | null, startDate?: string | null, endDate?: string | null): string {
+    const start = parseEventDate(startDate);
+    const end = parseEventDate(endDate ?? startDate);
+    const now = Date.now();
+    if (!Number.isNaN(end.getTime()) && now > end.getTime()) return "Completed";
+    const s = String(rawStatus ?? "").trim();
+    if (s) return s;
+    if (!Number.isNaN(start.getTime()) && now < start.getTime()) return "Upcoming";
+    return "Open";
+}
 function normalizeAssetUrl(raw?: string | null) {
     if (!raw) return "";
     const s = String(raw).trim();
@@ -65,16 +85,18 @@ function normalizeAssetUrl(raw?: string | null) {
     }
 }
 function fmt(iso: string) {
-    return new Date(iso).toLocaleDateString("en-PH", {
+    return parseEventDate(iso).toLocaleDateString("en-PH", {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: PH_TIMEZONE,
     });
 }
 function fmtTime(iso: string) {
-    return new Date(iso).toLocaleTimeString("en-PH", {
+    return parseEventDate(iso).toLocaleTimeString("en-PH", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: PH_TIMEZONE,
     });
 }
 
@@ -271,7 +293,7 @@ export default function ParticipantsPage() {
                     payload.event.start_date ?? new Date().toISOString(),
                 ),
                 capacity: Number(payload.event.capacity ?? 0),
-                status: String(payload.event.effective_status ?? payload.event.status ?? "Upcoming"),
+                status: normalizeStatus(payload.event.effective_status ?? payload.event.status, payload.event.start_date, payload.event.end_date),
             });
         setError("");
         setLoading(false);

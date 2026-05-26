@@ -11,6 +11,7 @@ use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\OrgOfficerResource;
+use App\Services\EventStatusService;
 use App\Support\RouteKeyResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,10 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
+    public function __construct(private readonly EventStatusService $eventStatusService)
+    {
+    }
+
     private function deleteOrganizationLogoFromStorage(?string $logoUrl): void
     {
         if (!$logoUrl) {
@@ -149,6 +154,7 @@ class AdminController extends Controller
     public function dashboard(Request $req)
     {
         try {
+            $this->eventStatusService->markEndedEventsCompleted();
             $summary = DB::table('events')
                 ->select(
                     DB::raw('COUNT(*) as total_events'),
@@ -282,6 +288,7 @@ class AdminController extends Controller
                         'joined_count' => (int) $row->joined_count,
                     ];
                 });
+            $this->eventStatusService->markEndedEventsCompleted(orgId: $orgId);
             $events   = DB::table('events')->where('host_org_id', $orgId)->get();
 
             return response()->json([
@@ -551,6 +558,7 @@ class AdminController extends Controller
     public function events(Request $req)
     {
         try {
+            $this->eventStatusService->markEndedEventsCompleted();
             $perPage = (int) $req->query('per_page', 15);
             $query = DB::table('events as e')
                 ->leftJoin('event_categories as ec', 'e.category_id', '=', 'ec.id')

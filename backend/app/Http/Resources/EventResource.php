@@ -7,11 +7,13 @@ use Illuminate\Support\Carbon;
 
 class EventResource extends JsonResource
 {
+    private const PH_TIMEZONE = 'Asia/Manila';
+
     private function parseEventDate($value): ?Carbon
     {
         if (!$value) return null;
         try {
-            return Carbon::parse((string) $value);
+            return Carbon::parse((string) $value, self::PH_TIMEZONE);
         } catch (\Throwable) {
             return null;
         }
@@ -26,7 +28,7 @@ class EventResource extends JsonResource
             return $status;
         }
 
-        $now = now();
+        $now = Carbon::now(self::PH_TIMEZONE);
         $eventEnd = $endAt ?? $startAt;
         if ($eventEnd && $eventEnd->lt($now)) {
             return 'Completed';
@@ -96,7 +98,7 @@ class EventResource extends JsonResource
             'status' => $rawStatus,
             'effective_status' => $effectiveStatus,
             'is_active' => $isActive,
-            'is_past' => $endAt ? $endAt->lt(now()) : null,
+            'is_past' => $endAt ? $endAt->lt(Carbon::now(self::PH_TIMEZONE)) : null,
             'total_registered' => isset($this->total_registered) ? (int) $this->total_registered : 0,
             'total_paid' => isset($this->total_paid) ? (int) $this->total_paid : 0,
             'total_pending' => isset($this->total_pending) ? (int) $this->total_pending : 0,

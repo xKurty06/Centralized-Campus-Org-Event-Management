@@ -12,6 +12,7 @@ use App\Http\Resources\OrganizationResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\OrgOfficerResource;
 use App\Http\Resources\RegistrationResource;
+use App\Services\EventStatusService;
 use App\Services\NotificationService;
 use App\Support\RouteKeyResolver;
 use Illuminate\Http\Request;
@@ -22,6 +23,10 @@ use Illuminate\Support\Str;
 
 class ManageController extends Controller
 {
+    public function __construct(private readonly EventStatusService $eventStatusService)
+    {
+    }
+
     private function deletePublicManagedImage(?string $url, string $expectedPrefix): void
     {
         if (!$url) {
@@ -134,6 +139,7 @@ class ManageController extends Controller
             if (!$orgRow) {
                 return response()->json(['success' => false, 'error' => 'Officer organization not found.'], 404);
             }
+            $this->eventStatusService->markEndedEventsCompleted(orgId: $orgRow->org_id);
 
             $perPage = (int) $req->query('per_page', 15);
             $events = DB::table('events')
@@ -278,6 +284,8 @@ class ManageController extends Controller
             if (!$eventAccess) {
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $this->eventStatusService->markEndedEventsCompleted((string) $eventAccess->event->id);
+            $eventAccess->event = DB::table('events')->where('id', $eventAccess->event->id)->first();
             $row = $this->buildEventRow($eventAccess->event);
             return response()->json(['success' => true, 'data' => new EventResource($row)]);
         } catch (\Exception $e) {
@@ -338,6 +346,7 @@ class ManageController extends Controller
             DB::table('events')
                 ->where('id', $resolvedEventId)
                 ->update(array_merge($data, ['updated_at' => now()]));
+            $this->eventStatusService->markEndedEventsCompleted($resolvedEventId);
 
             $nextStatus = $data['status'] ?? null;
             if ($nextStatus === 'Cancelled' && ($event->status ?? null) !== 'Cancelled') {
@@ -409,6 +418,7 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
             $resolvedEventId = (string) $eventAccess->event->id;
+            $this->eventStatusService->markEndedEventsCompleted($resolvedEventId);
 
             $perPage = (int) $req->query('per_page', 15);
             $filter  = $req->query('filter', 'all');

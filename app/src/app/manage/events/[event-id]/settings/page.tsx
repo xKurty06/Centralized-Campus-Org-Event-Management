@@ -25,17 +25,42 @@ interface EventDetail {
 
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = "Asia/Manila";
+
+function parseEventDate(value?: string | null): Date {
+    const s = String(value ?? "").trim();
+    if (!s) return new Date(NaN);
+    if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+    const normalized = s.includes("T") ? s : s.replace(" ", "T");
+    return new Date(`${normalized}+08:00`);
+}
+
+function normalizeStatus(rawStatus?: string | null, startDate?: string | null, endDate?: string | null): EventStatus {
+    const start = parseEventDate(startDate);
+    const end = parseEventDate(endDate ?? startDate);
+    const now = Date.now();
+    if (!Number.isNaN(end.getTime()) && now > end.getTime()) return "Completed";
+    const s = String(rawStatus ?? "").trim().toLowerCase();
+    if (s === "cancelled") return "Cancelled";
+    if (s === "completed") return "Completed";
+    if (s === "closed") return "Closed";
+    if (s === "open") return "Open";
+    if (s === "upcoming") return "Upcoming";
+    if (!Number.isNaN(start.getTime()) && now < start.getTime()) return "Upcoming";
+    return "Open";
+}
 
 function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("en-PH", {
+    return parseEventDate(iso).toLocaleDateString("en-PH", {
         month: "long",
         day: "numeric",
         year: "numeric",
+        timeZone: PH_TIMEZONE,
     });
 }
 function formatDateRange(startIso: string, endIso?: string) {
-    const start = new Date(startIso);
-    const end = new Date(endIso ?? startIso);
+    const start = parseEventDate(startIso);
+    const end = parseEventDate(endIso ?? startIso);
     const sameDay = start.toDateString() === end.toDateString();
     if (sameDay) return formatDate(startIso);
     return `${formatDate(startIso)} - ${formatDate(end.toISOString())}`;
@@ -318,7 +343,7 @@ export default function EventSettingsPage() {
             id: String(e.id ?? eventId),
             slug: e.slug ? String(e.slug) : String(e.id ?? eventId),
             title: String(e.title ?? "Untitled Event"),
-            status: (e.effective_status ?? e.status ?? "Upcoming") as EventStatus,
+            status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
             start_date: String(e.start_date ?? new Date().toISOString()),
             end_date: String(e.end_date ?? e.start_date ?? new Date().toISOString()),
             total_registered: Number(e.total_registered ?? 0),
