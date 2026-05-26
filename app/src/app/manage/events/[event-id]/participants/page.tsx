@@ -7,6 +7,8 @@ import ManageShell from "@/components/ManageShell";
 import Link from "next/link";
 // Adjust this import path according to your actual components folder structure
 import { IconRefresh } from "@/components/ui/IconRefresh";
+import { ParticipantsPageSkeleton } from "@/components/skeletons";
+import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
 type PaymentSelection = "Online" | "On-site" | "N/A";
 type PaymentStatus = "Pending" | "Paid";
@@ -226,10 +228,7 @@ export default function ParticipantsPage() {
         const res = await fetch(
             `${API_BASE_URL}/manage/participants/${eventId}?per_page=300`,
             {
-                headers: {
-                    Accept: "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: manageRequestHeaders(token),
             },
         ).catch(() => null);
         const payload = (await res?.json().catch(() => null)) as any;
@@ -312,10 +311,7 @@ export default function ParticipantsPage() {
         const res = await fetch(
             `${API_BASE_URL}/manage/participants/${eventId}?per_page=300`,
             {
-                headers: {
-                    Accept: "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: manageRequestHeaders(token),
             },
         ).catch(() => null);
         const payload = (await res?.json().catch(() => null)) as any;
@@ -393,7 +389,7 @@ export default function ParticipantsPage() {
         if (!token) throw new Error("Session missing. Please sign in again.");
         const res = await fetch(url, {
             method,
-            headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+            headers: manageRequestHeaders(token),
         });
         const payload = (await res.json().catch(() => null)) as any;
         if (!res.ok || !payload?.success)
@@ -504,11 +500,9 @@ export default function ParticipantsPage() {
                     </div>
                 )}
                 {loading ? (
-                    <div className="text-sm text-gray-500 text-center">
-                        Loading participants...
-                    </div>
+                    <ParticipantsPageSkeleton />
                 ) : (
-                    <>
+                    <div className="flex flex-col gap-6 animate-content-reveal">
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-col">
                                 <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
@@ -791,7 +785,7 @@ export default function ParticipantsPage() {
                             </div>
                             </section>
                         )}
-                    </>
+                    </div>
                 )}
             </div>
             {previewImageUrl && (

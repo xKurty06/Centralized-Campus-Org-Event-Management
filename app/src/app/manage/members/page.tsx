@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import ManageShell from '@/components/ManageShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 import { IconRefresh } from '@/components/ui/IconRefresh';
+import { ManageMembersStatsSkeleton, ManageMembersTableRowsSkeleton } from '@/components/skeletons';
+import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
 /* ----------------------------------------------------------------
    Schema reference — Org_Members table
@@ -218,7 +220,7 @@ export default function ManageMembersPage() {
         else setLoading(true);
 
         const res = await fetch(`${API_BASE_URL}/manage/members`, {
-            headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            headers: manageRequestHeaders(token),
         }).catch(() => null);
         const payload = await res?.json().catch(() => null) as { success?: boolean; data?: any[]; error?: string } | null;
         if (!res || !res.ok || !payload?.success || !Array.isArray(payload.data)) {
@@ -283,7 +285,7 @@ export default function ManageMembersPage() {
         setAddLoading(true);
         const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
         const res = await fetch(`${API_BASE_URL}/manage/members/lookup?school_id=${encodeURIComponent(addSchoolId.trim())}`, {
-            headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            headers: manageRequestHeaders(token ?? ''),
         }).catch(() => null);
         const payload = await res?.json().catch(() => null) as { success?: boolean; data?: any; error?: string } | null;
         setAddLoading(false);
@@ -307,7 +309,7 @@ export default function ManageMembersPage() {
         const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
         const res = await fetch(`${API_BASE_URL}/manage/members`, {
             method: 'POST',
-            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { ...manageRequestHeaders(token ?? ''), 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: lookupResult.userId }),
         }).catch(() => null);
         const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
@@ -327,7 +329,7 @@ export default function ManageMembersPage() {
         const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
         const res = await fetch(`${API_BASE_URL}/manage/members/${feeTarget.id}`, {
             method: 'PATCH',
-            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { ...manageRequestHeaders(token ?? ''), 'Content-Type': 'application/json' },
             body: JSON.stringify({ paid_membership_fee: next }),
         }).catch(() => null);
         const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
@@ -351,7 +353,7 @@ export default function ManageMembersPage() {
         const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
         const res = await fetch(`${API_BASE_URL}/manage/members/${statusTarget.id}`, {
             method: 'PATCH',
-            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            headers: { ...manageRequestHeaders(token ?? ''), 'Content-Type': 'application/json' },
             body: JSON.stringify({ membership_status: pendingStatus }),
         }).catch(() => null);
         const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
@@ -426,13 +428,17 @@ export default function ManageMembersPage() {
 
 
                 {/* ── Stat Cards ── */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    <StatCard label="Total" value={stats.total} color="blue" />
-                    <StatCard label="Active" value={stats.active} color="green" />
-                    <StatCard label="Pending" value={stats.pending} color="yellow" />
-                    <StatCard label="Inactive" value={stats.inactive} color="gray" />
-                    <StatCard label="Fee Paid" value={`${stats.feePaid} / ${stats.total}`} color="teal" />
-                </div>
+                {loading ? (
+                    <ManageMembersStatsSkeleton />
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 animate-content-reveal">
+                        <StatCard label="Total" value={stats.total} color="blue" />
+                        <StatCard label="Active" value={stats.active} color="green" />
+                        <StatCard label="Pending" value={stats.pending} color="yellow" />
+                        <StatCard label="Inactive" value={stats.inactive} color="gray" />
+                        <StatCard label="Fee Paid" value={`${stats.feePaid} / ${stats.total}`} color="teal" />
+                    </div>
+                )}
 
                 {/* ── Filters ── */}
                 {/* ── Filters ─────────────────────────────────────────────── */}
@@ -572,8 +578,10 @@ export default function ManageMembersPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.length === 0 ? (
-                                    <tr>
+                                {loading ? (
+                                    <ManageMembersTableRowsSkeleton />
+                                ) : filtered.length === 0 ? (
+                                    <tr className="animate-content-reveal">
                                         <td
                                             colSpan={8}
                                             className="text-center py-14 text-sm"
@@ -939,7 +947,7 @@ function MemberRow({
     onViewDetail: () => void;
 }) {
     return (
-        <tr>
+        <tr className="animate-content-reveal">
             {/* Name + email */}
             <td>
                 <button className="flex items-center gap-2.5 text-left w-full" onClick={onViewDetail}>

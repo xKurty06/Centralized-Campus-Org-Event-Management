@@ -425,6 +425,7 @@ export default function PrivacyPolicyPage() {
                         <span className="font-bold text-sm" style={{ color: 'var(--color-text)' }}>Salikop</span>
                     </Link>
                     <div className="flex items-center gap-1">
+                        <Link href="/events" className="btn btn-ghost border border-[var(--color-primary)] text-primary hover:bg-primary hover:text-white btn-sm text-xs max-h-[28px]">Home</Link>
                         <Link href="/support" className="btn btn-ghost btn-sm text-xs">Contact Support</Link>
                         {isLoggedIn && sessionUser ? (
                             <div className="relative">

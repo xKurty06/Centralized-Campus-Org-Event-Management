@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { IconRefresh } from '@/components/ui/IconRefresh';
+import { OrganizationsPageSkeleton } from '@/components/skeletons';
 
 type OrgCategory = 'All' | 'Academic' | 'Non-Academic' | 'Religious';
 type OrgStatus = 'Active' | 'Suspended';
@@ -272,10 +273,10 @@ export default function OrganizationsPage() {
     </div>
 
         {
-    loading ? <div className="text-sm text-gray-500">Loading organizations...</div> : filtered.length > 0 ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">{filtered.map((org) => <OrgCard key={org.id} org={org} />)}</div>
+    loading ? <OrganizationsPageSkeleton /> : filtered.length > 0 ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-content-reveal">{filtered.map((org) => <OrgCard key={org.id} org={org} />)}</div>
     ) : (
-      <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3 text-center"><p className="text-[15px] font-semibold text-gray-700">No organizations found</p><p className="text-[13px] text-gray-400 max-w-xs">No organizations match your current filters.</p><button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:text-green-800 hover:underline cursor-pointer">Clear all filters</button></div>
+      <div className="flex-1 flex flex-col items-center justify-center py-24 gap-3 text-center animate-content-reveal"><p className="text-[15px] font-semibold text-gray-700">No organizations found</p><p className="text-[13px] text-gray-400 max-w-xs">No organizations match your current filters.</p><button onClick={clearAll} className="mt-1 text-[13px] font-semibold text-green-700 hover:text-green-800 hover:underline cursor-pointer">Clear all filters</button></div>
     )
   }
 

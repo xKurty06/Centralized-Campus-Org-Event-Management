@@ -4,6 +4,8 @@ import React from "react";
 import { useParams } from "next/navigation";
 import ManageShell from "@/components/ManageShell";
 import Link from "next/link";
+import { ManageFormSkeleton } from "@/components/skeletons";
+import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
 type AudienceType = "CvSU_Only" | "Org_Members_Only";
 type EventStatus =
@@ -391,10 +393,7 @@ export default function EditEventPage() {
         return;
       }
       const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: manageRequestHeaders(token),
       }).catch(() => null);
       const payload = (await res?.json().catch(() => null)) as any;
       if (!res || !res.ok || !payload?.success || !payload.data) {
@@ -477,10 +476,7 @@ export default function EditEventPage() {
     setSaving(true);
 
     let body: BodyInit;
-    let headers: Record<string, string> = {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+    let headers: Record<string, string> = manageRequestHeaders(token);
 
     if (bannerFile) {
       const formData = new FormData();
@@ -559,9 +555,9 @@ export default function EditEventPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#f7f8fa] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-emerald-200 border-t-emerald-500 rounded-full animate-spin" />
-      </div>
+      <ManageShell pageTitle="Salikop">
+        <ManageFormSkeleton />
+      </ManageShell>
     );
   if (loadError)
     return (
@@ -580,7 +576,7 @@ export default function EditEventPage() {
 
   return (
     <ManageShell pageTitle="Salikop">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-5 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-5 animate-content-reveal">
         <div className="flex flex-col gap-3">
           <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
             <Link
@@ -669,7 +665,7 @@ export default function EditEventPage() {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-content-reveal">
         <div className="lg:col-span-2 flex flex-col gap-6">
           <SectionCard
             title="Event Banner"

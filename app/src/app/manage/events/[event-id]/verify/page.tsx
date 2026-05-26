@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import ManageShell from '@/components/ManageShell';
 import { useParams } from 'next/navigation';
+import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
@@ -591,7 +592,7 @@ export default function EntrancePanelPage() {
     (async () => {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
-        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: manageRequestHeaders(token),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
       if (!res?.ok || !payload?.success || !payload?.data) {
@@ -629,7 +630,7 @@ export default function EntrancePanelPage() {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/search`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { ...manageRequestHeaders(token), 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q }),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
@@ -683,7 +684,7 @@ export default function EntrancePanelPage() {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/checkin/${registration.id}`, {
         method: 'PUT',
-        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: manageRequestHeaders(token),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
       if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Check-in failed.');
@@ -721,7 +722,7 @@ export default function EntrancePanelPage() {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/confirm-payment/${registration.id}?checkin=false`, {
         method: 'PUT',
-        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: manageRequestHeaders(token),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
       if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Confirm payment failed.');
@@ -760,7 +761,7 @@ export default function EntrancePanelPage() {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/confirm-payment/${registration.id}?checkin=true`, {
         method: 'PUT',
-        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: manageRequestHeaders(token),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;
       if (!res?.ok || !payload?.success) throw new Error(payload?.error ?? 'Confirm payment failed.');
@@ -801,7 +802,7 @@ export default function EntrancePanelPage() {
       }));
       const res = await fetch(`${API_BASE_URL}/manage/verify/${eventId}/sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { ...manageRequestHeaders(token), 'Content-Type': 'application/json' },
         body: JSON.stringify({ items }),
       }).catch(() => null);
       const payload = await res?.json().catch(() => null) as any;

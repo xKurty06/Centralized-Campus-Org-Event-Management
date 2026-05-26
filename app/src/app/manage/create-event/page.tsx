@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ManageShell from '@/components/ManageShell';
+import { getSelectedManageOrgId, manageRequestHeaders } from '@/components/manageOrgSelection';
 
 /* ----------------------------------------------------------------
    Types — aligned to DB schema
@@ -243,13 +244,14 @@ export default function CreateEventPage() {
       if (form.banner_file) {
         payload.append('banner_file', form.banner_file);
       }
+      const selectedOrgId = getSelectedManageOrgId();
+      if (selectedOrgId) {
+        payload.append('org_id', selectedOrgId);
+      }
 
       const res = await fetch(`${API_BASE_URL}/manage/events`, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: manageRequestHeaders(token),
         body: payload,
       });
 
@@ -512,7 +514,7 @@ export default function CreateEventPage() {
                   {form.is_paid && (
                     <div className="flex flex-col gap-4 animate-fade-in">
                       <div className="w-full sm:w-1/2">
-                        <Field label="Registration Price" required hint="Amount to be paid in PHP (₱)." error={errors.price}>
+                        <Field label="Registration Price" required hint="Amount to be paid in pesos (₱)." error={errors.price}>
                           <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-gray-500 font-medium">₱</span>
                             <input type="number" value={form.price} onChange={(e) => update('price', e.target.value)}

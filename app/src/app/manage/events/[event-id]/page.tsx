@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import ManageShell from "@/components/ManageShell";
+import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
 /* ----------------------------------------------------------------
    Types
@@ -172,7 +173,11 @@ function normalizeEvent(e: Record<string, unknown>): ManagedEvent {
     start_date: String(e.start_date ?? new Date().toISOString()),
     end_date: String(e.end_date ?? e.start_date ?? new Date().toISOString()),
     venue_name: String(e.venue_name ?? "TBA"),
-    status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
+    status: normalizeStatus(
+      e.effective_status != null ? String(e.effective_status) : e.status != null ? String(e.status) : null,
+      e.start_date != null ? String(e.start_date) : null,
+      e.end_date != null ? String(e.end_date) : null,
+    ),
     is_paid: Boolean(e.is_paid),
     fee_amount: e.fee_amount != null ? Number(e.fee_amount) : undefined,
     capacity: Number(e.capacity ?? 0),
@@ -370,10 +375,7 @@ export default function EventDashboardPage() {
 
     try {
       const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: manageRequestHeaders(token),
       });
 
       // Unauthorized — session expired
@@ -501,7 +503,7 @@ export default function EventDashboardPage() {
 
         {/* ── Main content ── */}
         {!loading && !error && event && (
-          <>
+          <div className="flex flex-col gap-6 animate-content-reveal">
             {/* ── Header card ── */}
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl px-5 py-5">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -774,7 +776,7 @@ export default function EventDashboardPage() {
                 />
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </ManageShell>

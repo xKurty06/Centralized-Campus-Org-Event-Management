@@ -17,6 +17,8 @@ class CheckOfficer
         }
 
         $orgId = $request->route('org_id') ?? $request->input('org_id');
+        $selectedOrgId = trim((string) ($request->header('X-Manage-Org-Id') ?? $request->query('org_id') ?? $request->input('org_id') ?? ''));
+        $selectedOrgId = $selectedOrgId !== '' ? $selectedOrgId : null;
         $eventId = $request->route('event_id') ?? $request->route('id');
         $regId = $request->route('reg_id');
 
@@ -35,6 +37,18 @@ class CheckOfficer
         }
 
         if (!$orgId) {
+            if ($selectedOrgId) {
+                $isSelectedOfficer = DB::table('org_officers')
+                    ->where('user_id', $user->id)
+                    ->where('org_id', $selectedOrgId)
+                    ->where('is_active', 1)
+                    ->exists();
+
+                if (!$isSelectedOfficer) {
+                    return response()->json(['success' => false, 'error' => 'Forbidden. Officer access required for the selected organization.'], 403);
+                }
+            }
+
             $hasOfficer = DB::table('org_officers')
                 ->where('user_id', $user->id)
                 ->where('is_active', 1)
@@ -43,6 +57,10 @@ class CheckOfficer
                 return response()->json(['success' => false, 'error' => 'Forbidden. Officer access required.'], 403);
             }
             return $next($request);
+        }
+
+        if ($selectedOrgId && $selectedOrgId !== $orgId) {
+            return response()->json(['success' => false, 'error' => 'Forbidden. Request does not match selected organization context.'], 403);
         }
 
         $isOfficer = DB::table('org_officers')

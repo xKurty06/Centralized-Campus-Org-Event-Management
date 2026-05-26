@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import AdminShell from '@/components/AdminShell';
 import { IconRefresh } from '@/components/ui/IconRefresh';
+import { DashboardSkeleton } from '@/components/skeletons';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 const PH_TIMEZONE = 'Asia/Manila';
@@ -385,8 +386,9 @@ export default function AdminDashboardPage() {
         </div>
 
         {!!loadError && <div className="rounded-lg px-4 py-3 text-sm" style={{ background: 'var(--color-error-light)', color: 'var(--color-error)' }}>{loadError}</div>}
-        {isLoading && <div className="text-sm text-[var(--color-text-muted)]">Loading dashboard...</div>}
+        {isLoading && <DashboardSkeleton />}
 
+        {!isLoading && <div className="flex flex-col gap-6 animate-content-reveal">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {kpiCards.map((card) => <KpiCard key={card.label} card={card} />)}
         </div>
@@ -477,6 +479,7 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         </div>
+        </div>}
       </div>
     </AdminShell>
   );

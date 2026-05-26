@@ -476,11 +476,7 @@ export default function AdminEventsPage() {
                   </tr>
                 ) : (
                   filtered.map((ev) => (
-<<<<<<< HEAD
                     <tr key={ev.id} className={`animate-content-reveal ${ev.status === "Completed" ? "bg-gray-50 text-gray-400" : ""}`}>
-=======
-                    <tr key={ev.id} className={ev.status === "Completed" ? "bg-gray-50 text-gray-400" : undefined}>
->>>>>>> fcba99d (feat: Implement event status normalization and timezone handling)
                       <td className="text-sm font-medium max-w-[300px] align-middle">
                         <div className="flex items-center gap-2.5">
                           <div className={`w-10 h-10 rounded-lg overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-2)] flex-shrink-0 ${ev.status === "Completed" ? "grayscale" : ""}`}>

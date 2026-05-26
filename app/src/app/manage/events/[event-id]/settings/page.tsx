@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import ManageShell from "@/components/ManageShell";
+import { ManageFormSkeleton } from "@/components/skeletons";
+import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
 type EventStatus =
     | "Upcoming"
@@ -324,7 +326,7 @@ export default function EventSettingsPage() {
         }
 
         const res = await fetch(`${API_BASE_URL}/manage/events/${eventId}`, {
-            headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+            headers: manageRequestHeaders(token),
         }).catch(() => null);
         const payload = (await res?.json().catch(() => null)) as {
             success?: boolean;
@@ -374,11 +376,7 @@ export default function EventSettingsPage() {
             if (modal === "archive") {
                 const res = await fetch(`${API_BASE_URL}/manage/events/${event.id}`, {
                     method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { ...manageRequestHeaders(token), "Content-Type": "application/json" },
                     body: JSON.stringify({ status: "Closed", reason: reasonInput }),
                 });
                 const payload = (await res.json().catch(() => null)) as {
@@ -395,11 +393,7 @@ export default function EventSettingsPage() {
             if (modal === "cancel") {
                 const res = await fetch(`${API_BASE_URL}/manage/events/${event.id}`, {
                     method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { ...manageRequestHeaders(token), "Content-Type": "application/json" },
                     body: JSON.stringify({ status: "Cancelled", reason: reasonInput }),
                 });
                 const payload = (await res.json().catch(() => null)) as {
@@ -416,11 +410,7 @@ export default function EventSettingsPage() {
             if (modal === "delete") {
                 const res = await fetch(`${API_BASE_URL}/manage/events/${event.id}`, {
                     method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { ...manageRequestHeaders(token), "Content-Type": "application/json" },
                     body: JSON.stringify({ reason: reasonInput }),
                 });
                 const payload = (await res.json().catch(() => null)) as {
@@ -437,11 +427,7 @@ export default function EventSettingsPage() {
             if (modal === "reactivate") {
                 const res = await fetch(`${API_BASE_URL}/manage/events/${event.id}`, {
                     method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { ...manageRequestHeaders(token), "Content-Type": "application/json" },
                     body: JSON.stringify({ status: newStatus, reason: reasonInput }),
                 });
                 const payload = (await res.json().catch(() => null)) as {
@@ -513,7 +499,7 @@ export default function EventSettingsPage() {
         <ManageShell pageTitle="Salikop">
             <div className="flex flex-col gap-6 animate-fade-in">
                 {loadingEvent ? (
-                    <div className="text-sm text-gray-500">Loading event settings...</div>
+                    <ManageFormSkeleton />
                 ) : loadError ? (
                     <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
                         {loadError}
@@ -521,7 +507,7 @@ export default function EventSettingsPage() {
                 ) : !event ? (
                     <div className="text-sm text-gray-500">Event not found.</div>
                 ) : (
-                    <>
+                    <div className="flex flex-col gap-6 animate-content-reveal">
                         <div className="flex flex-col gap-3">
                             <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
                                 <Link
@@ -783,7 +769,7 @@ export default function EventSettingsPage() {
                                 recover a deleted event, contact your system administrator.
                             </p>
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
 

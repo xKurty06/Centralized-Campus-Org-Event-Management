@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { DetailPageSkeleton } from '@/components/skeletons';
 
 /* ----------------------------------------------------------------
    Types
@@ -364,7 +365,7 @@ export default function EventDetailPage() {
     return () => window.clearInterval(intervalId);
   }, [currentEvent]);
 
-  if (loading) return <div className="min-h-screen bg-gray-50 p-8 text-sm text-gray-500 text-center">Loading event...</div>;
+  if (loading) return <div className="min-h-screen bg-gray-50 flex flex-col"><DetailPageSkeleton /></div>;
 
   if (!currentEvent) {
     return (
@@ -454,7 +455,7 @@ export default function EventDetailPage() {
   }
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-3">
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-3 animate-content-reveal">
         <Link
           href="/events"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
@@ -543,7 +544,7 @@ export default function EventDetailPage() {
                 {event.registered} / {event.capacity} registered
               </DetailItem>
               <DetailItem icon={<IconTag />} label="Entry">
-                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">PHP {formatPrice(event.fee)}</span>}
+                {event.type === 'Free' ? <span className="text-green-700">Free</span> : <span className="text-amber-600">₱ {formatPrice(event.fee)}</span>}
               </DetailItem>
               <DetailItem icon={<IconAdviser />} label="Adviser">
                 {event.adviser}

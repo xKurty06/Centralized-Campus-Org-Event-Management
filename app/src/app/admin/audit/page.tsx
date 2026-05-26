@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Fragment } from 'react';
 import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 import { IconRefresh } from '@/components/ui/IconRefresh';
+import { TableRowsSkeleton } from '@/components/skeletons';
 
 type ActionCategory = 'Accreditation' | 'User' | 'Event' | 'Membership' | 'Officer' | 'Payment';
 
@@ -150,11 +151,15 @@ export default function AdminAuditPage() {
           </div>
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="py-16 text-center"><p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Loading audit entries...</p></div>
+              <div className="overflow-x-auto">
+                <table className="table-base">
+                  <tbody><TableRowsSkeleton columns={5} rows={6} /></tbody>
+                </table>
+              </div>
             ) : filtered.length === 0 ? (
-              <div className="py-16 text-center"><p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>No audit entries match your filters.</p></div>
+              <div className="py-16 text-center animate-content-reveal"><p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>No audit entries match your filters.</p></div>
             ) : (
-              <table className="table-base w-full text-left border-collapse">
+              <table className="table-base w-full text-left border-collapse animate-content-reveal">
                 <thead>
                   <tr className="border-b border-[var(--color-border)]"><th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider" style={{ width: '180px' }}>Timestamp</th><th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Actor</th><th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Category</th><th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Action</th><th className="py-3 px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Target</th><th className="py-3 px-4" style={{ width: '44px' }}></th></tr>
                 </thead>
@@ -215,4 +220,3 @@ function IconSearch() {
 function IconDownload() {
   return <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
-

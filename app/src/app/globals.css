@@ -79,6 +79,13 @@
   0%, 100% { box-shadow: 0 0 0 0   rgba(34,160,80,.4); }
   50%       { box-shadow: 0 0 0 8px rgba(34,160,80,0); }
 }
+@keyframes skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+@keyframes contentReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* ─────────────────────────────────────────────────────────────
    BASE — global element defaults on top of Tailwind Preflight
@@ -387,6 +394,7 @@
   .animate-fade-in     { animation: var(--animate-fade-in); }
   .animate-slide-right { animation: var(--animate-slide-right); }
   .animate-pulse-green { animation: var(--animate-pulse-green); }
+  .animate-content-reveal { animation: contentReveal 220ms ease-out both; }
 
   .h-topbar   { height: var(--topbar-height); }
   .pt-topbar  { padding-top: var(--topbar-height); }

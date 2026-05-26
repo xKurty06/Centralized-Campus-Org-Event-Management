@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ManageShell from "@/components/ManageShell";
 import { FilterSelect, FilterChip } from "@/components/ui/filter";
+import { EventsPageSkeleton } from "@/components/skeletons";
+import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
 type EventStatus =
   | "Upcoming"
@@ -294,10 +296,7 @@ export default function ManageEventsPage() {
         return;
       }
       const res = await fetch(`${API_BASE_URL}/manage/dashboard?per_page=300`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: manageRequestHeaders(token),
       }).catch(() => null);
       const payload = (await res?.json().catch(() => null)) as {
         success?: boolean;
@@ -558,9 +557,9 @@ export default function ManageEventsPage() {
               : `${filtered.length} of ${events.length} events`}
           </p>
           {loading ? (
-            <div className="text-sm text-gray-500">Loading events...</div>
+            <EventsPageSkeleton view="list" />
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center bg-white rounded-xl border border-gray-200">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center bg-white rounded-xl border border-gray-200 animate-content-reveal">
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
                 <svg
                   className="w-7 h-7 text-gray-300"
@@ -595,7 +594,7 @@ export default function ManageEventsPage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 animate-content-reveal">
               {filtered.map((event) => (
                 <EventRow key={event.id} event={event} />
               ))}

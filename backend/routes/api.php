@@ -45,6 +45,7 @@ foreach (['', 'v1'] as $versionPrefix) {
 
         // Manage routes (Officer) — CheckOfficer should validate org ownership where applicable
         Route::prefix('manage')->middleware(\App\Http\Middleware\CheckOfficer::class)->group(function () {
+            Route::get('/organizations', [ManageController::class, 'organizations']);
             Route::get('/dashboard', [ManageController::class, 'dashboard']);
             Route::get('/org-profile', [ManageController::class, 'orgProfile']);
             Route::put('/org-profile', [ManageController::class, 'updateOrgProfile']);

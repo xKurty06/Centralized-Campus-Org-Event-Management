@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import AdminShell from "@/components/AdminShell";
 import { FilterSelect, FilterChip } from "@/components/ui/filter";
 import { IconRefresh } from "@/components/ui/IconRefresh";
+import { TableRowsSkeleton } from "@/components/skeletons";
 
 type GlobalRole = "User" | "Overseer";
 const API_BASE_URL =
@@ -464,17 +465,9 @@ export default function AdminUsersPage() {
                             </thead>
                             <tbody>
                                 {isLoading ? (
-                                    <tr>
-                                        <td
-                                            colSpan={9}
-                                            className="text-center py-12 text-sm"
-                                            style={{ color: "var(--color-text-muted)" }}
-                                        >
-                                            Loading users...
-                                        </td>
-                                    </tr>
+                                    <TableRowsSkeleton columns={9} rows={6} />
                                 ) : filtered.length === 0 ? (
-                                    <tr>
+                                    <tr className="animate-content-reveal">
                                         <td
                                             colSpan={9}
                                             className="text-center py-12 text-sm"
@@ -485,7 +478,7 @@ export default function AdminUsersPage() {
                                     </tr>
                                 ) : (
                                     filtered.map((user) => (
-                                        <tr key={user.id}>
+                                        <tr key={user.id} className="animate-content-reveal">
                                             <td>
                                                 <div className="flex items-center gap-2.5">
                                                     <div

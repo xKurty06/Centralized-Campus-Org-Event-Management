@@ -88,10 +88,17 @@ class ManageController extends Controller
      */
     private function resolveOfficer(Request $req): ?object
     {
-        return DB::table('org_officers')
+        $selectedOrgId = $this->selectedOrgId($req);
+
+        $query = DB::table('org_officers')
             ->where('user_id', $req->user()->id)
-            ->where('is_active', 1)
-            ->orderByDesc('created_at')
+            ->where('is_active', 1);
+
+        if ($selectedOrgId) {
+            $query->where('org_id', $selectedOrgId);
+        }
+
+        return $query->orderByDesc('created_at')
             ->first();
     }
 
@@ -100,13 +107,58 @@ class ManageController extends Controller
      */
     private function resolveOfficerOrg(Request $req): ?object
     {
-        return DB::table('org_officers as oo')
+        $selectedOrgId = $this->selectedOrgId($req);
+
+        $query = DB::table('org_officers as oo')
             ->join('organizations as o', 'oo.org_id', '=', 'o.id')
             ->where('oo.user_id', $req->user()->id)
-            ->where('oo.is_active', 1)
-            ->orderByDesc('oo.created_at')
-            ->select('oo.org_id', 'o.*')
+            ->where('oo.is_active', 1);
+
+        if ($selectedOrgId) {
+            $query->where('oo.org_id', $selectedOrgId);
+        }
+
+        return $query->orderByDesc('oo.created_at')
+            ->select('oo.org_id', 'oo.position', 'o.*')
             ->first();
+    }
+
+    private function selectedOrgId(Request $req): ?string
+    {
+        $value = $req->header('X-Manage-Org-Id') ?: $req->query('org_id') ?: $req->input('org_id');
+        $value = is_string($value) ? trim($value) : '';
+
+        return $value !== '' ? $value : null;
+    }
+
+    public function organizations(Request $req)
+    {
+        try {
+            $rows = DB::table('org_officers as oo')
+                ->join('organizations as o', 'oo.org_id', '=', 'o.id')
+                ->leftJoin('org_categories as c', 'o.category_id', '=', 'c.id')
+                ->where('oo.user_id', $req->user()->id)
+                ->where('oo.is_active', 1)
+                ->orderByDesc('oo.created_at')
+                ->select('oo.org_id', 'oo.position', 'o.*', 'c.name as category_name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $rows->map(fn ($row) => [
+                    'id' => $row->org_id,
+                    'slug' => $row->slug ?: $row->org_id,
+                    'name' => $row->name,
+                    'code_name' => $row->code_name,
+                    'logo_url' => $row->logo_url,
+                    'category_name' => $row->category_name,
+                    'accreditation_status' => $row->accreditation_status,
+                    'position' => trim((string) ($row->position ?? 'Officer')) ?: 'Officer',
+                ])->values(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
     }
 
     /**
@@ -235,7 +287,6 @@ class ManageController extends Controller
             $id      = (string) Str::uuid();
             $bannerUrl = $req->input('banner_url');
             if ($req->hasFile('banner_file')) {
-                $this->deletePublicManagedImage($event->banner_url ?? null, 'event_banners');
                 $file = $req->file('banner_file');
                 $path = $file->storePublicly('event_banners', 'public');
                 $bannerUrl = Storage::url($path);

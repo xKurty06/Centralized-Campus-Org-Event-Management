@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AdminShell from '@/components/AdminShell';
 import { IconRefresh } from '@/components/ui/IconRefresh';
+import { DetailPageSkeleton } from '@/components/skeletons';
 
 /* ----------------------------------------------------------------
    Types
@@ -625,9 +626,7 @@ export default function AdminOrgDetailPage() {
                     </div>
                 )}
                 {isLoading && (
-                    <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
-                        Loading organization details...
-                    </div>
+                    <DetailPageSkeleton />
                 )}
 
                 {/* ── Breadcrumb ── */}

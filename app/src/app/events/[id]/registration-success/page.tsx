@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
+import { Skeleton, SkeletonText } from '@/components/skeletons';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 const PH_TIMEZONE = 'Asia/Manila';
@@ -104,11 +105,18 @@ function SuccessContent() {
     })();
   }, [eventId]);
 
-  // 3. Render a loading skeleton/spinner while fetching
+  // 3. Render a loading skeleton while fetching
   if (isLoading) {
     return (
       <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 rounded-full border-4 border-green-200 border-t-green-700" />
+        <div className="w-full rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center text-center gap-5">
+          <Skeleton width={80} height={80} radius="full" />
+          <div className="w-full max-w-[360px]">
+            <Skeleton width="70%" height={24} className="mx-auto mb-3" />
+            <SkeletonText lines={3} />
+          </div>
+          <Skeleton width={180} height={40} radius="lg" />
+        </div>
       </main>
     );
   }
@@ -168,7 +176,7 @@ function SuccessContent() {
   const cfg = stateConfig[state];
 
   return (
-    <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex flex-col gap-6">
+    <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex flex-col gap-6 animate-content-reveal">
       {/* ── Success card ── */}
       <div className={`bg-white rounded-2xl border ${cfg.color} shadow-sm overflow-hidden`}>
 
@@ -272,7 +280,14 @@ export default function RegistrationSuccessPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Suspense fallback={
         <main className="flex-1 w-full max-w-[560px] mx-auto px-6 py-12 flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 rounded-full border-4 border-green-200 border-t-green-700" />
+          <div className="w-full rounded-2xl border border-gray-200 bg-white p-8 flex flex-col items-center text-center gap-5">
+            <Skeleton width={80} height={80} radius="full" />
+            <div className="w-full max-w-[360px]">
+              <Skeleton width="70%" height={24} className="mx-auto mb-3" />
+              <SkeletonText lines={3} />
+            </div>
+            <Skeleton width={180} height={40} radius="lg" />
+          </div>
         </main>
       }>
         <SuccessContent />

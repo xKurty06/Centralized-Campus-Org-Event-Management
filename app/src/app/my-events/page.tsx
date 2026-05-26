@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { IconRefresh } from "@/components/ui/IconRefresh";
+import { EventsPageSkeleton } from "@/components/skeletons";
 
 type PaymentSelection = "Online" | "On-site" | "N/A";
 type PaymentStatus = "Pending" | "Paid";
@@ -409,11 +410,11 @@ export default function MyEventsPage() {
         </div>
 
         {loading ? (
-          <div className="text-sm text-gray-500">Loading your events...</div>
+          <EventsPageSkeleton view="list" />
         ) : error ? (
           <div className="text-sm text-red-600">{error}</div>
         ) : (
-          <>
+          <div className="flex flex-col gap-6 animate-content-reveal">
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Stat value={rows.length} label="Total registered" />
@@ -483,7 +484,7 @@ export default function MyEventsPage() {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
     </div>
