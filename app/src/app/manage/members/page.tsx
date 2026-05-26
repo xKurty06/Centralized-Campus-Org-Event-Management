@@ -695,7 +695,7 @@ export default function ManageMembersPage() {
                                         {fullName(lookupResult)}
                                     </p>
                                     <p className="text-xs" style={{ color: 'var(--color-primary)' }}>
-                                        {lookupResult.course} · {lookupResult.dept} · Year {lookupResult.yearLevel}, Sec {lookupResult.section}
+                                        {lookupResult.dept} · {lookupResult.course} {lookupResult.yearLevel}-{lookupResult.section}
                                     </p>
                                 </div>
                                 {/* Verified checkmark */}
