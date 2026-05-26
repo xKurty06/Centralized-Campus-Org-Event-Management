@@ -47,6 +47,7 @@ interface MyRegistration {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const PH_TIMEZONE = "Asia/Manila";
 
 function normalizeBannerUrl(raw?: string | null) {
   if (!raw) return undefined;
@@ -62,36 +63,55 @@ function normalizeBannerUrl(raw?: string | null) {
   }
 }
 
+function parseEventDate(value: string): Date {
+  const s = String(value ?? "").trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes("T") ? s : s.replace(" ", "T");
+  return new Date(`${normalized}+08:00`);
+}
+
 function isUpcoming(reg: MyRegistration) {
-  return new Date(reg.event_start_date).getTime() >= Date.now();
+  return parseEventDate(reg.event_end_date).getTime() >= Date.now();
 }
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-PH", {
+  return parseEventDate(iso).toLocaleDateString("en-PH", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: PH_TIMEZONE,
   });
 }
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-PH", {
+  return parseEventDate(iso).toLocaleTimeString("en-PH", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: PH_TIMEZONE,
   });
 }
 function formatDateTimeRange(startIso: string, endIso?: string) {
-  const start = new Date(startIso);
-  const end = new Date(endIso ?? startIso);
+  const start = parseEventDate(startIso);
+  const end = parseEventDate(endIso ?? startIso);
   const sameDay = start.toDateString() === end.toDateString();
   if (sameDay) return `${formatDate(startIso)} · ${formatTime(startIso)} - ${formatTime(end.toISOString())}`;
   return `${formatDate(startIso)} ${formatTime(startIso)} - ${formatDate(end.toISOString())} ${formatTime(end.toISOString())}`;
 }
 function daysUntil(iso: string): string | null {
-  const diff = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  const diff = Math.ceil((parseEventDate(iso).getTime() - Date.now()) / 86400000);
   if (diff < 0) return null;
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   return `In ${diff} days`;
+}
+
+function getEventWindowBadge(startIso: string, endIso: string): string | null {
+  const nowMs = Date.now();
+  const startMs = parseEventDate(startIso).getTime();
+  const endMs = parseEventDate(endIso).getTime();
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return null;
+  if (startMs <= nowMs && nowMs <= endMs) return "Ongoing";
+  return daysUntil(startIso);
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
@@ -185,7 +205,7 @@ function RegistrationCard({
   isUpcomingTab: boolean;
 }) {
   const statusPill = getStatusPill(reg);
-  const countdown = isUpcomingTab ? daysUntil(reg.event_start_date) : null;
+  const countdown = isUpcomingTab ? getEventWindowBadge(reg.event_start_date, reg.event_end_date) : null;
   const showUpload = needsUpload(reg);
 
   return (
@@ -218,6 +238,9 @@ function RegistrationCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${CATEGORY_COLORS[reg.category_name] ?? CATEGORY_COLORS.Other}`}>
               {reg.category_name}
+            </span>
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${reg.event_is_paid ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"}`}>
+              {reg.event_is_paid ? "Paid" : "Free"}
             </span>
             <span className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusPill.style}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${statusPill.dot}`} />
@@ -345,11 +368,11 @@ export default function MyEventsPage() {
   }, []);
 
   const upcomingRegs = useMemo(
-    () => rows.filter(isUpcoming).sort((a, b) => new Date(a.event_start_date).getTime() - new Date(b.event_start_date).getTime()),
+    () => rows.filter(isUpcoming).sort((a, b) => parseEventDate(a.event_start_date).getTime() - parseEventDate(b.event_start_date).getTime()),
     [rows],
   );
   const pastRegs = useMemo(
-    () => rows.filter((r) => !isUpcoming(r)).sort((a, b) => new Date(b.event_start_date).getTime() - new Date(a.event_start_date).getTime()),
+    () => rows.filter((r) => !isUpcoming(r)).sort((a, b) => parseEventDate(b.event_start_date).getTime() - parseEventDate(a.event_start_date).getTime()),
     [rows],
   );
 

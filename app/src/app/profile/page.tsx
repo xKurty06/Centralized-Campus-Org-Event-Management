@@ -61,7 +61,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
-  const [activity] = useState<ActivitySummary>(EMPTY_ACTIVITY);
+  const [activity, setActivity] = useState<ActivitySummary>(EMPTY_ACTIVITY);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -84,6 +84,12 @@ export default function ProfilePage() {
           section: typeof u.section === 'number' ? u.section : null,
           global_role: u.global_role === 'Overseer' ? 'Overseer' : u.global_role === 'Officer' ? 'Officer' : 'User',
           is_active: Boolean(u.is_active ?? true),
+        });
+        setActivity({
+          total_registered: Number(u.activity?.total_registered ?? 0),
+          total_confirmed: Number(u.activity?.total_confirmed ?? 0),
+          total_attended: Number(u.activity?.total_attended ?? 0),
+          total_upcoming: Number(u.activity?.total_upcoming ?? 0),
         });
         if (Array.isArray(u.memberships)) {
           setMemberships(u.memberships.map((m: any) => ({

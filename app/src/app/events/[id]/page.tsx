@@ -109,6 +109,7 @@ interface CampusEvent {
   audience_type: AudienceType;
   is_member: boolean | null;
   is_registered: boolean;
+  registration_payment_status?: 'Pending' | 'Paid' | null;
   orgCategory: 'Academic' | 'Non-Academic' | 'Religious';
   date: string;
   time: string;
@@ -306,6 +307,10 @@ export default function EventDetailPage() {
         audience_type: (e.audience_type ?? 'Open') as AudienceType,
         is_member: e.is_member === null ? null : Boolean(e.is_member),
         is_registered: Boolean(e.is_registered),
+        registration_payment_status:
+          e.registration_payment_status === 'Pending' || e.registration_payment_status === 'Paid'
+            ? e.registration_payment_status
+            : (e.payment_status === 'Pending' || e.payment_status === 'Paid' ? e.payment_status : null),
         orgCategory: (e.organization_category ?? 'Non-Academic') as 'Academic' | 'Non-Academic' | 'Religious',
         date: String(e.start_date ?? new Date().toISOString()),
         time: new Date(e.start_date ?? Date.now()).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true }),
@@ -633,20 +638,26 @@ export default function EventDetailPage() {
                 </div>
 
                 {status === 'none' &&
-                  (event.is_registered ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full flex items-center justify-center gap-2 bg-green-100 text-green-700 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed"
-                    >
-                      Already registered
-                    </button>
-                  ) : !isLoggedIn ? (
+                  (!isLoggedIn ? (
                     <button
                       onClick={() => router.push('/')}
                       className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 text-white text-[14px] font-semibold py-3 rounded-xl transition-colors cursor-pointer"
                     >
                       Sign In to Register
+                    </button>
+                  ) : event.is_registered ? (
+                    <button
+                      type="button"
+                      disabled
+                      className={`w-full flex items-center justify-center gap-2 text-[14px] font-semibold py-3 rounded-xl cursor-not-allowed ${
+                        event.type === 'Paid' && event.registration_payment_status === 'Pending'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {event.type === 'Paid' && event.registration_payment_status === 'Pending'
+                        ? 'Pending Payment'
+                        : 'Already Registered'}
                     </button>
                   ) : accessBlocked ? (
                     <div className="group relative">

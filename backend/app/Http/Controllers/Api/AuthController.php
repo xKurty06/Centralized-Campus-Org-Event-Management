@@ -73,7 +73,27 @@ class AuthController extends Controller
                 'code' => $academic->course_code ?? null,
                 'name' => $academic->course_name ?? null,
             ],
+            'activity' => $this->resolveActivitySummary($user),
             'memberships' => $this->resolveOrgMemberships($user),
+        ];
+    }
+
+    private function resolveActivitySummary(User $user): array
+    {
+        $summary = DB::table('registrations as r')
+            ->join('events as e', 'r.event_id', '=', 'e.id')
+            ->where('r.user_id', $user->id)
+            ->selectRaw('COUNT(*) as total_registered')
+            ->selectRaw("SUM(CASE WHEN e.is_paid = 0 OR r.payment_status = 'Paid' THEN 1 ELSE 0 END) as total_confirmed")
+            ->selectRaw("SUM(CASE WHEN r.attendance_status = 'Checked_In' THEN 1 ELSE 0 END) as total_attended")
+            ->selectRaw("SUM(CASE WHEN e.start_date >= NOW() AND e.status NOT IN ('Cancelled', 'Completed') THEN 1 ELSE 0 END) as total_upcoming")
+            ->first();
+
+        return [
+            'total_registered' => (int) ($summary->total_registered ?? 0),
+            'total_confirmed' => (int) ($summary->total_confirmed ?? 0),
+            'total_attended' => (int) ($summary->total_attended ?? 0),
+            'total_upcoming' => (int) ($summary->total_upcoming ?? 0),
         ];
     }
 

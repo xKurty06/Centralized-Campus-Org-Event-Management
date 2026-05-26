@@ -495,7 +495,7 @@ function Step1({
                 <input
                     id="name"
                     type="text"
-                    placeholder="e.g. Association of Computer Technology Students"
+                    placeholder="e.g. Computer Science Student Organization"
                     value={form.name}
                     onChange={(e) => onChange("name", e.target.value)}
                     maxLength={120}

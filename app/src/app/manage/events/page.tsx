@@ -93,6 +93,13 @@ function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
 }
 
+function isOngoing(startIso: string, endIso: string) {
+  const now = Date.now();
+  const start = new Date(startIso).getTime();
+  const end = new Date(endIso).getTime();
+  return start <= now && now <= end;
+}
+
 const CATEGORY_COLORS: Record<EventCategory, string> = {
   Workshop: "bg-blue-50 text-blue-700",
   Seminar: "bg-purple-50 text-purple-700",
@@ -135,6 +142,7 @@ function EventRow({ event }: { event: ManagedEvent }) {
   const isFull = fill >= 100;
   const days = daysUntil(event.start_date);
   const status = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.Upcoming;
+  const ongoing = isOngoing(event.start_date, event.end_date);
 
   return (
     <Link
@@ -153,9 +161,12 @@ function EventRow({ event }: { event: ManagedEvent }) {
           >
             {status.label}
           </span>
-          {event.is_paid && (
-            <span className="text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full">
-              Paid
+          <span className={`text-[11px] font-semibold border px-2.5 py-0.5 rounded-full ${event.is_paid ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-green-50 text-green-700 border-green-200"}`}>
+            {event.is_paid ? "Paid" : "Free"}
+          </span>
+          {ongoing && (
+            <span className="text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 px-2.5 py-0.5 rounded-full">
+              Ongoing
             </span>
           )}
           {event.proofs_pending_review > 0 && (

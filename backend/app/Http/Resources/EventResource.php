@@ -78,6 +78,7 @@ class EventResource extends JsonResource
             'audience_type' => $this->audience_type,
             'is_member' => isset($this->is_member) ? (bool) $this->is_member : null,
             'is_registered' => isset($this->is_registered) ? (bool) $this->is_registered : null,
+            'registration_payment_status' => $this->registration_payment_status ?? null,
             'is_paid' => (bool) $this->is_paid,
             'fee_amount' => isset($this->fee_amount) ? (float) $this->fee_amount : null,
             'payment_instructions' => $this->payment_instructions ?? null,
