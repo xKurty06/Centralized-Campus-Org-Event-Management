@@ -985,12 +985,12 @@ function MemberRow({
 
             {/* Course */}
             <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {member.course} · {member.dept}
+                {member.dept} · {member.course}
             </td>
 
             {/* Year / Section */}
             <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                Y{member.yearLevel} / S{member.section}
+                {member.yearLevel} - {member.section}
             </td>
 
             {/* Joined */}
