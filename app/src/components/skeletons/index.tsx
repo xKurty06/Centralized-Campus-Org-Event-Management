@@ -132,7 +132,13 @@ export function ParticipantsPageSkeleton() {
     <div className="flex flex-col gap-6 animate-fade-in">
       <div><Skeleton width={180} height={14} className="mb-3" /><Skeleton width={280} height={24} /></div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="card p-4"><Skeleton width={52} height={22} className="mb-2" /><Skeleton width="70%" height={12} /></div>)}</div>
-      <div className="card overflow-hidden"><TableRowsSkeleton columns={6} rows={6} /></div>
+      <div className="card overflow-hidden">
+        <table className="table-base">
+          <tbody>
+            <TableRowsSkeleton columns={6} rows={6} />
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

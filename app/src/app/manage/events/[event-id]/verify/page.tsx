@@ -62,6 +62,8 @@ interface EventInfo {
   title: string;
   venue: string;
   startDate: string;
+  endDate?: string;
+  status: 'Upcoming' | 'Open' | 'Closed' | 'Completed' | 'Cancelled';
   isPaid: boolean;
   capacity: number;
   checkedIn: number;
@@ -77,6 +79,7 @@ const EMPTY_EVENT: EventInfo = {
   title: 'Event',
   venue: 'TBA',
   startDate: new Date().toISOString(),
+  status: 'Open',
   isPaid: false,
   capacity: 0,
   checkedIn: 0,
@@ -132,6 +135,29 @@ function formatTime(iso: string) {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function parseEventDate(value?: string | null): Date {
+  const s = String(value ?? '').trim();
+  if (!s) return new Date(NaN);
+  if (/[zZ]|[+\-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  const normalized = s.includes('T') ? s : s.replace(' ', 'T');
+  return new Date(`${normalized}+08:00`);
+}
+
+function normalizeEventStatus(rawStatus?: string | null, startDate?: string | null, endDate?: string | null): EventInfo['status'] {
+  const start = parseEventDate(startDate);
+  const end = parseEventDate(endDate ?? startDate);
+  const now = Date.now();
+  if (!Number.isNaN(end.getTime()) && now > end.getTime()) return 'Completed';
+  const s = String(rawStatus ?? '').trim().toLowerCase();
+  if (s === 'cancelled') return 'Cancelled';
+  if (s === 'completed') return 'Completed';
+  if (s === 'closed') return 'Closed';
+  if (s === 'open') return 'Open';
+  if (s === 'upcoming') return 'Upcoming';
+  if (!Number.isNaN(start.getTime()) && now < start.getTime()) return 'Upcoming';
+  return 'Open';
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -464,10 +490,12 @@ function OfflineQueuePanel({
   queue,
   onSync,
   isSyncing,
+  disabled = false,
 }: {
   queue: QueuedAction[];
   onSync: () => void;
   isSyncing: boolean;
+  disabled?: boolean;
 }) {
   const pendingCount = queue.filter((q) => q.syncStatus === 'Pending').length;
   if (pendingCount === 0) return null;
@@ -485,10 +513,10 @@ function OfflineQueuePanel({
         </div>
         <button
           onClick={onSync}
-          disabled={isSyncing}
+          disabled={isSyncing || disabled}
           className="text-[12px] font-semibold text-amber-700 hover:text-amber-900 bg-white border border-amber-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
         >
-          {isSyncing ? 'Syncing…' : 'Sync Now'}
+          {disabled ? 'Locked' : isSyncing ? 'Syncing…' : 'Sync Now'}
         </button>
       </div>
       <div className="divide-y divide-amber-100">
@@ -563,6 +591,7 @@ export default function EntrancePanelPage() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [event,          setEvent]          = useState<EventInfo>(EMPTY_EVENT);
   const [currentTime,    setCurrentTime]    = useState('');
+  const isCompleted = event.status === 'Completed';
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -602,9 +631,12 @@ export default function EntrancePanelPage() {
       const e = payload.data;
       setEvent({
         id:              String(e.id ?? eventId),
+        slug:            e.slug ? String(e.slug) : String(e.id ?? eventId),
         title:           String(e.title ?? 'Event'),
         venue:           String(e.venue_name ?? 'TBA'),
         startDate:       String(e.start_date ?? new Date().toISOString()),
+        endDate:         String(e.end_date ?? e.start_date ?? new Date().toISOString()),
+        status:          normalizeEventStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
         isPaid:          Boolean(e.is_paid),
         capacity:        Number(e.capacity ?? 0),
         checkedIn:       Number(e.total_checked_in ?? 0),
@@ -625,6 +657,10 @@ export default function EntrancePanelPage() {
   const handleSearch = useCallback(() => {
     const q = searchInput.trim();
     if (!q || !eventId) return;
+    if (isCompleted) {
+      setToast({ msg: 'Entrance verification is locked for completed events.', type: 'error' });
+      return;
+    }
     setSearchQuery(q);
     (async () => {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
@@ -662,7 +698,7 @@ export default function EntrancePanelPage() {
         regDate:    String(r.reg_date ?? new Date().toISOString()),
       });
     })();
-  }, [searchInput, eventId]);
+  }, [searchInput, eventId, isCompleted]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleSearch();
@@ -679,6 +715,10 @@ export default function EntrancePanelPage() {
   /* — Check In (green card — payment already confirmed) — */
   const handleCheckIn = useCallback(() => {
     if (!registration || registration === 'not_found') return;
+    if (isCompleted) {
+      setToast({ msg: 'Completed events are read-only.', type: 'error' });
+      return;
+    }
     setActionLoading(true);
     (async () => {
       const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
@@ -711,11 +751,15 @@ export default function EntrancePanelPage() {
     })().catch((e) => {
       setToast({ msg: e?.message ?? 'Check-in failed.', type: 'error' });
     }).finally(() => setActionLoading(false));
-  }, [registration, isOnline, eventId]);
+  }, [registration, isOnline, eventId, isCompleted]);
 
   /* — Confirm Payment ONLY (no check-in) — */
   const handleConfirmPaymentOnly = useCallback(() => {
     if (!registration || registration === 'not_found') return;
+    if (isCompleted) {
+      setToast({ msg: 'Completed events are read-only.', type: 'error' });
+      return;
+    }
     setActionLoading(true);
     setLoadingAction('payment_only');
     (async () => {
@@ -750,11 +794,15 @@ export default function EntrancePanelPage() {
     })().catch((e) => {
       setToast({ msg: e?.message ?? 'Confirm payment failed.', type: 'error' });
     }).finally(() => { setActionLoading(false); setLoadingAction(null); });
-  }, [registration, isOnline, eventId]);
+  }, [registration, isOnline, eventId, isCompleted]);
 
   /* — Confirm Payment AND Check In — */
   const handleConfirmPaymentAndCheckIn = useCallback(() => {
     if (!registration || registration === 'not_found') return;
+    if (isCompleted) {
+      setToast({ msg: 'Completed events are read-only.', type: 'error' });
+      return;
+    }
     setActionLoading(true);
     setLoadingAction('payment_checkin');
     (async () => {
@@ -788,10 +836,14 @@ export default function EntrancePanelPage() {
     })().catch((e) => {
       setToast({ msg: e?.message ?? 'Confirm payment failed.', type: 'error' });
     }).finally(() => { setActionLoading(false); setLoadingAction(null); });
-  }, [registration, isOnline, eventId]);
+  }, [registration, isOnline, eventId, isCompleted]);
 
   /* — Sync queue — */
   const handleSync = () => {
+    if (isCompleted) {
+      setToast({ msg: 'Completed events are read-only.', type: 'error' });
+      return;
+    }
     setIsSyncing(true);
     (async () => {
       const token   = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
@@ -834,7 +886,7 @@ export default function EntrancePanelPage() {
             <div className="flex flex-row justify-between items-center w-full mb-1 gap-3 flex-wrap">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{event.title}</h1>
-                <span className="badge badge-green">Entrance Panel</span>
+                <span className={`badge ${isCompleted ? 'badge-gray' : 'badge-green'}`}>{isCompleted ? 'Completed' : 'Entrance Panel'}</span>
               </div>
               <div className="flex-shrink-0"><ConnectionBadge isOnline={isOnline} /></div>
             </div>
@@ -849,6 +901,12 @@ export default function EntrancePanelPage() {
               <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
             </div>
           </div>
+
+          {isCompleted && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+              This event is completed. Entrance verification, payment confirmation, and sync actions are locked. Use the masterlist to review participants and attendance history.
+            </div>
+          )}
 
           {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -892,6 +950,7 @@ export default function EntrancePanelPage() {
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={handleKeyDown}
+                      disabled={isCompleted}
                       className="!text-[15px] !font-mono !py-3 !pr-10"
                       autoComplete="off"
                       spellCheck={false}
@@ -902,12 +961,12 @@ export default function EntrancePanelPage() {
                       </button>
                     )}
                   </div>
-                  <button onClick={handleSearch} className="btn btn-primary px-6 flex-shrink-0">
+                  <button onClick={handleSearch} disabled={isCompleted} className={`btn px-6 flex-shrink-0 ${isCompleted ? 'btn-ghost text-[var(--color-text-muted)] cursor-not-allowed' : 'btn-primary'}`}>
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                    <span className="hidden sm:inline">Look Up</span>
+                    <span className="hidden sm:inline">{isCompleted ? 'Locked' : 'Look Up'}</span>
                   </button>
                 </div>
-                <p className="form-hint mt-2">Press Enter or click Look Up after entering the School ID</p>
+                <p className="form-hint mt-2">{isCompleted ? 'Completed events cannot process new verification actions.' : 'Press Enter or click Look Up after entering the School ID'}</p>
               </div>
 
               {/* Result area */}
@@ -935,7 +994,7 @@ export default function EntrancePanelPage() {
 
             {/* Right — Queue + Tips + Activity */}
             <div className="flex flex-col gap-5">
-              <OfflineQueuePanel queue={queue} onSync={handleSync} isSyncing={isSyncing} />
+              <OfflineQueuePanel queue={queue} onSync={handleSync} isSyncing={isSyncing} disabled={isCompleted} />
 
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                 <p className="text-[12px] font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">Quick Tips</p>

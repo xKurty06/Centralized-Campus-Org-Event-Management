@@ -245,12 +245,14 @@ function ActionCard({
   label,
   desc,
   variant = "default",
+  disabled = false,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   desc: string;
   variant?: "default" | "primary" | "warning";
+  disabled?: boolean;
 }) {
   const styles = {
     default:
@@ -266,6 +268,29 @@ function ActionCard({
     warning:
       "bg-gray-100 text-gray-500 group-hover:bg-amber-100 group-hover:text-amber-700",
   };
+
+  if (disabled) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-gray-400">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-100 text-gray-400">
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold leading-tight">{label}</p>
+          <p className="text-[11px] mt-0.5">{desc}</p>
+        </div>
+        <svg className="w-4 h-4 flex-shrink-0 text-gray-300" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M6.5 9V7.75a3.5 3.5 0 117 0V9M6 9h8a1 1 0 011 1v5a1 1 0 01-1 1H6a1 1 0 01-1-1v-5a1 1 0 011-1z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <Link
@@ -446,6 +471,7 @@ export default function EventDashboardPage() {
   const isActive = event
     ? event.status === "Open" || event.status === "Upcoming"
     : false;
+  const isCompleted = event?.status === "Completed";
 
   return (
     <ManageShell pageTitle="Salikop">
@@ -560,10 +586,14 @@ export default function EventDashboardPage() {
                 {/* Edit shortcut */}
                 <Link
                   href={`/manage/events/${event.slug ?? event.id}/edit`}
-                  className="flex items-center gap-2 text-[13px] font-semibold text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 px-3 py-2 rounded-lg transition-all no-underline flex-shrink-0"
+                  className={`flex items-center gap-2 text-[13px] font-semibold border px-3 py-2 rounded-lg transition-all no-underline flex-shrink-0 ${
+                    isCompleted
+                      ? "pointer-events-none border-gray-200 bg-gray-50 text-gray-400"
+                      : "text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
                 >
                   <IconEdit />
-                  Edit event
+                  {isCompleted ? "Editing locked" : "Edit event"}
                 </Link>
               </div>
 
@@ -612,6 +642,22 @@ export default function EventDashboardPage() {
                   >
                     review in participants
                   </Link>
+                </p>
+              </div>
+            )}
+
+            {isCompleted && (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v5m0 3v.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <p className="text-[13px] font-medium text-amber-800">
+                  This event is completed. Editing, entrance verification, and payment actions are locked. Participants remain available, and lifecycle settings such as archiving can still be managed.
                 </p>
               </div>
             )}
@@ -750,28 +796,30 @@ export default function EventDashboardPage() {
                   href={`/manage/events/${event.slug ?? event.id}/participants`}
                   icon={<IconUsers />}
                   label="Participants & masterlist"
-                  desc="View registrations, manage payment status"
+                  desc={isCompleted ? "View registrations and attendance records" : "View registrations, manage payment status"}
                   variant="default"
                 />
                 <ActionCard
                   href={`/manage/events/${event.slug ?? event.id}/verify`}
                   icon={<IconScan />}
                   label="Entrance verification"
-                  desc="Scan QR codes at the door"
+                  desc={isCompleted ? "Locked after event completion" : "Scan QR codes at the door"}
                   variant="primary"
+                  disabled={isCompleted}
                 />
                 <ActionCard
                   href={`/manage/events/${event.slug ?? event.id}/edit`}
                   icon={<IconEdit />}
                   label="Edit event details"
-                  desc="Update title, schedule, venue, capacity"
+                  desc={isCompleted ? "Locked after event completion" : "Update title, schedule, venue, capacity"}
                   variant="default"
+                  disabled={isCompleted}
                 />
                 <ActionCard
                   href={`/manage/events/${event.slug ?? event.id}/settings`}
                   icon={<IconSettings />}
                   label="Event settings"
-                  desc="Archive or delete this event"
+                  desc={isCompleted ? "Archive and lifecycle controls" : "Archive or delete this event"}
                   variant="warning"
                 />
               </div>

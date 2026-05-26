@@ -14,7 +14,7 @@ final class EventStatusService
         $nowPh = Carbon::now(self::PH_TIMEZONE)->format('Y-m-d H:i:s');
 
         $query = DB::table('events')
-            ->whereNotIn('status', ['Cancelled', 'Completed'])
+            ->whereNotIn('status', ['Cancelled', 'Completed', 'Closed'])
             ->whereNotNull('end_date')
             ->where('end_date', '<', $nowPh);
 

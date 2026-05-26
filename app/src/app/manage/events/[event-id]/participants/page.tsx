@@ -212,6 +212,7 @@ export default function ParticipantsPage() {
     const [error, setError] = useState("");
     const [refreshing, setRefreshing] = useState(false);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const isCompleted = event?.status === "Completed";
 
     async function loadParticipants() {
         setLoading(true);
@@ -383,6 +384,7 @@ export default function ParticipantsPage() {
     }
 
     const callWithToken = async (url: string, method: "PUT") => {
+        if (isCompleted) throw new Error("Completed events are read-only.");
         const token =
             window.localStorage.getItem("auth_token") ??
             window.sessionStorage.getItem("auth_token");
@@ -549,11 +551,11 @@ export default function ParticipantsPage() {
                                     </span>
                                 </nav>
                             </div>
-                            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-                                <div>
-                                    <h1 className="text-[24px] font-bold text-[var(--color-text)] tracking-tight">
-                                        {event?.title ?? "Event"}
-                                    </h1>
+                        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                            <div>
+                                <h1 className="text-[24px] font-bold text-[var(--color-text)] tracking-tight">
+                                    {event?.title ?? "Event"}
+                                </h1>
                                     <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
                                         {fmt(event?.start_date ?? new Date().toISOString())} · Event
                                         Slug: <span className="font-mono">{eventRouteKey}</span>
@@ -565,6 +567,11 @@ export default function ParticipantsPage() {
                                 </div>
                             </div>
                         </div>
+                        {isCompleted && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+                                This event is completed. Participant records are still available, but payment and proof actions are locked.
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <Card
                                 title="Total Registered"
@@ -693,7 +700,8 @@ export default function ParticipantsPage() {
                                                     onClick={() =>
                                                         handleVerifyProof(p.id, p.reg_id, false)
                                                     }
-                                                    className="h-8 rounded-lg border border-rose-200 bg-rose-50/50 text-[12px] font-medium text-rose-700"
+                                                    disabled={isCompleted}
+                                                    className={`h-8 rounded-lg border text-[12px] font-medium ${isCompleted ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed" : "border-rose-200 bg-rose-50/50 text-rose-700"}`}
                                                 >
                                                     Reject
                                                 </button>
@@ -701,7 +709,8 @@ export default function ParticipantsPage() {
                                                     onClick={() =>
                                                         handleVerifyProof(p.id, p.reg_id, true)
                                                     }
-                                                    className="h-8 rounded-lg bg-emerald-600 text-white text-[12px] font-medium"
+                                                    disabled={isCompleted}
+                                                    className={`h-8 rounded-lg text-[12px] font-medium ${isCompleted ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-emerald-600 text-white"}`}
                                                 >
                                                     Approve
                                                 </button>
@@ -739,9 +748,10 @@ export default function ParticipantsPage() {
                                         </div>
                                         <button
                                             onClick={() => handleMarkAsPaid(r.id)}
-                                            className="h-8 px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-[12px] font-semibold text-emerald-700"
+                                            disabled={isCompleted}
+                                            className={`h-8 px-3 rounded-lg border text-[12px] font-semibold ${isCompleted ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
                                         >
-                                            Received Cash
+                                            {isCompleted ? "Locked" : "Received Cash"}
                                         </button>
                                     </div>
                                 ))}

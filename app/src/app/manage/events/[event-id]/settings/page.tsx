@@ -144,6 +144,7 @@ interface ConfirmModalProps {
     confirmStyle: string;
     inputConfirm?: string;
     reasonLabel?: string;
+    reasonRequired?: boolean;
     reason?: string;
     onReasonChange?: (reason: string) => void;
     showStatusSelect?: boolean;
@@ -160,6 +161,7 @@ function ConfirmModal({
     confirmStyle,
     inputConfirm,
     reasonLabel,
+    reasonRequired = false,
     reason,
     onReasonChange,
     showStatusSelect,
@@ -169,7 +171,8 @@ function ConfirmModal({
     onCancel,
 }: ConfirmModalProps) {
     const [typed, setTyped] = useState("");
-    const canConfirm = !inputConfirm || typed === inputConfirm;
+    const hasReason = !reasonRequired || String(reason ?? "").trim().length > 0;
+    const canConfirm = (!inputConfirm || typed === inputConfirm) && hasReason;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -233,11 +236,12 @@ function ConfirmModal({
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[12px] font-semibold text-gray-600">
                             {reasonLabel}
+                            {reasonRequired ? <span className="ml-1 text-red-500">*</span> : null}
                         </label>
                         <textarea
                             value={reason || ""}
                             onChange={(e) => onReasonChange?.(e.target.value)}
-                            placeholder="Enter reason (optional)..."
+                            placeholder={reasonRequired ? "Enter reason..." : "Enter reason..."}
                             className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none"
                             rows={3}
                         />
@@ -304,6 +308,7 @@ export default function EventSettingsPage() {
     const isCancelled = event?.status === "Cancelled";
     const isArchivable = Boolean(isCompleted || isCancelled);
     const isReactivatable = event && (event.status === "Closed" || event.status === "Cancelled");
+    const isCompletedLocked = isCompleted;
 
     function showToast(msg: string) {
         setToast(msg);
@@ -361,6 +366,11 @@ export default function EventSettingsPage() {
 
     async function handleConfirm() {
         if (!event || !modal) return;
+        if (isCompletedLocked && modal !== "archive") {
+            setModal(null);
+            showToast("Completed events are read-only.");
+            return;
+        }
 
         setState("loading");
         setModal(null);
@@ -458,6 +468,7 @@ export default function EventSettingsPage() {
             confirmStyle: string;
             inputConfirm?: string;
             reasonLabel?: string;
+            reasonRequired?: boolean;
             showStatusSelect?: boolean;
         }
     > = {
@@ -466,14 +477,16 @@ export default function EventSettingsPage() {
             message: `"${event?.title ?? "This event"}" will be closed from new registrations and moved to your archive. Existing registrations and attendance records are preserved.`,
             confirmLabel: "Archive event",
             confirmStyle: "bg-amber-600 hover:bg-amber-700",
-            reasonLabel: "Reason for archiving (optional)",
+            reasonLabel: "Reason for archiving",
+            reasonRequired: true,
         },
         cancel: {
             title: "Cancel this event?",
             message: `"${event?.title ?? "This event"}" will be marked as Cancelled. All ${event?.total_registered ?? 0} registered participants will be notified. This action cannot be undone.`,
             confirmLabel: "Cancel event",
             confirmStyle: "bg-red-600 hover:bg-red-700",
-            reasonLabel: "Reason for cancellation (optional)",
+            reasonLabel: "Reason for cancellation",
+            reasonRequired: true,
         },
         delete: {
             title: "Permanently delete this event?",
@@ -481,14 +494,16 @@ export default function EventSettingsPage() {
             confirmLabel: "Delete permanently",
             confirmStyle: "bg-red-700 hover:bg-red-800",
             inputConfirm: "DELETE",
-            reasonLabel: "Reason for deletion (optional)",
+            reasonLabel: "Reason for deletion",
+            reasonRequired: true,
         },
         reactivate: {
             title: "Reactivate this event?",
             message: `"${event?.title ?? "This event"}" will be reactivated and made available for registrations again. You can choose the status to reactivate it as.`,
             confirmLabel: "Reactivate event",
             confirmStyle: "bg-green-600 hover:bg-green-700",
-            reasonLabel: "Reason for reactivation (optional)",
+            reasonLabel: "Reason for reactivation",
+            reasonRequired: true,
             showStatusSelect: true,
         },
     };
@@ -611,6 +626,12 @@ export default function EventSettingsPage() {
                             </span>
                         </div>
 
+                        {isCompleted && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+                                This event is completed. Event details stay locked, but you can still archive it or permanently delete it. Cancellation, reactivation, and verification changes remain disabled.
+                            </div>
+                        )}
+
                         <section className="flex flex-col gap-3">
                             <div>
                                 <h2 className="text-[14px] font-bold text-gray-800">
@@ -643,6 +664,8 @@ export default function EventSettingsPage() {
                                         consequence="You can always archive or cancel it again if needed."
                                         buttonLabel="Reactivate"
                                         buttonStyle="bg-green-600 hover:bg-green-700 text-white"
+                                        disabled={isCompletedLocked}
+                                        disabledReason={isCompletedLocked ? "Completed events cannot be reactivated directly. Archive them instead." : undefined}
                                         onClick={() => setModal("reactivate")}
                                     />
                                 )}
@@ -710,11 +733,11 @@ export default function EventSettingsPage() {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => setModal("cancel")}
-                                        disabled={Boolean(isCancelled)}
-                                        className={`flex-shrink-0 text-[12px] font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer border border-red-300 text-red-600 bg-white hover:bg-red-50 ${isCancelled ? "opacity-40 cursor-not-allowed" : ""}`}
+                                        onClick={() => !isCompletedLocked && setModal("cancel")}
+                                        disabled={Boolean(isCancelled) || isCompletedLocked}
+                                        className={`flex-shrink-0 text-[12px] font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer border border-red-300 text-red-600 bg-white hover:bg-red-50 ${isCancelled || isCompletedLocked ? "opacity-40 cursor-not-allowed" : ""}`}
                                     >
-                                        {isCancelled ? "Already cancelled" : "Cancel event"}
+                                        {isCompletedLocked ? "Locked" : isCancelled ? "Already cancelled" : "Cancel event"}
                                     </button>
                                 </div>
                                 <div className="p-5 flex flex-col sm:flex-row sm:items-start gap-4">
@@ -735,7 +758,7 @@ export default function EventSettingsPage() {
                                         </p>
                                         {event.total_registered > 0 && (
                                             <p className="text-[11px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 mt-3 inline-block">
-                                                ? {event.total_registered} registration records will be
+                                                {event.total_registered} registration records will be
                                                 permanently lost
                                             </p>
                                         )}
@@ -781,6 +804,7 @@ export default function EventSettingsPage() {
                     confirmStyle={cfg.confirmStyle}
                     inputConfirm={cfg.inputConfirm}
                     reasonLabel={cfg.reasonLabel}
+                    reasonRequired={cfg.reasonRequired}
                     reason={reasonInput}
                     onReasonChange={setReasonInput}
                     showStatusSelect={cfg.showStatusSelect}

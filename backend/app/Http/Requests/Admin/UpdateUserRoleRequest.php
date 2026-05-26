@@ -15,6 +15,7 @@ class UpdateUserRoleRequest extends FormRequest
     {
         return [
             'global_role' => 'required|in:Overseer,User',
+            'reason' => 'required|string|max:500',
         ];
     }
 }

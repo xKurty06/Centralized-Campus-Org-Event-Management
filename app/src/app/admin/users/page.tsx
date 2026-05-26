@@ -36,13 +36,14 @@ export default function AdminUsersPage() {
     >("All");
     const [filterDept, setFilterDept] = useState("All");
     const [confirmToggle, setConfirmToggle] = useState<User | null>(null);
-    const [deactivateReason, setDeactivateReason] = useState("");
+    const [statusActionReason, setStatusActionReason] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [actionError, setActionError] = useState("");
     const [roleChangePending, setRoleChangePending] = useState<{
         user: User;
         newRole: GlobalRole;
     } | null>(null);
+    const [roleChangeReason, setRoleChangeReason] = useState("");
     const [refreshing, setRefreshing] = useState(false);
 
     async function loadUsers(showRefreshing = false) {
@@ -154,7 +155,7 @@ export default function AdminUsersPage() {
 
     async function handleToggleActive() {
         if (!confirmToggle) return;
-        if (confirmToggle.isActive && !deactivateReason.trim()) return;
+        if (!statusActionReason.trim()) return;
         const token =
             window.localStorage.getItem("auth_token") ??
             window.sessionStorage.getItem("auth_token");
@@ -175,9 +176,7 @@ export default function AdminUsersPage() {
                         Accept: "application/json",
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify(
-                        confirmToggle.isActive ? { reason: deactivateReason.trim() } : {},
-                    ),
+                    body: JSON.stringify({ reason: statusActionReason.trim() }),
                 },
             );
             if (!res.ok) {
@@ -191,7 +190,7 @@ export default function AdminUsersPage() {
                 ),
             );
             setConfirmToggle(null);
-            setDeactivateReason("");
+            setStatusActionReason("");
         } catch {
             setActionError("Network error. Please try again.");
         } finally {
@@ -201,38 +200,58 @@ export default function AdminUsersPage() {
 
     function closeToggleModal() {
         setConfirmToggle(null);
-        setDeactivateReason("");
+        setStatusActionReason("");
         setActionError("");
         setActionLoading(false);
     }
 
     async function handleRoleChange() {
         if (!roleChangePending) return;
+        if (!roleChangeReason.trim()) {
+            setActionError("Please provide a reason for this role change.");
+            return;
+        }
         const token =
             window.localStorage.getItem("auth_token") ??
             window.sessionStorage.getItem("auth_token");
-        if (!token) return;
-        const res = await fetch(
-            `${API_BASE_URL}/admin/users/${roleChangePending.user.id}/role`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    Authorization: `Bearer ${token}`,
+        if (!token) {
+            setActionError("You are not authenticated. Please sign in again.");
+            return;
+        }
+        setActionLoading(true);
+        setActionError("");
+        try {
+            const res = await fetch(
+                `${API_BASE_URL}/admin/users/${roleChangePending.user.id}/role`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ global_role: roleChangePending.newRole, reason: roleChangeReason.trim() }),
                 },
-                body: JSON.stringify({ global_role: roleChangePending.newRole }),
-            },
-        );
-        if (!res.ok) return;
-        setUsers((prev) =>
-            prev.map((u) =>
-                u.id === roleChangePending.user.id
-                    ? { ...u, globalRole: roleChangePending.newRole }
-                    : u,
-            ),
-        );
-        setRoleChangePending(null);
+            );
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null);
+                setActionError(payload?.error ?? "Unable to update user role.");
+                return;
+            }
+            setUsers((prev) =>
+                prev.map((u) =>
+                    u.id === roleChangePending.user.id
+                        ? { ...u, globalRole: roleChangePending.newRole }
+                        : u,
+                ),
+            );
+            setRoleChangePending(null);
+            setRoleChangeReason("");
+        } catch {
+            setActionError("Network error. Please try again.");
+        } finally {
+            setActionLoading(false);
+        }
     }
 
     const hasActiveFilters =
@@ -569,7 +588,7 @@ export default function AdminUsersPage() {
                                                         onChange={(e) => {
                                                             const newRole = e.target.value as GlobalRole;
                                                             if (newRole !== user.globalRole)
-                                                                setRoleChangePending({ user, newRole });
+                                                                { setRoleChangePending({ user, newRole }); setRoleChangeReason(""); setActionError(""); }
                                                         }}
                                                         className="text-xs rounded-md"
                                                         style={{
@@ -614,7 +633,7 @@ export default function AdminUsersPage() {
                                             <td>
                                                 <button
                                                     className={`btn btn-sm ${user.isActive ? "btn-danger" : "btn-outline"}`}
-                                                    onClick={() => setConfirmToggle(user)}
+                                                    onClick={() => { setConfirmToggle(user); setStatusActionReason(""); setActionError(""); }}
                                                 >
                                                     {user.isActive ? "Deactivate" : "Reactivate"}
                                                 </button>
@@ -657,30 +676,28 @@ export default function AdminUsersPage() {
                                 ? "This will block the user from logging in. All records are preserved."
                                 : "This will restore the user's access to the platform."}
                         </p>
-                        {confirmToggle.isActive && (
-                            <div className="flex flex-col gap-1.5 pt-2">
-                                <label
-                                    className="text-sm font-semibold"
-                                    style={{ color: "var(--color-text)" }}
-                                >
-                                    Reason for deactivation{" "}
-                                    <span style={{ color: "var(--color-error)" }}>*</span>
-                                </label>
-                                <textarea
-                                    value={deactivateReason}
-                                    onChange={(e) => setDeactivateReason(e.target.value)}
-                                    placeholder="Briefly explain why this account is being deactivated..."
-                                    className="w-full rounded-md p-3 text-sm border focus:outline-none resize-none"
-                                    style={{
-                                        borderColor: "var(--color-border)",
-                                        background: "var(--color-bg-secondary, #f9fafb)",
-                                        color: "var(--color-text)",
-                                    }}
-                                    rows={3}
-                                    required
-                                />
-                            </div>
-                        )}
+                        <div className="flex flex-col gap-1.5 pt-2">
+                            <label
+                                className="text-sm font-semibold"
+                                style={{ color: "var(--color-text)" }}
+                            >
+                                {confirmToggle.isActive ? "Reason for deactivation" : "Reason for reactivation"}{" "}
+                                <span style={{ color: "var(--color-error)" }}>*</span>
+                            </label>
+                            <textarea
+                                value={statusActionReason}
+                                onChange={(e) => setStatusActionReason(e.target.value)}
+                                placeholder={confirmToggle.isActive ? "Briefly explain why this account is being deactivated..." : "Briefly explain why this account is being reactivated..."}
+                                className="w-full rounded-md p-3 text-sm border focus:outline-none resize-none"
+                                style={{
+                                    borderColor: "var(--color-border)",
+                                    background: "var(--color-bg-secondary, #f9fafb)",
+                                    color: "var(--color-text)",
+                                }}
+                                rows={3}
+                                required
+                            />
+                        </div>
                         {!!actionError && (
                             <p className="text-sm" style={{ color: "var(--color-error)" }}>
                                 {actionError}
@@ -698,7 +715,7 @@ export default function AdminUsersPage() {
                                 className={`btn ${confirmToggle.isActive ? "btn-danger" : "btn-primary"}`}
                                 onClick={handleToggleActive}
                                 disabled={
-                                    (confirmToggle.isActive && !deactivateReason.trim()) ||
+                                    !statusActionReason.trim() ||
                                     actionLoading
                                 }
                             >
@@ -735,15 +752,41 @@ export default function AdminUsersPage() {
                             </strong>{" "}
                             ({roleChangePending.user.schoolId}).
                         </p>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+                                Reason for role change <span style={{ color: "var(--color-error)" }}>*</span>
+                            </label>
+                            <textarea
+                                value={roleChangeReason}
+                                onChange={(e) => { setRoleChangeReason(e.target.value); setActionError(""); }}
+                                placeholder={roleChangePending.newRole === "Overseer" ? "Explain why this user needs Overseer access..." : "Explain why Overseer access is being revoked..."}
+                                className="w-full rounded-md p-3 text-sm border focus:outline-none resize-none"
+                                style={{
+                                    borderColor: "var(--color-border)",
+                                    background: "var(--color-bg-secondary, #f9fafb)",
+                                    color: "var(--color-text)",
+                                }}
+                                rows={3}
+                                required
+                            />
+                        </div>
+                        {!!actionError && (
+                            <p className="text-sm" style={{ color: "var(--color-error)" }}>
+                                {actionError}
+                            </p>
+                        )}
                         <div className="flex gap-3 justify-end">
                             <button
                                 className="btn btn-ghost"
-                                onClick={() => setRoleChangePending(null)}
+                                onClick={() => { setRoleChangePending(null); setRoleChangeReason(""); setActionError(""); }}
+                                disabled={actionLoading}
                             >
                                 Cancel
                             </button>
-                            <button className="btn btn-danger" onClick={handleRoleChange}>
-                                {roleChangePending.newRole === "Overseer"
+                            <button className="btn btn-danger" onClick={handleRoleChange} disabled={actionLoading || !roleChangeReason.trim()}>
+                                {actionLoading
+                                    ? "Processing..."
+                                    : roleChangePending.newRole === "Overseer"
                                     ? "Yes, Grant Overseer"
                                     : "Yes, Revoke Access"}
                             </button>

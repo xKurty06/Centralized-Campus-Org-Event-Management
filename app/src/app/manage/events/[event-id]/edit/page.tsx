@@ -256,16 +256,19 @@ function AudienceCard({
   option,
   selected,
   onClick,
+  disabled = false,
 }: {
   option: AudienceOption;
   selected: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left p-4 rounded-xl border transition-all duration-150 ${selected ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-100" : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white"}`}
+      disabled={disabled}
+      className={`w-full text-left p-4 rounded-xl border transition-all duration-150 ${selected ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-100" : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white"} ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
     >
       <div className="flex items-center gap-3">
         <span className={`flex-shrink-0 flex items-center justify-center ${selected ? "text-emerald-600" : "text-gray-400"}`}>
@@ -291,12 +294,15 @@ function AudienceCard({
 function BannerUpload({
   currentUrl,
   onChange,
+  disabled = false,
 }: {
   currentUrl: string;
   onChange: (file: File) => void;
+  disabled?: boolean;
 }) {
   const [dragging, setDragging] = useState(false);
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
@@ -305,14 +311,15 @@ function BannerUpload({
   return (
     <div
       onDragOver={(e) => {
+        if (disabled) return;
         e.preventDefault();
         setDragging(true);
       }}
-      onDragLeave={() => setDragging(false)}
+      onDragLeave={() => !disabled && setDragging(false)}
       onDrop={onDrop}
-      className={`relative w-full h-44 rounded-xl border-2 border-dashed transition-all overflow-hidden ${dragging ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300"}`}
+      className={`relative w-full h-44 rounded-xl border-2 border-dashed transition-all overflow-hidden ${dragging ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300"} ${disabled ? "opacity-70" : ""}`}
     >
-      <label className="relative h-full w-full cursor-pointer">
+      <label className={`relative h-full w-full ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
         {currentUrl ? (
           <>
             <img
@@ -321,17 +328,17 @@ function BannerUpload({
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-x-0 bottom-0 bg-black/30 text-white text-[12px] font-medium py-2 text-center">
-              Click to replace banner
+              {disabled ? "Editing locked" : "Click to replace banner"}
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <div className="text-center">
               <p className="text-[13px] font-medium text-gray-600">
-                Drop banner image here
+                {disabled ? "Banner locked" : "Drop banner image here"}
               </p>
               <p className="text-[12px] text-gray-400 mt-0.5">
-                or click to browse
+                {disabled ? "Completed events cannot be edited" : "or click to browse"}
               </p>
             </div>
           </div>
@@ -340,6 +347,7 @@ function BannerUpload({
           type="file"
           accept="image/*"
           className="hidden"
+          disabled={disabled}
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) onChange(f);
@@ -376,6 +384,7 @@ export default function EditEventPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState("");
+  const isCompleted = form?.status === "Completed";
 
   useEffect(() => {
     (async () => {
@@ -434,6 +443,7 @@ export default function EditEventPage() {
     field: keyof EventForm,
     value: EventForm[keyof EventForm],
   ) => {
+    if (isCompleted) return;
     setForm((p) => ({ ...p!, [field]: value }));
     setIsDirty(true);
     setSaved(false);
@@ -441,6 +451,7 @@ export default function EditEventPage() {
   };
 
   const handleDiscard = () => {
+    if (isCompleted) return;
     if (initialForm) {
       setForm(initialForm);
       setBannerFile(null);
@@ -461,6 +472,10 @@ export default function EditEventPage() {
 
   const handleSave = async () => {
     if (!form) return;
+    if (isCompleted) {
+      setErrors({ form: "Completed events are read-only." });
+      return;
+    }
     const v = validate();
     if (Object.keys(v).length) {
       setErrors(v);
@@ -644,13 +659,18 @@ export default function EditEventPage() {
           {errors.form && (
             <p className="text-[12px] text-red-500">{errors.form}</p>
           )}
+          {isCompleted && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+              This event is completed. Event details are now read-only. Participant records remain available from the masterlist.
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-3 flex-shrink-0">
           {isDirty && (
             <button
               onClick={handleDiscard}
-              disabled={saving}
+              disabled={saving || isCompleted}
               className="inline-flex items-center justify-center h-10 px-4 text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors"
             >
               Discard Changes
@@ -658,10 +678,10 @@ export default function EditEventPage() {
           )}
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center justify-center h-10 gap-2 px-4 text-[13px] font-semibold bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors no-underline"
+            disabled={saving || isCompleted}
+            className={`inline-flex items-center justify-center h-10 gap-2 px-4 text-[13px] font-semibold rounded-lg transition-colors no-underline ${isCompleted ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-green-700 hover:bg-green-800 text-white"}`}
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {isCompleted ? "Editing locked" : saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
@@ -673,6 +693,7 @@ export default function EditEventPage() {
           >
             <BannerUpload
               currentUrl={form.banner_url}
+              disabled={Boolean(isCompleted)}
               onChange={(file) => {
                 setBannerFile(file);
                 update("banner_url", URL.createObjectURL(file));
@@ -684,6 +705,7 @@ export default function EditEventPage() {
               <Field label="Event Title" required>
                 <Input
                   value={form.title}
+                  disabled={Boolean(isCompleted)}
                   onChange={(e) => update("title", e.target.value)}
                 />
                 {errors.title && (
@@ -694,6 +716,7 @@ export default function EditEventPage() {
                 <Textarea
                   rows={5}
                   value={form.description}
+                  disabled={Boolean(isCompleted)}
                   onChange={(e) => update("description", e.target.value)}
                 />
                 {errors.description && (
@@ -706,6 +729,7 @@ export default function EditEventPage() {
                 <Field label="Category">
                   <Select
                     value={form.category_id}
+                    disabled={Boolean(isCompleted)}
                     onChange={(e) =>
                       update("category_id", Number(e.target.value))
                     }
@@ -725,6 +749,7 @@ export default function EditEventPage() {
                 <Field label="Venue">
                   <Select
                     value={form.venue_id}
+                    disabled={Boolean(isCompleted)}
                     onChange={(e) => update("venue_id", Number(e.target.value))}
                   >
                     {VENUES.map((v) => (
@@ -745,6 +770,7 @@ export default function EditEventPage() {
                   <Input
                     type="datetime-local"
                     value={form.start_date}
+                    disabled={Boolean(isCompleted)}
                     onChange={(e) => update("start_date", e.target.value)}
                   />
                   {errors.start_date && (
@@ -757,6 +783,7 @@ export default function EditEventPage() {
                   <Input
                     type="datetime-local"
                     value={form.end_date}
+                    disabled={Boolean(isCompleted)}
                     onChange={(e) => update("end_date", e.target.value)}
                   />
                   {errors.end_date && (
@@ -771,6 +798,7 @@ export default function EditEventPage() {
                   type="number"
                   min={1}
                   value={form.capacity}
+                  disabled={Boolean(isCompleted)}
                   onChange={(e) =>
                     update("capacity", Number(e.target.value) || "")
                   }
@@ -792,6 +820,7 @@ export default function EditEventPage() {
               <Field label="Update Status">
                 <Select
                   value={form.status}
+                  disabled={Boolean(isCompleted)}
                   onChange={(e) =>
                     update("status", e.target.value as EventStatus)
                   }
@@ -815,6 +844,7 @@ export default function EditEventPage() {
                   key={opt.value}
                   option={opt}
                   selected={form.audience_type === opt.value}
+                  disabled={Boolean(isCompleted)}
                   onClick={() => update("audience_type", opt.value)}
                 />
               ))}

@@ -320,7 +320,10 @@ class AdminController extends Controller
             $status = $req->input('accreditation_status');
 
             $previousOrg = DB::table('organizations')->where('id', $orgId)->first();
-            $reason = $req->input('reason');
+            $reason = trim((string) $req->input('reason', ''));
+            if ($reason === '') {
+                return response()->json(['success' => false, 'error' => 'Reason is required.'], 422);
+            }
 
             DB::table('organizations')->where('id', $orgId)->update([
                 'accreditation_status' => $status,
@@ -594,6 +597,7 @@ class AdminController extends Controller
     public function deleteEvent(Request $req, string $id)
     {
         try {
+            $this->eventStatusService->markEndedEventsCompleted($id);
             $event = DB::table('events')->where('id', $id)->first();
             if (!$event) {
                 return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
@@ -770,6 +774,10 @@ class AdminController extends Controller
             if (!$user) {
                 return response()->json(['success' => false, 'error' => 'User not found.'], 404);
             }
+            $reason = trim((string) $req->input('reason', ''));
+            if ($reason === '') {
+                return response()->json(['success' => false, 'error' => 'Deactivation reason is required.'], 422);
+            }
 
             DB::table('users')->where('id', $id)->update(['is_active' => 0]);
 
@@ -780,7 +788,7 @@ class AdminController extends Controller
                 'Deactivated Account',
                 trim(($updated->first_name ?? '') . ' ' . ($updated->last_name ?? '')) . ' (' . ($updated->school_id ?? '') . ')',
                 (string) $updated->id,
-                $req->input('reason') ? ('Reason: ' . $req->input('reason')) : null
+                'Reason: ' . $reason
             );
 
             return response()->json(['success' => true, 'data' => $updated]);
@@ -797,6 +805,10 @@ class AdminController extends Controller
             if (!$user) {
                 return response()->json(['success' => false, 'error' => 'User not found.'], 404);
             }
+            $reason = trim((string) $req->input('reason', ''));
+            if ($reason === '') {
+                return response()->json(['success' => false, 'error' => 'Reactivation reason is required.'], 422);
+            }
 
             DB::table('users')->where('id', $id)->update(['is_active' => 1]);
             $updated = DB::table('users')->where('id', $id)->first();
@@ -805,7 +817,8 @@ class AdminController extends Controller
                 'User',
                 'Reactivated Account',
                 trim(($updated->first_name ?? '') . ' ' . ($updated->last_name ?? '')) . ' (' . ($updated->school_id ?? '') . ')',
-                (string) $updated->id
+                (string) $updated->id,
+                'Reason: ' . $reason
             );
 
             return response()->json(['success' => true, 'data' => $updated]);
@@ -858,7 +871,10 @@ class AdminController extends Controller
                 'Assigned Global Role',
                 trim(($updated->first_name ?? '') . ' ' . ($updated->last_name ?? '')) . ' (' . ($updated->school_id ?? '') . ')',
                 (string) $updated->id,
-                'global_role: ' . ($user->global_role ?? 'User') . ' -> ' . ($updated->global_role ?? 'User')
+                json_encode([
+                    'reason' => trim((string) $req->input('reason', '')),
+                    'global_role' => ($user->global_role ?? 'User') . ' -> ' . ($updated->global_role ?? 'User'),
+                ])
             );
 
             return response()->json(['success' => true, 'data' => $updated]);

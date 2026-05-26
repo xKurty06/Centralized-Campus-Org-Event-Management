@@ -184,6 +184,134 @@ class ManageController extends Controller
         return $event ? (object) ['org' => $orgRow, 'event' => $event] : null;
     }
 
+    private function resolveOfficerRegistrationAccess(Request $req, string $registrationId): ?object
+    {
+        $orgRow = $this->resolveOfficer($req);
+        if (!$orgRow) {
+            return null;
+        }
+
+        $registration = DB::table('registrations as r')
+            ->join('events as e', 'r.event_id', '=', 'e.id')
+            ->select(
+                'r.id as registration_id',
+                'r.user_id',
+                'r.event_id',
+                'r.payment_status',
+                'r.attendance_status',
+                'e.host_org_id'
+            )
+            ->where('r.id', $registrationId)
+            ->where('e.host_org_id', $orgRow->org_id)
+            ->first();
+
+        if (!$registration) {
+            return null;
+        }
+
+        $event = DB::table('events')->where('id', $registration->event_id)->first();
+        if (!$event) {
+            return null;
+        }
+
+        return (object) [
+            'org' => $orgRow,
+            'registration' => $registration,
+            'event' => $event,
+        ];
+    }
+
+    private function refreshManagedEvent(string $eventId): ?object
+    {
+        $this->eventStatusService->markEndedEventsCompleted($eventId);
+
+        return DB::table('events')->where('id', $eventId)->first();
+    }
+
+    private function isCompletedEvent(?object $event): bool
+    {
+        return strtolower(trim((string) ($event->status ?? ''))) === 'completed';
+    }
+
+    private function completedEventLockedResponse()
+    {
+        return response()->json([
+            'success' => false,
+            'error' => 'Completed events are read-only. Participants can still be viewed.',
+        ], 422);
+    }
+
+    private function canArchiveCompletedEvent(UpdateEventRequest $req): bool
+    {
+        $requestedStatus = trim((string) $req->input('status', ''));
+        if ($requestedStatus !== 'Closed') {
+            return false;
+        }
+
+        $blockedFields = [
+            'venue_id',
+            'category_id',
+            'title',
+            'banner_url',
+            'description',
+            'start_date',
+            'end_date',
+            'capacity',
+            'audience_type',
+            'is_paid',
+            'price',
+            'payment_instructions',
+        ];
+
+        foreach ($blockedFields as $field) {
+            if ($req->has($field) && $field !== 'status') {
+                return false;
+            }
+        }
+
+        if ($req->hasFile('banner_file')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isLifecycleSettingsAction(UpdateEventRequest $req, ?object $event): bool
+    {
+        if (!$event || !$req->filled('status')) {
+            return false;
+        }
+
+        $requestedStatus = trim((string) $req->input('status', ''));
+        $currentStatus = trim((string) ($event->status ?? ''));
+        if ($requestedStatus === '' || strcasecmp($requestedStatus, $currentStatus) === 0) {
+            return false;
+        }
+
+        $nonLifecycleFields = [
+            'venue_id',
+            'category_id',
+            'title',
+            'banner_url',
+            'description',
+            'start_date',
+            'end_date',
+            'capacity',
+            'audience_type',
+            'is_paid',
+            'price',
+            'payment_instructions',
+        ];
+
+        foreach ($nonLifecycleFields as $field) {
+            if ($req->has($field)) {
+                return false;
+            }
+        }
+
+        return !$req->hasFile('banner_file');
+    }
+
     public function dashboard(Request $req)
     {
         try {
@@ -364,6 +492,19 @@ class ManageController extends Controller
             if ($event->host_org_id !== $orgRow->org_id) {
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
+            $event = $this->refreshManagedEvent($resolvedEventId);
+            if (!$event) {
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+            if ($this->isCompletedEvent($event) && !$this->canArchiveCompletedEvent($req)) {
+                return $this->completedEventLockedResponse();
+            }
+            if ($this->isLifecycleSettingsAction($req, $event)) {
+                $reason = trim((string) $req->input('reason', ''));
+                if ($reason === '') {
+                    return response()->json(['success' => false, 'error' => 'Reason is required for this action.'], 422);
+                }
+            }
 
             $bannerUrl = $req->input('banner_url');
             if ($req->hasFile('banner_file')) {
@@ -449,7 +590,16 @@ class ManageController extends Controller
                 DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
-
+            $reason = trim((string) $req->input('reason', ''));
+            if ($reason === '') {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Deletion reason is required.'], 422);
+            }
+            $event = $this->refreshManagedEvent($resolvedEventId);
+            if (!$event) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
             DB::table('notifications')->where('reference_id', $resolvedEventId)->delete();
             DB::table('events')->where('id', $resolvedEventId)->delete();
 
@@ -533,6 +683,20 @@ class ManageController extends Controller
                 DB::rollBack();
                 return response()->json(['success' => false, 'error' => 'Proof not found.'], 404);
             }
+            $registrationAccess = $this->resolveOfficerRegistrationAccess($req, $reg_id);
+            if (!$registrationAccess) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+            $event = $this->refreshManagedEvent((string) $registrationAccess->event->id);
+            if (!$event) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+            if ($this->isCompletedEvent($event)) {
+                DB::rollBack();
+                return $this->completedEventLockedResponse();
+            }
 
             DB::table('payment_proofs')
                 ->where('id', $proof->id)
@@ -560,6 +724,17 @@ class ManageController extends Controller
             $proof = DB::table('payment_proofs')->where('reg_id', $reg_id)->first();
             if (!$proof) {
                 return response()->json(['success' => false, 'error' => 'Proof not found.'], 404);
+            }
+            $registrationAccess = $this->resolveOfficerRegistrationAccess($req, $reg_id);
+            if (!$registrationAccess) {
+                return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
+            }
+            $event = $this->refreshManagedEvent((string) $registrationAccess->event->id);
+            if (!$event) {
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+            if ($this->isCompletedEvent($event)) {
+                return $this->completedEventLockedResponse();
             }
 
             DB::table('payment_proofs')
@@ -639,6 +814,15 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
             $resolvedEventId = (string) $eventAccess->event->id;
+            $event = $this->refreshManagedEvent($resolvedEventId);
+            if (!$event) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+            if ($this->isCompletedEvent($event)) {
+                DB::rollBack();
+                return $this->completedEventLockedResponse();
+            }
 
             $registration = DB::table('registrations')
                 ->where('id', $reg_id)
@@ -673,6 +857,13 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
             $resolvedEventId = (string) $eventAccess->event->id;
+            $event = $this->refreshManagedEvent($resolvedEventId);
+            if (!$event) {
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+            if ($this->isCompletedEvent($event)) {
+                return $this->completedEventLockedResponse();
+            }
 
             $registration = DB::table('registrations')
                 ->where('id', $reg_id)
@@ -708,6 +899,15 @@ class ManageController extends Controller
                 return response()->json(['success' => false, 'error' => 'Forbidden.'], 403);
             }
             $resolvedEventId = (string) $eventAccess->event->id;
+            $event = $this->refreshManagedEvent($resolvedEventId);
+            if (!$event) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'error' => 'Event not found.'], 404);
+            }
+            if ($this->isCompletedEvent($event)) {
+                DB::rollBack();
+                return $this->completedEventLockedResponse();
+            }
 
             foreach ($items as $it) {
                 $queueId = $it['id'] ?? null;
