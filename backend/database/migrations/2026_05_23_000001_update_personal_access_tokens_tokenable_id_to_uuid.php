@@ -1,22 +1,25 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('personal_access_tokens', function (Blueprint $table): void {
-            $table->string('tokenable_id', 36)->change();
-        });
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
+        DB::statement("ALTER TABLE personal_access_tokens MODIFY tokenable_id CHAR(36) NOT NULL");
     }
 
     public function down(): void
     {
-        Schema::table('personal_access_tokens', function (Blueprint $table): void {
-            $table->unsignedBigInteger('tokenable_id')->change();
-        });
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
+        DB::statement("ALTER TABLE personal_access_tokens MODIFY tokenable_id BIGINT UNSIGNED NOT NULL");
     }
 };

@@ -7,6 +7,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::unprepared("DROP TRIGGER IF EXISTS after_registration_insert");
 
         DB::unprepared(<<<'SQL'
@@ -25,6 +29,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::unprepared("DROP TRIGGER IF EXISTS before_registration_insert");
 
         DB::unprepared(<<<'SQL'

@@ -2,13 +2,17 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Create view v_event_dashboard
         DB::unprepared(<<<'SQL'
         CREATE OR REPLACE VIEW v_event_dashboard AS
@@ -150,6 +154,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Drop view
         DB::unprepared('DROP VIEW IF EXISTS v_event_dashboard');
         // Drop trigger and procedure
