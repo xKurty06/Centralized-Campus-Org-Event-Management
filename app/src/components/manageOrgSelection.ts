@@ -12,6 +12,11 @@ export function setSelectedManageOrgId(orgId: string): void {
   window.sessionStorage.setItem(MANAGE_SELECTED_ORG_KEY, orgId);
 }
 
+export function clearSelectedManageOrgId(): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(MANAGE_SELECTED_ORG_KEY);
+}
+
 export function manageRequestHeaders(token?: string | null): Record<string, string> {
   const selectedOrgId = getSelectedManageOrgId();
   return {

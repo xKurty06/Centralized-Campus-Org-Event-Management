@@ -6,11 +6,11 @@ import { ManageFormSkeleton } from '@/components/skeletons';
 import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
 /* ----------------------------------------------------------------
-   Types — aligned to DB schema
+   Types â€” aligned to DB schema
 
    Organizations table:
      id, name, description, logo_url, adviser,
-     category_id → Org_Categories(name: Academic|Non-Academic|Religious),
+     category_id â†’ Org_Categories(name: Academic|Non-Academic|Religious),
      accreditation_status (Active|Suspended),
      accredited_by, accredited_at
    ---------------------------------------------------------------- */
@@ -260,7 +260,7 @@ export default function ManageOrgProfilePage() {
           </div>
         )}
 
-        {/* ── Header ── */}
+        {/* â”€â”€ Header â”€â”€ */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 
           {/* LEFT */}
@@ -286,7 +286,7 @@ export default function ManageOrgProfilePage() {
         </div>
 
 
-        {/* ── Accreditation read-only strip ── */}
+        {/* â”€â”€ Accreditation read-only strip â”€â”€ */}
         <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-wrap">
             {org.accreditation_status === 'Active' ? (
@@ -332,7 +332,7 @@ export default function ManageOrgProfilePage() {
           </div>
         </div>
 
-        {/* ── Suspended alert ── */}
+        {/* â”€â”€ Suspended alert â”€â”€ */}
         {org.accreditation_status === 'Suspended' && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3.5">
             <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none">
@@ -345,10 +345,10 @@ export default function ManageOrgProfilePage() {
           </div>
         )}
 
-        {/* ── Two-column form ── */}
+        {/* â”€â”€ Two-column form â”€â”€ */}
         <form onSubmit={handleSave} className="flex flex-col lg:flex-row gap-5">
 
-          {/* LEFT — editable fields */}
+          {/* LEFT â€” editable fields */}
           <div className="flex-1 flex flex-col gap-5">
 
             <FormCard title="Organization name">
@@ -391,19 +391,19 @@ export default function ManageOrgProfilePage() {
                   placeholder="e.g. Prof. Maria Santos"
                   className="w-full px-4 py-3 text-[14px] text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-600 focus:bg-white focus:shadow-[0_0_0_3px_#dcfce7] transition-all placeholder:text-gray-400"
                 />
-                <p className="text-[11px] text-gray-400">Include honorific — Prof., Dr., Engr., etc.</p>
+                <p className="text-[11px] text-gray-400">Include honorific â€” Prof., Dr., Engr., etc.</p>
               </div>
             </FormCard>
           </div>
 
-          {/* RIGHT — logo + preview + save */}
+          {/* RIGHT â€” logo + preview + save */}
           <div className="lg:w-[290px] flex flex-col gap-5 flex-shrink-0">
 
             {/* Logo */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-100">
                 <p className="text-[13px] font-semibold text-gray-700">Organization logo</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">PNG or JPG · Max 2MB · Square recommended</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">PNG or JPG Â· Max 2MB Â· Square recommended</p>
               </div>
               <div className="px-5 py-5 flex flex-col items-center gap-4">
                 {/* Preview circle */}
@@ -462,7 +462,7 @@ export default function ManageOrgProfilePage() {
                   <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 20 20" fill="none">
                     <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 1114 0H3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
-                  <p className="text-[11px] text-gray-400 truncate">Adviser: {adviser || '—'}</p>
+                  <p className="text-[11px] text-gray-400 truncate">Adviser: {adviser || 'â€”'}</p>
                 </div>
               </div>
             </div>

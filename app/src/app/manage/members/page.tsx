@@ -1,18 +1,17 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import ManageShell from '@/components/ManageShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 import { IconRefresh } from '@/components/ui/IconRefresh';
 import { ManageMembersStatsSkeleton, ManageMembersTableRowsSkeleton } from '@/components/skeletons';
 import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
 /* ----------------------------------------------------------------
-   Schema reference — Org_Members table
+   Schema reference â€” Org_Members table
    ----------------------------------------------------------------
    id                  UUID PK
-   user_id             FK → Users(id)
-   org_id              FK → Organizations(id)
+   user_id             FK â†’ Users(id)
+   org_id              FK â†’ Organizations(id)
    membership_status   ENUM: Pending | Active | Inactive
    paid_membership_fee Boolean DEFAULT false
    joined_at           Timestamp
@@ -20,7 +19,7 @@ import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
    API endpoints (wired to placeholders):
    GET   /api/manage/members?org_id=:id
-   GET   /api/manage/members/lookup?school_id=:id  → user preview
+   GET   /api/manage/members/lookup?school_id=:id  â†’ user preview
    POST  /api/manage/members            { org_id, user_id }
    PATCH /api/manage/members/:id        { membership_status | paid_membership_fee }
    ---------------------------------------------------------------- */
@@ -50,7 +49,7 @@ interface Member {
     dept: string;          // Departments.code
     yearLevel: number;     // Users.year_level
     section: number;       // Users.section
-    // Derived — true if a row exists in Org_Officers for this user+org
+    // Derived â€” true if a row exists in Org_Officers for this user+org
     isOfficer: boolean;
 }
 
@@ -174,13 +173,13 @@ export default function ManageMembersPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [loadError, setLoadError] = useState('');
 
-    // ── Filters
+    // â”€â”€ Filters
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState<StatusFilter>('All');
     const [filterFee, setFilterFee] = useState<FeeFilter>('All');
     const [filterDept, setFilterDept] = useState('All');
 
-    // ── Add member modal
+    // â”€â”€ Add member modal
     const [showAddModal, setShowAddModal] = useState(false);
     const [addSchoolId, setAddSchoolId] = useState('');
     const [addLoading, setAddLoading] = useState(false);
@@ -192,17 +191,17 @@ export default function ManageMembersPage() {
         yearLevel: number; section: number;
     } | null>(null);
 
-    // ── Fee toggle confirm modal
+    // â”€â”€ Fee toggle confirm modal
     const [feeTarget, setFeeTarget] = useState<Member | null>(null);
 
-    // ── Status change confirm modal
+    // â”€â”€ Status change confirm modal
     const [statusTarget, setStatusTarget] = useState<Member | null>(null);
     const [pendingStatus, setPendingStatus] = useState<MembershipStatus | null>(null);
 
-    // ── Detail drawer
+    // â”€â”€ Detail drawer
     const [detailMember, setDetailMember] = useState<Member | null>(null);
 
-    /* ── Derived ── */
+    /* â”€â”€ Derived â”€â”€ */
     const departments = useMemo(() => {
         const d = [...new Set(members.map((m) => m.dept).filter(Boolean))].sort();
         return ['All', ...d];
@@ -271,7 +270,7 @@ export default function ManageMembersPage() {
         feePaid: members.filter((m) => m.paidMembershipFee).length,
     }), [members]);
 
-    /* ── Handlers ── */
+    /* â”€â”€ Handlers â”€â”€ */
 
     // Simulates GET /api/manage/members/lookup?school_id=
     async function handleLookup() {
@@ -385,10 +384,10 @@ export default function ManageMembersPage() {
        RENDER
     ================================================================ */
     return (
-        <ManageShell pageTitle="Salikop">
+        <>
             <main className="flex flex-col gap-6 animate-fade-in">
 
-                {/* ── Page Header ── */}
+                {/* â”€â”€ Page Header â”€â”€ */}
                 <div className="flex flex-col w-full">
                     <div>
                         {/* Removed mb-1 and added leading-none to pull the title closer */}
@@ -427,7 +426,7 @@ export default function ManageMembersPage() {
                 </div>
 
 
-                {/* ── Stat Cards ── */}
+                {/* â”€â”€ Stat Cards â”€â”€ */}
                 {loading ? (
                     <ManageMembersStatsSkeleton />
                 ) : (
@@ -440,8 +439,8 @@ export default function ManageMembersPage() {
                     </div>
                 )}
 
-                {/* ── Filters ── */}
-                {/* ── Filters ─────────────────────────────────────────────── */}
+                {/* â”€â”€ Filters â”€â”€ */}
+                {/* â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="card" style={{ boxShadow: 'none' }}>
                     <div className="card-body py-3.5">
                         <div className="flex flex-col gap-2.5">
@@ -456,7 +455,7 @@ export default function ManageMembersPage() {
                                         type="text"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search by name, student ID, email, or course…"
+                                        placeholder="Search by name, student ID, email, or courseâ€¦"
                                         className={`input-has-left-icon ${search ? 'input-has-right-icon' : ''}`}
                                     />
                                     {search && (
@@ -549,7 +548,7 @@ export default function ManageMembersPage() {
                     </div>
                 </div>
 
-                {/* ── Table ── */}
+                {/* â”€â”€ Table â”€â”€ */}
                 <div className="card">
                     <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
                         <h2 className="text-[15px] font-semibold text-[var(--color-text)]">Members</h2>
@@ -617,14 +616,14 @@ export default function ManageMembersPage() {
                             Showing <strong>{filtered.length}</strong> of <strong>{members.length}</strong> members
                         </p>
                         <div className="flex items-center gap-1">
-                            <button className="btn btn-ghost btn-sm" disabled>← Prev</button>
+                            <button className="btn btn-ghost btn-sm" disabled>â† Prev</button>
                             <span
                                 className="text-xs px-3 py-1.5 rounded-md font-semibold"
                                 style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary)' }}
                             >
                                 1
                             </span>
-                            <button className="btn btn-ghost btn-sm" disabled>Next →</button>
+                            <button className="btn btn-ghost btn-sm" disabled>Next â†’</button>
                         </div>
                     </div>
                 </div>
@@ -695,7 +694,7 @@ export default function ManageMembersPage() {
                                         {fullName(lookupResult)}
                                     </p>
                                     <p className="text-xs" style={{ color: 'var(--color-primary)' }}>
-                                        {lookupResult.dept} · {lookupResult.course} {lookupResult.yearLevel}-{lookupResult.section}
+                                        {lookupResult.dept} Â· {lookupResult.course} {lookupResult.yearLevel}-{lookupResult.section}
                                     </p>
                                 </div>
                                 {/* Verified checkmark */}
@@ -787,7 +786,7 @@ export default function ManageMembersPage() {
             )}
 
             {/* ================================================================
-                DETAIL DRAWER — slides in from the right
+                DETAIL DRAWER â€” slides in from the right
             ================================================================ */}
             {detailMember && (
                 <>
@@ -863,7 +862,7 @@ export default function ManageMembersPage() {
                                 <DrawerField label="School ID" value={detailMember.schoolId} mono />
                                 <DrawerField label="Course" value={detailMember.course} />
                                 <DrawerField label="Department" value={detailMember.dept} />
-                                <DrawerField label="Year / Section" value={`Year ${detailMember.yearLevel} · Section ${detailMember.section}`} />
+                                <DrawerField label="Year / Section" value={`Year ${detailMember.yearLevel} Â· Section ${detailMember.section}`} />
                             </section>
 
                             <hr className="divider" />
@@ -930,7 +929,7 @@ export default function ManageMembersPage() {
                     </aside>
                 </>
             )}
-        </ManageShell>
+        </>
     );
 }
 
@@ -985,7 +984,7 @@ function MemberRow({
 
             {/* Course */}
             <td className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {member.dept} · {member.course}
+                {member.dept} Â· {member.course}
             </td>
 
             {/* Year / Section */}
@@ -998,7 +997,7 @@ function MemberRow({
                 {fmtDate(member.joinedAt)}
             </td>
 
-            {/* Status — inline select with confirm on change */}
+            {/* Status â€” inline select with confirm on change */}
             <td>
                 <select
                     value={member.membershipStatus}
@@ -1019,7 +1018,7 @@ function MemberRow({
                 </select>
             </td>
 
-            {/* Fee badge — click to toggle */}
+            {/* Fee badge â€” click to toggle */}
             <td>
                 <button
                     onClick={onFeeToggle}
@@ -1085,7 +1084,7 @@ function MemberSummary({ member }: { member: Member }) {
                     {fullName(member)}
                 </p>
                 <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    {member.schoolId} · {member.course}
+                    {member.schoolId} Â· {member.course}
                 </p>
             </div>
         </div>
@@ -1158,7 +1157,7 @@ function Modal({
     );
 }
 
-/* ── Icons ── */
+/* â”€â”€ Icons â”€â”€ */
 function IconSearch() {
     return (
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">

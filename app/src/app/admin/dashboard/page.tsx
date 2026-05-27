@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import AdminShell from '@/components/AdminShell';
 import { IconRefresh } from '@/components/ui/IconRefresh';
 import { DashboardSkeleton } from '@/components/skeletons';
 
@@ -368,7 +367,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <AdminShell>
+    <>
       <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -481,6 +480,6 @@ export default function AdminDashboardPage() {
         </div>
         </div>}
       </div>
-    </AdminShell>
+    </>
   );
 }

@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import React from "react";
-import ManageShell from "@/components/ManageShell";
 import Link from "next/link";
 // Adjust this import path according to your actual components folder structure
 import { IconRefresh } from "@/components/ui/IconRefresh";
@@ -494,7 +493,7 @@ export default function ParticipantsPage() {
     ];
 
     return (
-        <ManageShell pageTitle="Salikop">
+        <>
             <div className="flex flex-col gap-6 animate-fade-in">
                 {!!error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
@@ -557,7 +556,7 @@ export default function ParticipantsPage() {
                                     {event?.title ?? "Event"}
                                 </h1>
                                     <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
-                                        {fmt(event?.start_date ?? new Date().toISOString())} · Event
+                                        {fmt(event?.start_date ?? new Date().toISOString())} Â· Event
                                         Slug: <span className="font-mono">{eventRouteKey}</span>
                                     </p>
                                 </div>
@@ -823,6 +822,6 @@ export default function ParticipantsPage() {
                     </div>
                 </div>
             )}
-        </ManageShell>
+        </>
     );
 }

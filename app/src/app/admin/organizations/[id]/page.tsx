@@ -1,9 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import AdminShell from '@/components/AdminShell';
 import { IconRefresh } from '@/components/ui/IconRefresh';
 import { DetailPageSkeleton } from '@/components/skeletons';
 
@@ -102,7 +101,7 @@ export default function AdminOrgDetailPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
-    // ── Org state
+    // â”€â”€ Org state
     const [org, setOrg] = useState<OrgProfile>({
         id: '',
         name: '',
@@ -119,7 +118,7 @@ export default function AdminOrgDetailPage() {
     const [members, setMembers] = useState<Member[]>([]);
     const [memberGrowth, setMemberGrowth] = useState<Array<{ month: string; value: number }>>([]);
 
-    // ── Edit profile modal
+    // â”€â”€ Edit profile modal
     const [showEditModal, setShowEditModal] = useState(false);
     const [editDraft, setEditDraft] = useState<OrgProfile>(org);
     const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
@@ -129,12 +128,12 @@ export default function AdminOrgDetailPage() {
     const [selectedLogoSize, setSelectedLogoSize] = useState('');
     const [selectedLogoDimensions, setSelectedLogoDimensions] = useState('');
 
-    // ── Accreditation confirm modal
+    // â”€â”€ Accreditation confirm modal
     const [showAccredModal, setShowAccredModal] = useState(false);
     const [accreditationReason, setAccreditationReason] = useState('');
     const [accreditationError, setAccreditationError] = useState('');
 
-    // ── Add officer modal
+    // â”€â”€ Add officer modal
     const [showAddOfficerModal, setShowAddOfficerModal] = useState(false);
     const [addSchoolId, setAddSchoolId] = useState('');
     const [addLookupState, setAddLookupState] = useState<'idle' | 'loading' | 'found' | 'not_found' | 'error'>('idle');
@@ -153,16 +152,16 @@ export default function AdminOrgDetailPage() {
     const [addError, setAddError] = useState('');
     const [addLookupError, setAddLookupError] = useState('');
 
-    // ── Edit officer modal
+    // â”€â”€ Edit officer modal
     const [editingOfficer, setEditingOfficer] = useState<Officer | null>(null);
     const [editPosition, setEditPosition] = useState('');
 
-    // ── Deactivate officer confirm
+    // â”€â”€ Deactivate officer confirm
     const [deactivatingOfficer, setDeactivatingOfficer] = useState<Officer | null>(null);
     const [officerRemovalReason, setOfficerRemovalReason] = useState('');
     const [officerRemovalError, setOfficerRemovalError] = useState('');
 
-    // ── Members modal
+    // â”€â”€ Members modal
     const [showMembersModal, setShowMembersModal] = useState(false);
 
     const activeOfficers = useMemo(() => officers.filter((o) => o.isActive), [officers]);
@@ -618,7 +617,7 @@ export default function AdminOrgDetailPage() {
     }
 
     return (
-        <AdminShell>
+        <>
             <main className="flex flex-col gap-6 animate-fade-in">
                 {errorMsg && (
                     <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--color-error)', color: 'var(--color-error)' }}>
@@ -629,7 +628,7 @@ export default function AdminOrgDetailPage() {
                     <DetailPageSkeleton />
                 )}
 
-                {/* ── Breadcrumb ── */}
+                {/* â”€â”€ Breadcrumb â”€â”€ */}
                 <div className="flex flex-col gap-4">
                     <Link
                         href="/admin/organizations"
@@ -647,7 +646,7 @@ export default function AdminOrgDetailPage() {
                         Back to Organizations
                     </Link>
 
-                    {/* ── Page Header ── */}
+                    {/* â”€â”€ Page Header â”€â”€ */}
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex items-center gap-4">
                             {org.logoUrl ? (
@@ -702,7 +701,7 @@ export default function AdminOrgDetailPage() {
                     </div>
                 </div>
 
-                {/* ── Description ── */}
+                {/* â”€â”€ Description â”€â”€ */}
                 <div className="card">
                     <div className="card-body">
                         <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
@@ -711,7 +710,7 @@ export default function AdminOrgDetailPage() {
                     </div>
                 </div>
 
-                {/* ── Accreditation Control ── */}
+                {/* â”€â”€ Accreditation Control â”€â”€ */}
                 <div className="card" style={{ borderColor: org.accreditationStatus === 'Active' ? 'var(--color-border)' : 'var(--color-error)' }}>
                     <div className="card-body flex items-center justify-between gap-4 flex-wrap">
                         <div>
@@ -736,17 +735,17 @@ export default function AdminOrgDetailPage() {
                                 setShowAccredModal(true);
                             }}
                         >
-                            {org.accreditationStatus === 'Active' ? '⚠ Suspend Organization' : '✓ Restore Accreditation'}
+                            {org.accreditationStatus === 'Active' ? 'âš  Suspend Organization' : 'âœ“ Restore Accreditation'}
                         </button>
                     </div>
                 </div>
 
-                {/* ── Officers Section ── */}
+                {/* â”€â”€ Officers Section â”€â”€ */}
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-[16px] font-bold" style={{ color: 'var(--color-text)' }}>Officers</h2>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                            {activeOfficers.length} active · {inactiveOfficers.length} inactive
+                            {activeOfficers.length} active Â· {inactiveOfficers.length} inactive
                         </p>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={() => { setAddSchoolId(''); setAddPosition(''); setAddError(''); handleClearOfficerLookup(); setShowAddOfficerModal(true); }}>
@@ -843,7 +842,7 @@ export default function AdminOrgDetailPage() {
                     </table>
                 </div>
 
-                {/* ── Members Overview ── */}
+                {/* â”€â”€ Members Overview â”€â”€ */}
                 <div className="card">
                     <div className="card-body flex flex-col gap-5">
                         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -1316,10 +1315,10 @@ export default function AdminOrgDetailPage() {
                                         {addLookupResult.firstName} {addLookupResult.lastName}
                                     </p>
                                     <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                                        {addLookupResult.schoolId} • {addLookupResult.email}
+                                        {addLookupResult.schoolId} â€¢ {addLookupResult.email}
                                     </p>
                                     <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
-                                        {addLookupResult.course || 'N/A'} • {addLookupResult.dept || 'N/A'} • Y{addLookupResult.yearLevel || '?'}-{addLookupResult.section || '?'}
+                                        {addLookupResult.course || 'N/A'} â€¢ {addLookupResult.dept || 'N/A'} â€¢ Y{addLookupResult.yearLevel || '?'}-{addLookupResult.section || '?'}
                                     </p>
                                 </div>
                                 <button
@@ -1416,7 +1415,7 @@ export default function AdminOrgDetailPage() {
                     </div>
                 </Modal>
             )}
-        </AdminShell>
+        </>
     );
 }
 

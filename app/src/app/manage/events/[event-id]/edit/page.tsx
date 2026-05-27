@@ -2,7 +2,6 @@
 import { useState, useEffect, ReactNode } from "react";
 import React from "react";
 import { useParams } from "next/navigation";
-import ManageShell from "@/components/ManageShell";
 import Link from "next/link";
 import { ManageFormSkeleton } from "@/components/skeletons";
 import { manageRequestHeaders } from "@/components/manageOrgSelection";
@@ -570,27 +569,27 @@ export default function EditEventPage() {
 
   if (loading)
     return (
-      <ManageShell pageTitle="Salikop">
+      <>
         <ManageFormSkeleton />
-      </ManageShell>
+      </>
     );
   if (loadError)
     return (
-      <ManageShell pageTitle="Salikop">
+      <>
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
           {loadError}
         </div>
-      </ManageShell>
+      </>
     );
   if (!form)
     return (
-      <ManageShell pageTitle="Salikop">
+      <>
         <div className="text-sm text-gray-500">Event data unavailable.</div>
-      </ManageShell>
+      </>
     );
 
   return (
-    <ManageShell pageTitle="Salikop">
+    <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-5 animate-content-reveal">
         <div className="flex flex-col gap-3">
           <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
@@ -857,6 +856,6 @@ export default function EditEventPage() {
           </SectionCard>
         </div>
       </div>
-    </ManageShell>
+    </>
   );
 }

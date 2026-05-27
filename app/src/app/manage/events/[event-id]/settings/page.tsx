@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import ManageShell from "@/components/ManageShell";
 import { ManageFormSkeleton } from "@/components/skeletons";
 import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
@@ -511,7 +510,7 @@ export default function EventSettingsPage() {
     const cfg = modal ? modalConfig[modal] : null;
 
     return (
-        <ManageShell pageTitle="Salikop">
+        <>
             <div className="flex flex-col gap-6 animate-fade-in">
                 {loadingEvent ? (
                     <ManageFormSkeleton />
@@ -614,7 +613,7 @@ export default function EventSettingsPage() {
                                         {event.title}
                                     </p>
                                     <p className="text-[12px] text-gray-400">
-                                        {formatDateRange(event.start_date, event.end_date)} · {event.total_registered}{" "}
+                                        {formatDateRange(event.start_date, event.end_date)} Â· {event.total_registered}{" "}
                                         registered
                                     </p>
                                 </div>
@@ -843,7 +842,7 @@ export default function EventSettingsPage() {
                             />
                         </svg>
                         <p className="text-[13px] font-semibold text-gray-700">
-                            Processing�
+                            Processingï¿½
                         </p>
                     </div>
                 </div>
@@ -867,7 +866,7 @@ export default function EventSettingsPage() {
                     {toast}
                 </div>
             )}
-        </ManageShell>
+        </>
     );
 }
 

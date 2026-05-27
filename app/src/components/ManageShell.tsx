@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MANAGE_SELECTED_ORG_KEY, setSelectedManageOrgId } from './manageOrgSelection';
+import ShellProfileMenu from './ShellProfileMenu';
 
 // ─── Nav config ─────────────────────────────────────────────
 
@@ -558,47 +559,7 @@ function Sidebar({
                     </div>
                 </Link>
 
-                {/* Current officer */}
-                <div
-                    className={[
-                        'flex items-center rounded-lg p-2 w-full',
-                        collapsed ? 'justify-center' : '',
-                    ].join(' ')}
-                    style={{ background: 'var(--color-surface-2)' }}
-                >
-                    <div
-                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
-                        style={{
-                            background: 'var(--color-primary-muted)',
-                            color: 'var(--color-primary)',
-                        }}
-                    >
-                        {/* Replace with officer initials from session */}
-                        {initials(sessionUser?.first_name, sessionUser?.last_name)}
-                    </div>
-
-                    <div
-                        className={`overflow-hidden transition-all duration-200 ${collapsed
-                            ? 'w-0 max-w-0 opacity-0 ml-0'
-                            : 'flex-1 opacity-100 ml-3'
-                            }`}
-                    >
-                        <p
-                            className="text-[12.5px] font-semibold truncate leading-tight"
-                            style={{ color: 'var(--color-text)' }}
-                        >
-                            {/* Replace with session officer name */}
-                            {sessionUser ? `${sessionUser.first_name ?? ''} ${sessionUser.last_name ?? ''}`.trim() : 'Officer'}
-                        </p>
-                        <p
-                            className="text-[11px]"
-                            style={{ color: 'var(--color-text-muted)' }}
-                        >
-                            {/* Replace with Org_Officers.position from session */}
-                            {sessionUser?.school_id ?? 'Officer'}
-                        </p>
-                    </div>
-                </div>
+                <ShellProfileMenu collapsed={collapsed} role="officer" user={sessionUser} />
             </div>
         </aside>
     );
@@ -640,11 +601,6 @@ interface SessionUser {
     last_name?: string;
     school_id?: string;
 }
-function initials(first = '', last = '') {
-    const value = `${first.slice(0, 1)}${last.slice(0, 1)}`.toUpperCase();
-    return value || 'OF';
-}
-
 export default function ManageShell({
     children,
     pageTitle = 'Salikop',

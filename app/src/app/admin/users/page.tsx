@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
-import AdminShell from "@/components/AdminShell";
 import { FilterSelect, FilterChip } from "@/components/ui/filter";
 import { IconRefresh } from "@/components/ui/IconRefresh";
 import { TableRowsSkeleton } from "@/components/skeletons";
@@ -285,7 +284,7 @@ export default function AdminUsersPage() {
         filterDept !== "All";
 
     return (
-        <AdminShell>
+        <>
             <main className="flex flex-col gap-6 animate-fade-in">
                 <div>
                     <p
@@ -844,7 +843,7 @@ export default function AdminUsersPage() {
                     </div>
                 </Modal>
             )}
-        </AdminShell>
+        </>
     );
 }
 

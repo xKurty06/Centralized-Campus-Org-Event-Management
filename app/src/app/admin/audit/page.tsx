@@ -1,7 +1,6 @@
 ﻿'use client';
 
 import { useState, useEffect, useMemo, Fragment } from 'react';
-import AdminShell from '@/components/AdminShell';
 import { FilterSelect, FilterChip } from '@/components/ui/filter';
 import { IconRefresh } from '@/components/ui/IconRefresh';
 import { TableRowsSkeleton } from '@/components/skeletons';
@@ -95,7 +94,7 @@ export default function AdminAuditPage() {
   const hasActiveFilters = !!search || categoryFilter !== 'All' || roleFilter !== 'All';
 
   return (
-    <AdminShell>
+    <>
       <main className="flex flex-col gap-6 animate-fade-in">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-1">Admin</p>
@@ -187,7 +186,7 @@ export default function AdminAuditPage() {
           </div>
         </div>
       </main>
-    </AdminShell>
+    </>
   );
 }
 

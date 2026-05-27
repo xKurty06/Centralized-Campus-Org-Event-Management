@@ -1,8 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import ManageShell from "@/components/ManageShell";
 import { FilterSelect, FilterChip } from "@/components/ui/filter";
 import { EventsPageSkeleton } from "@/components/skeletons";
 import { manageRequestHeaders } from "@/components/manageOrgSelection";
@@ -388,7 +387,7 @@ export default function ManageEventsPage() {
   const hasActiveFilters = !!search || categoryFilter !== "All";
 
   return (
-    <ManageShell pageTitle="Salikop">
+    <>
       <div className="flex flex-col gap-6 animate-fade-in">
         <div className="flex flex-col w-full">
           <div>
@@ -602,7 +601,7 @@ export default function ManageEventsPage() {
           )}
         </div>
       </div>
-    </ManageShell>
+    </>
   );
 }
 

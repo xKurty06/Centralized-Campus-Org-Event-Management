@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { clearSelectedManageOrgId } from '@/components/manageOrgSelection';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -384,6 +385,7 @@ export default function PrivacyPolicyPage() {
         window.localStorage.removeItem('auth_user');
         window.sessionStorage.removeItem('auth_token');
         window.sessionStorage.removeItem('auth_user');
+        clearSelectedManageOrgId();
         document.cookie = 'auth_role=; Path=/; Max-Age=0; SameSite=Lax';
         document.cookie = 'auth_session=; Path=/; Max-Age=0; SameSite=Lax';
         setSessionRole('guest');

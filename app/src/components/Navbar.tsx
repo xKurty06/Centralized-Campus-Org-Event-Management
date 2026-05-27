@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { clearSelectedManageOrgId } from './manageOrgSelection';
 
 /* ----------------------------------------------------------------
    Types
@@ -127,6 +128,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
     window.localStorage.removeItem('auth_user');
     window.sessionStorage.removeItem('auth_token');
     window.sessionStorage.removeItem('auth_user');
+    clearSelectedManageOrgId();
     document.cookie = 'auth_role=; Path=/; Max-Age=0; SameSite=Lax';
     document.cookie = 'auth_session=; Path=/; Max-Age=0; SameSite=Lax';
     setSessionRole('guest');

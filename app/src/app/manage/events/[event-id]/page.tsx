@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import ManageShell from "@/components/ManageShell";
 import { manageRequestHeaders } from "@/components/manageOrgSelection";
 
 /* ----------------------------------------------------------------
@@ -390,7 +389,7 @@ export default function EventDashboardPage() {
 
     const token = getAuthToken();
     if (!token) {
-      // Redirect to login — token is missing
+      // Redirect to login â€” token is missing
       router.replace("/login");
       return;
     }
@@ -403,13 +402,13 @@ export default function EventDashboardPage() {
         headers: manageRequestHeaders(token),
       });
 
-      // Unauthorized — session expired
+      // Unauthorized â€” session expired
       if (res.status === 401) {
         router.replace("/login");
         return;
       }
 
-      // Forbidden — user doesn't own this event
+      // Forbidden â€” user doesn't own this event
       if (res.status === 403) {
         setError("You do not have permission to manage this event.");
         setLoading(false);
@@ -454,7 +453,7 @@ export default function EventDashboardPage() {
     fetchEvent();
   }, [fetchEvent]);
 
-  /* Derived values — always safe to compute (fallback to zeros) */
+  /* Derived values â€” always safe to compute (fallback to zeros) */
   const fill = useMemo(() => {
     if (!event || event.capacity <= 0) return 0;
     return Math.min(
@@ -474,9 +473,9 @@ export default function EventDashboardPage() {
   const isCompleted = event?.status === "Completed";
 
   return (
-    <ManageShell pageTitle="Salikop">
+    <>
       <div className="flex flex-col gap-4 animate-fade-in">
-        {/* ── Back link ── */}
+        {/* â”€â”€ Back link â”€â”€ */}
         <Link
           href="/manage/events"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors no-underline w-fit"
@@ -493,10 +492,10 @@ export default function EventDashboardPage() {
           Back to Events
         </Link>
 
-        {/* ── Loading skeleton ── */}
+        {/* â”€â”€ Loading skeleton â”€â”€ */}
         {loading && <EventDashboardSkeleton />}
 
-        {/* ── Error state ── */}
+        {/* â”€â”€ Error state â”€â”€ */}
         {!loading && error && (
           <div className="flex flex-col gap-3">
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-4 flex items-start gap-3">
@@ -527,10 +526,10 @@ export default function EventDashboardPage() {
           </div>
         )}
 
-        {/* ── Main content ── */}
+        {/* â”€â”€ Main content â”€â”€ */}
         {!loading && !error && event && (
           <div className="flex flex-col gap-6 animate-content-reveal">
-            {/* ── Header card ── */}
+            {/* â”€â”€ Header card â”€â”€ */}
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl px-5 py-5">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex flex-col gap-2 flex-1 min-w-0">
@@ -551,7 +550,7 @@ export default function EventDashboardPage() {
                     </span>
                     {event.is_paid && (
                       <span className="text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                        Paid · ₱{event.fee_amount ?? 0}
+                        Paid Â· â‚±{event.fee_amount ?? 0}
                       </span>
                     )}
                     {isActive && days >= 0 && (
@@ -605,7 +604,7 @@ export default function EventDashboardPage() {
                 </span>
                 <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
                   <IconClock />
-                  {formatTime(event.start_date)} – {formatTime(event.end_date)}
+                  {formatTime(event.start_date)} â€“ {formatTime(event.end_date)}
                 </span>
                 <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
                   <IconPin />
@@ -618,7 +617,7 @@ export default function EventDashboardPage() {
               </div>
             </div>
 
-            {/* ── Proofs alert ── */}
+            {/* â”€â”€ Proofs alert â”€â”€ */}
             {event.proofs_pending_review > 0 && (
               <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3.5">
                 <svg
@@ -635,7 +634,7 @@ export default function EventDashboardPage() {
                 </svg>
                 <p className="text-[13px] font-semibold text-blue-800">
                   {event.proofs_pending_review} payment proof
-                  {event.proofs_pending_review > 1 ? "s" : ""} awaiting review –{" "}
+                  {event.proofs_pending_review > 1 ? "s" : ""} awaiting review â€“{" "}
                   <Link
                     href={`/manage/events/${event.slug ?? event.id}/participants`}
                     className="underline text-blue-700"
@@ -662,7 +661,7 @@ export default function EventDashboardPage() {
               </div>
             )}
 
-            {/* ── Stat cards ── */}
+            {/* â”€â”€ Stat cards â”€â”€ */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard
                 icon={<IconUsers />}
@@ -733,7 +732,7 @@ export default function EventDashboardPage() {
               )}
             </div>
 
-            {/* ── Capacity bar ── */}
+            {/* â”€â”€ Capacity bar â”€â”€ */}
             <div className="bg-white border border-gray-200 rounded-xl px-5 py-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <p className="text-[13px] font-semibold text-gray-700">
@@ -786,7 +785,7 @@ export default function EventDashboardPage() {
               )}
             </div>
 
-            {/* ── Quick actions ── */}
+            {/* â”€â”€ Quick actions â”€â”€ */}
             <div className="flex flex-col gap-3">
               <h2 className="text-[14px] font-bold text-gray-800">
                 Quick actions
@@ -827,7 +826,7 @@ export default function EventDashboardPage() {
           </div>
         )}
       </div>
-    </ManageShell>
+    </>
   );
 }
 

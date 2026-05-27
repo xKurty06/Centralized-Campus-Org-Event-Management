@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { clearSelectedManageOrgId } from './manageOrgSelection';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
@@ -66,6 +67,7 @@ export default function RouteAccessGuard() {
           window.localStorage.removeItem('auth_user');
           window.sessionStorage.removeItem('auth_token');
           window.sessionStorage.removeItem('auth_user');
+          clearSelectedManageOrgId();
           document.cookie = 'auth_role=; Path=/; Max-Age=0; SameSite=Lax';
           document.cookie = 'auth_session=; Path=/; Max-Age=0; SameSite=Lax';
 

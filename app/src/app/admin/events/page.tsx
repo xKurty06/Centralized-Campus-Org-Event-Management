@@ -91,7 +91,7 @@ function formatAdminDateTime(value?: string | null): string {
   });
 
   // 4. Piece them together exactly how you want it
-  return `${monthDay}, ${year} • ${time}`;
+  return `${monthDay}, ${year} â€¢ ${time}`;
 }
 
 function normalizeStatus(
@@ -495,7 +495,7 @@ export default function AdminEventsPage() {
                           <div className="flex flex-col min-w-0">
                             <span className={ev.status === "Completed" ? "truncate text-gray-500" : "truncate"}>{ev.title}</span>
                             <span className="text-xs text-[var(--color-text-muted)] truncate">
-                              {ev.venue} • {ev.category}
+                              {ev.venue} â€¢ {ev.category}
                             </span>
                           </div>
                         </div>

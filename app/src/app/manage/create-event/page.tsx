@@ -1,13 +1,12 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ManageShell from '@/components/ManageShell';
 import { getSelectedManageOrgId, manageRequestHeaders } from '@/components/manageOrgSelection';
 
 /* ----------------------------------------------------------------
-   Types — aligned to DB schema
+   Types â€” aligned to DB schema
    ---------------------------------------------------------------- */
 
 type AudienceType = 'CvSU_Only' | 'Org_Members_Only';
@@ -294,10 +293,10 @@ export default function CreateEventPage() {
   }
 
   return (
-    <ManageShell pageTitle="Salikop">
+    <>
       <div className="flex flex-col gap-6 animate-fade-in">
 
-        {/* ── Header ── */}
+        {/* â”€â”€ Header â”€â”€ */}
         <div>
           <Link
             href="/manage/dashboard"
@@ -321,7 +320,7 @@ export default function CreateEventPage() {
           </div>
         </div>
 
-        {/* ── Step indicator ── */}
+        {/* â”€â”€ Step indicator â”€â”€ */}
         <div className="flex items-center gap-2">
           {([{ n: 1, label: 'Event details' }, { n: 2, label: 'Content & access' }] as const).map((s, i) => (
             <div key={s.n} className="flex items-center gap-2">
@@ -341,7 +340,7 @@ export default function CreateEventPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-          {/* ── STEP 1: Basic details ── */}
+          {/* â”€â”€ STEP 1: Basic details â”€â”€ */}
           {step === 1 && (
             <>
               <SectionCard title="Basic information" subtitle="Shown on the event card and detail page">
@@ -406,7 +405,7 @@ export default function CreateEventPage() {
               </SectionCard>
 
               {/* Banner */}
-              <SectionCard title="Event banner" subtitle="Displayed on the event card and detail page · PNG or JPG · Max 5MB">
+              <SectionCard title="Event banner" subtitle="Displayed on the event card and detail page Â· PNG or JPG Â· Max 5MB">
                 {!form.banner_preview ? (
                   <label className="flex flex-col items-center justify-center gap-3 h-44 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer">
                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center">
@@ -417,7 +416,7 @@ export default function CreateEventPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-[14px] font-semibold text-gray-600">Click to upload banner</p>
-                      <p className="text-[12px] text-gray-400 mt-0.5">Recommended: 1200×630px · 16:9</p>
+                      <p className="text-[12px] text-gray-400 mt-0.5">Recommended: 1200Ã—630px Â· 16:9</p>
                     </div>
                     <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
                   </label>
@@ -434,7 +433,7 @@ export default function CreateEventPage() {
                         </svg>
                       </button>
                     </div>
-                    <p className="text-[12px] text-gray-400">{form.banner_file?.name} · {((form.banner_file?.size ?? 0) / 1024).toFixed(0)} KB</p>
+                    <p className="text-[12px] text-gray-400">{form.banner_file?.name} Â· {((form.banner_file?.size ?? 0) / 1024).toFixed(0)} KB</p>
                   </div>
                 )}
                 {errors.banner_file && (
@@ -452,7 +451,7 @@ export default function CreateEventPage() {
             </>
           )}
 
-          {/* ── STEP 2: Content & access ── */}
+          {/* â”€â”€ STEP 2: Content & access â”€â”€ */}
           {step === 2 && (
             <>
               {/* Description */}
@@ -467,7 +466,7 @@ export default function CreateEventPage() {
               </SectionCard>
 
               {/* Audience */}
-              <SectionCard title="Audience & access" subtitle="Determines who can register — enforced at registration endpoint">
+              <SectionCard title="Audience & access" subtitle="Determines who can register â€” enforced at registration endpoint">
                 <div className="flex flex-col gap-3">
                   {AUDIENCE_OPTIONS.map((opt) => {
                     const active = form.audience_type === opt.value;
@@ -514,9 +513,9 @@ export default function CreateEventPage() {
                   {form.is_paid && (
                     <div className="flex flex-col gap-4 animate-fade-in">
                       <div className="w-full sm:w-1/2">
-                        <Field label="Registration Price" required hint="Amount to be paid in pesos (₱)." error={errors.price}>
+                        <Field label="Registration Price" required hint="Amount to be paid in pesos (â‚±)." error={errors.price}>
                           <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-gray-500 font-medium">₱</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-gray-500 font-medium">â‚±</span>
                             <input type="number" value={form.price} onChange={(e) => update('price', e.target.value)}
                               onWheel={(e) => e.currentTarget.blur()}
                               min={1} placeholder="e.g. 150" className={`${ic(!!errors.price)} pl-8`} />
@@ -545,14 +544,14 @@ export default function CreateEventPage() {
                 </div>
                 <div className="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: 'Title', value: form.title || '—' },
-                    { label: 'Category', value: form.category || '—' },
-                    { label: 'Venue', value: VENUES.find((v) => v.id === form.venue_id)?.name || '—' },
-                    { label: 'Capacity', value: form.capacity ? `${form.capacity} slots` : '—' },
-                    { label: 'Start', value: form.start_date ? `${form.start_date} ${form.start_time}` : '—' },
-                    { label: 'End', value: form.end_date ? `${form.end_date} ${form.end_time}` : '—' },
-                    { label: 'Audience', value: AUDIENCE_OPTIONS.find((a) => a.value === form.audience_type)?.label || '—' },
-                    { label: 'Payment', value: form.is_paid ? `Paid (₱${form.price || '0'})` : 'Free' },
+                    { label: 'Title', value: form.title || 'â€”' },
+                    { label: 'Category', value: form.category || 'â€”' },
+                    { label: 'Venue', value: VENUES.find((v) => v.id === form.venue_id)?.name || 'â€”' },
+                    { label: 'Capacity', value: form.capacity ? `${form.capacity} slots` : 'â€”' },
+                    { label: 'Start', value: form.start_date ? `${form.start_date} ${form.start_time}` : 'â€”' },
+                    { label: 'End', value: form.end_date ? `${form.end_date} ${form.end_time}` : 'â€”' },
+                    { label: 'Audience', value: AUDIENCE_OPTIONS.find((a) => a.value === form.audience_type)?.label || 'â€”' },
+                    { label: 'Payment', value: form.is_paid ? `Paid (â‚±${form.price || '0'})` : 'Free' },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex flex-col gap-0.5">
                       <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</span>
@@ -587,6 +586,6 @@ export default function CreateEventPage() {
           )}
         </form>
       </div>
-    </ManageShell>
+    </>
   );
 }
