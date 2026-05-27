@@ -626,8 +626,8 @@ export default function EventDetailPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[12px] text-gray-500">Available slots</span>
-                    <span className={`text-[12px] font-semibold ${isFull ? 'text-red-500' : 'text-green-700'}`}>
-                      {isFull ? 'Full' : `${spots} left`}
+                    <span className={`text-[12px] font-semibold ${displayStatus === 'Completed' ? 'text-gray-500' : isFull ? 'text-red-500' : 'text-green-700'}`}>
+                      {displayStatus === 'Completed' ? 'Event ended' : isFull ? 'Full' : `${spots} left`}
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
