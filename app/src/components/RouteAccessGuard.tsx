@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { clearSelectedManageOrgId } from './manageOrgSelection';
 
@@ -19,8 +19,15 @@ function isPublicPath(pathname: string): boolean {
 export default function RouteAccessGuard() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated || !pathname) return;
+
     const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
 
     if (!token) {
@@ -80,7 +87,7 @@ export default function RouteAccessGuard() {
 
     run();
     return () => controller.abort();
-  }, [pathname, router]);
+  }, [isHydrated, pathname, router]);
 
   return null;
 }
