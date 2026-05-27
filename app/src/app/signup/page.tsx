@@ -213,11 +213,13 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
 // --- SVG Icons
 function BrandLogo({ size = 40 }: { size?: number }) {
     return (
-        <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-            <path d="M20 2L34.64 10.5V27.5L20 36L5.36 27.5V10.5L20 2Z" fill="#22a050" />
-            <path d="M20 6L31.07 12.25V24.75L20 31L8.93 24.75V12.25L20 6Z" fill="#1a7a3c" />
-            <path d="M14 20.5L18 24.5L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <img
+            src="/Salikop_logo.png"
+            alt="Salikop logo"
+            width={size}
+            height={size}
+            className="object-contain"
+        />
     );
 }
 

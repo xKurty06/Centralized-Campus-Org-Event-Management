@@ -151,12 +151,13 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
 
         {/* ── Brand (Left Column) ── */}
         <Link href="/events" className="flex items-center gap-2.5 flex-shrink-0 no-underline justify-self-start">
-          <div className="w-8 h-8 rounded-lg bg-green-700 flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="7" stroke="white" strokeWidth="1.6" />
-              <path d="M10 6v4.5l2.5 1.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <img
+            src="/Salikop_logo.png"
+            alt="Salikop logo"
+            width={32}
+            height={32}
+            className="w-8 h-8 object-contain flex-shrink-0"
+          />
           <div className="flex flex-col leading-tight">
             <span className="text-[15px] font-bold text-green-700 tracking-tight">Salikop</span>
             <span className="text-[10px] font-normal text-gray-400 hidden sm:block">Cavite State University</span>
