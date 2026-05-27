@@ -295,7 +295,8 @@ export default function AdminDashboardPage() {
         setActivity(mapActivity(Array.isArray(auditPayload?.data) ? auditPayload.data : []));
 
         const users = Array.isArray(userPayload?.data) ? userPayload.data : [];
-        setRegisteredStudents(users.filter((u: any) => u.is_active === true && u.global_role === 'User').length);
+        // Count all active accounts, including elevated roles (Overseer/Super Admin).
+        setRegisteredStudents(users.filter((u: any) => u.is_active === true).length);
 
         setLoadError('');
       } catch {
@@ -358,7 +359,7 @@ export default function AdminDashboardPage() {
       color: 'text-amber-700', bg: 'bg-amber-100',
     },
     {
-      label: 'Registered Students', value: registeredStudents, href: '/admin/users',
+      label: 'Registered Accounts', value: registeredStudents, href: '/admin/users',
       icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
       color: 'text-purple-700', bg: 'bg-purple-100',
     },
