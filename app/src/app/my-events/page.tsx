@@ -233,8 +233,11 @@ function RegistrationCard({
           )}
           {/* Checked-in badge */}
           {reg.attendance_status === "Checked_In" && (
-            <span className="absolute bottom-2 left-2 text-[10px] font-bold bg-white/90 text-green-700 border border-green-200 px-2 py-0.5 rounded-full shadow-sm">
-              ✓ Attended
+            <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold bg-white/90 text-green-700 border border-green-200 px-2 py-0.5 rounded-full shadow-sm">
+              <svg className="w-3 h-3" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10.5l4 4L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Attended
             </span>
           )}
         </div>

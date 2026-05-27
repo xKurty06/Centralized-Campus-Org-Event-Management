@@ -110,6 +110,14 @@ function normalizeImageUrl(raw?: string | null): string | null {
   return `${API_ORIGIN}${path}`;
 }
 
+function mapOrgCategory(categoryValue: unknown): OrgRow['category'] {
+  const value = String(categoryValue ?? '').trim().toLowerCase();
+  if (value.startsWith('relig')) return 'Religious';
+  if (value.startsWith('acad')) return 'Academic';
+  if (value.startsWith('non')) return 'Non-Academic';
+  return 'Non-Academic';
+}
+
 function KpiCard({ card }: { card: KpiCardData }) {
   const body = (
     <div className={`card card-body !p-5 flex items-start gap-4 h-full border border-[var(--color-border)] transition-all duration-200 hover:shadow-md hover:-translate-y-[1px] ${card.href ? 'cursor-pointer' : ''}`}>
@@ -182,7 +190,7 @@ export default function AdminDashboardPage() {
   const mapEvents = (rows: any[]): EventRow[] => rows.map((e: any) => ({
     id: String(e.id ?? ''),
     title: String(e.title ?? 'Untitled Event'),
-    orgName: String(e.host_org_name ?? e.host_org?.name ?? 'Organization'),
+    orgName: String(e.organization_name ?? e.host_org_name ?? e.host_org?.name ?? 'Organization'),
     orgCode: String(e.host_org_code ?? e.host_org?.code ?? 'ORG'),
     status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
     startDate: String(e.start_date ?? ''),
@@ -195,7 +203,7 @@ export default function AdminDashboardPage() {
     slug: o.slug ? String(o.slug) : String(o.id ?? ''),
     name: String(o.name ?? 'Organization'),
     logoUrl: normalizeImageUrl(o.logo_url ?? o.banner_url ?? null),
-    category: (o.category?.name ?? 'Academic') as OrgRow['category'],
+    category: mapOrgCategory(o.category_name ?? o.category?.name),
     accreditationStatus: (o.accreditation_status ?? 'Active') as OrgRow['accreditationStatus'],
     eventCount: Number(o.total_events ?? o.events_this_year ?? 0),
     accreditedAt: String(o.updated_at ?? o.created_at ?? ''),

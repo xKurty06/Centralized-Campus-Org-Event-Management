@@ -735,7 +735,19 @@ export default function AdminOrgDetailPage() {
                                 setShowAccredModal(true);
                             }}
                         >
-                            {org.accreditationStatus === 'Active' ? '⚠ Suspend Organization' : '✓ Restore Accreditation'}
+                            <span className="inline-flex items-center gap-1.5">
+                                {org.accreditationStatus === 'Active' ? (
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                        <path d="M10 3l7 12H3L10 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                                        <path d="M10 7.5v3.5M10 13.5h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                        <path d="M4 10.5l4 4L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                )}
+                                {org.accreditationStatus === 'Active' ? 'Suspend Organization' : 'Restore Accreditation'}
+                            </span>
                         </button>
                     </div>
                 </div>

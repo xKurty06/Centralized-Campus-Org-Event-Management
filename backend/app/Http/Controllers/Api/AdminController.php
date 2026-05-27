@@ -195,6 +195,7 @@ class AdminController extends Controller
                 ->select(
                     'o.*',
                     'c.name as category_name',
+                    DB::raw('(select count(*) from org_members m where m.org_id = o.id) as members_count'),
                     DB::raw('(select count(*) from events e where e.host_org_id = o.id) as total_events')
                 )
                 ->latest('o.created_at')

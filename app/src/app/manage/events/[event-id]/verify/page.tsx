@@ -537,6 +537,54 @@ function OfflineQueuePanel({
   );
 }
 
+function ActivityGlyph({ action }: { action: RecentActivity['action'] }) {
+  if (action === 'Check_In') {
+    return (
+      <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 10.5l4 4L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M7 4.5h4a3 3 0 010 6H7m0-6v11m0-5h6M5 7h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TipIcon({ type }: { type: 'paid' | 'cash' | 'offline' | 'enter' }) {
+  const common = 'w-4 h-4 flex-shrink-0';
+  if (type === 'paid') {
+    return (
+      <svg className={`${common} text-green-600`} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="7" fill="currentColor" opacity=".18" />
+        <path d="M6.5 10.3l2.2 2.2 4.8-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (type === 'cash') {
+    return (
+      <svg className={`${common} text-red-500`} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="7" fill="currentColor" opacity=".16" />
+        <path d="M10 6.5v4M10 13.5h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (type === 'offline') {
+    return (
+      <svg className={`${common} text-amber-600`} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4.5 7.5A7.6 7.6 0 0110 5c2.1 0 4 .85 5.4 2.25M7.2 10.1A4.2 4.2 0 0110 9c1.1 0 2.1.4 2.85 1.05M9.95 13.5h.1M3 3l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={`${common} text-gray-500`} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M7 5l-3 3 3 3M4 8h7a4 4 0 010 8H9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /* — Recent Activity Feed — */
 function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
   return (
@@ -551,7 +599,7 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-[11px] font-bold
               ${a.action === 'Check_In' ? 'bg-green-500' : 'bg-blue-500'}`}
             >
-              {a.action === 'Check_In' ? '✓' : '₱'}
+              <ActivityGlyph action={a.action} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-[var(--color-text)] truncate">{a.studentName}</p>
@@ -999,10 +1047,10 @@ export default function EntrancePanelPage() {
                 <p className="text-[12px] font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wide">Quick Tips</p>
                 <ul className="flex flex-col gap-2.5">
                   {[
-                    { icon: 'ðŸŸ¢', text: 'Green card = payment confirmed. Tap Check In.' },
-                    { icon: 'ðŸ”´', text: 'Red card = collect cash. Confirm Payment & Check In for immediate entry, or Confirm Only if they enter later.' },
-                    { icon: 'ðŸ“µ', text: 'Works offline. Actions sync when connection returns.' },
-                    { icon: '↩️', text: 'Press Enter to instantly look up a School ID.' },
+                    { icon: <TipIcon type="paid" />, text: 'Green card = payment confirmed. Tap Check In.' },
+                    { icon: <TipIcon type="cash" />, text: 'Red card = collect cash. Confirm Payment & Check In for immediate entry, or Confirm Only if they enter later.' },
+                    { icon: <TipIcon type="offline" />, text: 'Works offline. Actions sync when connection returns.' },
+                    { icon: <TipIcon type="enter" />, text: 'Press Enter to instantly look up a School ID.' },
                   ].map((tip, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
                       <span className="mt-0.5">{tip.icon}</span>
