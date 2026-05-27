@@ -6,7 +6,8 @@ import { FilterSelect, FilterChip } from "@/components/ui/filter";
 import { IconRefresh } from "@/components/ui/IconRefresh";
 import { TableRowsSkeleton } from "@/components/skeletons";
 
-type GlobalRole = "User" | "Overseer";
+type GlobalRole = "User" | "Overseer" | "Super_Admin";
+type AssignableGlobalRole = Exclude<GlobalRole, "Super_Admin">;
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
@@ -41,10 +42,13 @@ export default function AdminUsersPage() {
     const [actionError, setActionError] = useState("");
     const [roleChangePending, setRoleChangePending] = useState<{
         user: User;
-        newRole: GlobalRole;
+        newRole: AssignableGlobalRole;
     } | null>(null);
     const [roleChangeReason, setRoleChangeReason] = useState("");
     const [refreshing, setRefreshing] = useState(false);
+    const [currentGlobalRole, setCurrentGlobalRole] = useState<GlobalRole>("User");
+
+    const isSuperAdmin = currentGlobalRole === "Super_Admin";
 
     async function loadUsers(showRefreshing = false) {
         const token =
@@ -89,7 +93,9 @@ export default function AdminUsersPage() {
                     course: String(u.course_code ?? u.course_id ?? "N/A"),
                     yearLevel: Number(u.year_level ?? 0),
                     section: Number(u.section ?? 0),
-                    globalRole: (u.global_role === "Overseer"
+                    globalRole: (u.global_role === "Super_Admin"
+                        ? "Super_Admin"
+                        : u.global_role === "Overseer"
                         ? "Overseer"
                         : "User") as GlobalRole,
                     isActive: Boolean(u.is_active),
@@ -116,6 +122,23 @@ export default function AdminUsersPage() {
     }, [confirmToggle, roleChangePending]);
 
     useEffect(() => {
+        const rawUser =
+            window.localStorage.getItem("auth_user") ??
+            window.sessionStorage.getItem("auth_user");
+        if (rawUser) {
+            try {
+                const parsed = JSON.parse(rawUser) as { global_role?: string };
+                setCurrentGlobalRole(
+                    parsed.global_role === "Super_Admin"
+                        ? "Super_Admin"
+                        : parsed.global_role === "Overseer"
+                        ? "Overseer"
+                        : "User",
+                );
+            } catch {
+                setCurrentGlobalRole("User");
+            }
+        }
         loadUsers(false);
     }, []);
 
@@ -149,6 +172,7 @@ export default function AdminUsersPage() {
             active: users.filter((u) => u.isActive).length,
             deactivated: users.filter((u) => !u.isActive).length,
             overseers: users.filter((u) => u.globalRole === "Overseer").length,
+            superAdmins: users.filter((u) => u.globalRole === "Super_Admin").length,
         }),
         [users],
     );
@@ -284,11 +308,12 @@ export default function AdminUsersPage() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <StatCard label="Total Users" value={stats.total} color="blue" />
                     <StatCard label="Active" value={stats.active} color="green" />
                     <StatCard label="Deactivated" value={stats.deactivated} color="red" />
                     <StatCard label="Overseers" value={stats.overseers} color="yellow" />
+                    <StatCard label="Super Admins" value={stats.superAdmins} color="blue" />
                 </div>
 
                 {!!loadError && (
@@ -314,8 +339,9 @@ export default function AdminUsersPage() {
                     <span className="text-base">!</span>
                     <div>
                         <strong>Global Role changes are permanent and powerful.</strong>{" "}
-                        Granting Overseer access gives full administrative control over all
-                        organizations, events, and user accounts.
+                        Only Super Admin accounts can grant or revoke Overseer access.
+                        Overseers can still manage organizations, events, and user accounts,
+                        but role promotion is read-only for them.
                     </div>
                 </div>
 
@@ -366,6 +392,7 @@ export default function AdminUsersPage() {
                                         { value: "All", label: "All Roles" },
                                         { value: "User", label: "User" },
                                         { value: "Overseer", label: "Overseer" },
+                                        { value: "Super_Admin", label: "Super Admin" },
                                     ]}
                                     className="sm:w-36"
                                 />
@@ -504,11 +531,15 @@ export default function AdminUsersPage() {
                                                         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
                                                         style={{
                                                             background:
-                                                                user.globalRole === "Overseer"
+                                                                user.globalRole === "Super_Admin"
+                                                                    ? "#dbeafe"
+                                                                    : user.globalRole === "Overseer"
                                                                     ? "#fef3c7"
                                                                     : "var(--color-primary-muted)",
                                                             color:
-                                                                user.globalRole === "Overseer"
+                                                                user.globalRole === "Super_Admin"
+                                                                    ? "#1d4ed8"
+                                                                    : user.globalRole === "Overseer"
                                                                     ? "#92610a"
                                                                     : "var(--color-primary)",
                                                         }}
@@ -586,37 +617,56 @@ export default function AdminUsersPage() {
                                                     <select
                                                         value={user.globalRole}
                                                         onChange={(e) => {
-                                                            const newRole = e.target.value as GlobalRole;
+                                                            const newRole = e.target.value as AssignableGlobalRole;
                                                             if (newRole !== user.globalRole)
                                                                 { setRoleChangePending({ user, newRole }); setRoleChangeReason(""); setActionError(""); }
                                                         }}
+                                                        disabled={!isSuperAdmin || user.globalRole === "Super_Admin"}
+                                                        title={
+                                                            user.globalRole === "Super_Admin"
+                                                                ? "Super admin accounts are managed manually."
+                                                                : isSuperAdmin
+                                                                ? "Change global role"
+                                                                : "Only Super Admin can change global roles."
+                                                        }
                                                         className="text-xs rounded-md"
                                                         style={{
                                                             width: "auto",
                                                             padding: "4px 8px",
                                                             border:
-                                                                user.globalRole === "Overseer"
+                                                                user.globalRole === "Super_Admin"
+                                                                    ? "1.5px solid #3b82f6"
+                                                                    : user.globalRole === "Overseer"
                                                                     ? "1.5px solid #f0a500"
                                                                     : "1.5px solid var(--color-border)",
                                                             background:
-                                                                user.globalRole === "Overseer"
+                                                                user.globalRole === "Super_Admin"
+                                                                    ? "#eff6ff"
+                                                                    : user.globalRole === "Overseer"
                                                                     ? "#fffbeb"
                                                                     : "white",
                                                             color:
-                                                                user.globalRole === "Overseer"
+                                                                user.globalRole === "Super_Admin"
+                                                                    ? "#1d4ed8"
+                                                                    : user.globalRole === "Overseer"
                                                                     ? "#92610a"
                                                                     : "var(--color-text)",
                                                             fontWeight:
-                                                                user.globalRole === "Overseer" ? "600" : "400",
+                                                                user.globalRole === "Super_Admin" || user.globalRole === "Overseer" ? "600" : "400",
+                                                            opacity: !isSuperAdmin || user.globalRole === "Super_Admin" ? 0.72 : 1,
+                                                            cursor: !isSuperAdmin || user.globalRole === "Super_Admin" ? "not-allowed" : "pointer",
                                                         }}
                                                     >
                                                         <option value="User">User</option>
                                                         <option value="Overseer">Overseer</option>
+                                                        {user.globalRole === "Super_Admin" && (
+                                                            <option value="Super_Admin">Super Admin</option>
+                                                        )}
                                                     </select>
-                                                    {user.globalRole === "Overseer" && (
+                                                    {(user.globalRole === "Overseer" || user.globalRole === "Super_Admin") && (
                                                         <span
-                                                            className="text-amber-500 text-xs"
-                                                            title="Overseer"
+                                                            className={user.globalRole === "Super_Admin" ? "text-blue-500 text-xs" : "text-amber-500 text-xs"}
+                                                            title={user.globalRole === "Super_Admin" ? "Super Admin" : "Overseer"}
                                                         >
                                                             *
                                                         </span>

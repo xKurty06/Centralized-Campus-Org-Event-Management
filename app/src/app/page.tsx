@@ -222,7 +222,7 @@ function LoginForm() {
 
       const role = payload.data.user.global_role;
       const isOfficer = role === 'Officer';
-      if (role === 'Overseer') {
+      if (role === 'Super_Admin' || role === 'Overseer') {
         router.push('/admin/dashboard');
         return;
       }

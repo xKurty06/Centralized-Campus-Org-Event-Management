@@ -500,7 +500,7 @@ export default function SupportPage() {
 
         try {
             const parsed = JSON.parse(rawUser) as { global_role?: string };
-            setSessionRole(parsed.global_role === 'Overseer' ? 'admin' : parsed.global_role === 'Officer' ? 'officer' : 'student');
+            setSessionRole(parsed.global_role === 'Super_Admin' || parsed.global_role === 'Overseer' ? 'admin' : parsed.global_role === 'Officer' ? 'officer' : 'student');
         } catch {
             setSessionRole('guest');
         }

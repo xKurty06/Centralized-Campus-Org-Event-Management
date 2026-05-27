@@ -44,7 +44,7 @@ return new class extends Migration
             $table->integer('section'); // Student's specific class section assignment.
 
             // ACCESS CONTROL & STATE
-            $table->enum('global_role', ['Overseer', 'User'])->default('User');
+            $table->enum('global_role', ['Super_Admin', 'Overseer', 'User'])->default('User');
             $table->boolean('is_active')->default(true);
 
             $table->timestamp('created_at')->useCurrent();

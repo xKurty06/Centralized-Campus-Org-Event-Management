@@ -21,8 +21,8 @@ class AuthController extends Controller
 {
     protected function resolveEffectiveRole(User $user): string
     {
-        if ($user->global_role === 'Overseer') {
-            return 'Overseer';
+        if (in_array($user->global_role, ['Super_Admin', 'Overseer'], true)) {
+            return $user->global_role;
         }
 
         $hasActiveOfficerRole = DB::table('org_officers')

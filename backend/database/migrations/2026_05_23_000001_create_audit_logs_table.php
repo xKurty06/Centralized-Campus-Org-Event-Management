@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreign('actor_id')->references('id')->on('users')->onDelete('restrict');
             $table->string('actor_name', 200);
             $table->string('actor_school_id', 20);
-            $table->enum('actor_role', ['Overseer', 'Officer']);
+            $table->enum('actor_role', ['Super_Admin', 'Overseer', 'Officer']);
             $table->enum('category', ['Accreditation', 'User', 'Event', 'Membership', 'Officer', 'Payment']);
             $table->string('action', 120);
             $table->string('target_label', 255);

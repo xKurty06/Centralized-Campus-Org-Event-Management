@@ -67,12 +67,16 @@ class AdminController extends Controller
         $actor = $req->user();
         if (!$actor) return;
 
+        $actorRole = in_array($actor->global_role ?? null, ['Super_Admin', 'Overseer'], true)
+            ? $actor->global_role
+            : 'Officer';
+
         DB::table('audit_logs')->insert([
             'id' => (string) \Illuminate\Support\Str::uuid(),
             'actor_id' => $actor->id,
             'actor_name' => trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) ?: 'Unknown',
             'actor_school_id' => $actor->school_id ?? '',
-            'actor_role' => (($actor->global_role ?? 'User') === 'Overseer') ? 'Overseer' : 'Officer',
+            'actor_role' => $actorRole,
             'category' => $category,
             'action' => $action,
             'target_label' => $targetLabel,
@@ -855,9 +859,23 @@ class AdminController extends Controller
     public function updateUserRole(UpdateUserRoleRequest $req, string $id)
     {
         try {
+            if (($req->user()->global_role ?? null) !== 'Super_Admin') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Forbidden. Super admin access required to change global roles.',
+                ], 403);
+            }
+
             $user = DB::table('users')->where('id', $id)->first();
             if (!$user) {
                 return response()->json(['success' => false, 'error' => 'User not found.'], 404);
+            }
+
+            if (($user->global_role ?? null) === 'Super_Admin') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Super admin accounts must be changed manually.',
+                ], 422);
             }
 
             DB::table('users')->where('id', $id)->update([

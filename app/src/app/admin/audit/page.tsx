@@ -13,7 +13,7 @@ interface AuditEntry {
   timestamp: string;
   actor_name: string;
   actor_school_id: string;
-  actor_role: 'Overseer' | 'Officer';
+  actor_role: 'Super_Admin' | 'Overseer' | 'Officer';
   category: ActionCategory;
   action: string;
   target_label: string;
@@ -54,7 +54,7 @@ export default function AdminAuditPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCat] = useState<ActionCategory | 'All'>('All');
-  const [roleFilter, setRoleFilter] = useState<'All' | 'Overseer' | 'Officer'>('All');
+  const [roleFilter, setRoleFilter] = useState<'All' | 'Super_Admin' | 'Overseer' | 'Officer'>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   async function loadAudit(showRefreshing = false) {
@@ -107,6 +107,7 @@ export default function AdminAuditPage() {
           {[
             { label: 'Total Entries', value: entries.length, color: 'var(--color-text)' },
             { label: 'Today', value: entries.filter((e) => e.timestamp?.slice(0, 10) === new Date().toISOString().slice(0, 10)).length, color: 'var(--color-primary-light)' },
+            { label: 'Super Admin Actions', value: entries.filter((e) => e.actor_role === 'Super_Admin').length, color: 'var(--color-info)' },
             { label: 'Overseer Actions', value: entries.filter((e) => e.actor_role === 'Overseer').length, color: 'var(--color-info)' },
             { label: 'Officer Actions', value: entries.filter((e) => e.actor_role === 'Officer').length, color: 'var(--color-warning)' },
           ].map((s) => <div key={s.label} className="card flex items-center gap-3 px-4 py-3" style={{ boxShadow: 'none' }}><span className="text-xl font-bold" style={{ color: s.color }}>{s.value}</span><span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{s.label}</span></div>)}
@@ -122,7 +123,7 @@ export default function AdminAuditPage() {
                   {search && <button type="button" onClick={() => setSearch('')} aria-label="Clear search" className="input-icon-right bg-transparent border-0 cursor-pointer transition-opacity hover:opacity-60" style={{ color: 'var(--color-text-muted)' }}><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 9M11 2L2 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>}
                 </div>
                 <FilterSelect value={categoryFilter} defaultValue="All" onChange={(v) => setCat(v as ActionCategory | 'All')} options={[{ value: 'All', label: 'All Categories' }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]} className="sm:w-44" />
-                <FilterSelect value={roleFilter} defaultValue="All" onChange={(v) => setRoleFilter(v as typeof roleFilter)} options={[{ value: 'All', label: 'All Roles' }, { value: 'Overseer', label: 'Overseer' }, { value: 'Officer', label: 'Officer' }]} className="sm:w-36" />
+                <FilterSelect value={roleFilter} defaultValue="All" onChange={(v) => setRoleFilter(v as typeof roleFilter)} options={[{ value: 'All', label: 'All Roles' }, { value: 'Super_Admin', label: 'Super Admin' }, { value: 'Overseer', label: 'Overseer' }, { value: 'Officer', label: 'Officer' }]} className="sm:w-40" />
                 {hasActiveFilters && <button type="button" onClick={() => { setSearch(''); setCat('All'); setRoleFilter('All'); }} className="btn btn-ghost btn-sm whitespace-nowrap self-start sm:self-auto" style={{ color: 'var(--color-error)' }}>Clear all</button>}
               </div>
               {hasActiveFilters && <div className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t" style={{ borderColor: 'var(--color-border)' }}><span className="text-[11px] font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>Filtering by:</span>{search && <FilterChip label={`"${search}"`} onRemove={() => setSearch('')} />}{categoryFilter !== 'All' && <FilterChip label={categoryFilter} onRemove={() => setCat('All')} />}{roleFilter !== 'All' && <FilterChip label={roleFilter} onRemove={() => setRoleFilter('All')} />}</div>}
@@ -168,7 +169,7 @@ export default function AdminAuditPage() {
                     <Fragment key={entry.id}>
                       <tr className="hover:bg-[var(--color-surface-2)] transition-colors" style={{ cursor: entry.meta ? 'pointer' : 'default' }} onClick={() => entry.meta && setExpandedId(expandedId === entry.id ? null : entry.id)}>
                         <td className="py-3 px-4"><div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: CATEGORY_DOT[entry.category] }} /><span className="text-xs font-mono" style={{ color: 'var(--color-text-secondary)' }}>{fmtDate(entry.timestamp)}</span></div></td>
-                        <td className="py-3 px-4"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ background: entry.actor_role === 'Overseer' ? 'rgba(26,115,232,.1)' : 'var(--color-primary-muted)', color: entry.actor_role === 'Overseer' ? 'var(--color-info)' : 'var(--color-primary)' }}>{entry.actor_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}</div><div><p className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>{entry.actor_name}</p><p className="text-[10px] font-mono" style={{ color: 'var(--color-text-muted)' }}>{entry.actor_school_id}</p></div></div></td>
+                        <td className="py-3 px-4"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ background: entry.actor_role === 'Super_Admin' || entry.actor_role === 'Overseer' ? 'rgba(26,115,232,.1)' : 'var(--color-primary-muted)', color: entry.actor_role === 'Super_Admin' || entry.actor_role === 'Overseer' ? 'var(--color-info)' : 'var(--color-primary)' }}>{entry.actor_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}</div><div><p className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>{entry.actor_name}</p><p className="text-[10px] font-mono" style={{ color: 'var(--color-text-muted)' }}>{entry.actor_school_id}</p></div></div></td>
                         <td className="py-3 px-4"><span className={`badge ${CATEGORY_BADGE[entry.category]}`}>{entry.category}</span></td>
                         <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--color-text)' }}>{entry.action}</td>
                         <td className="py-3 px-4 text-xs" style={{ color: 'var(--color-text-secondary)', maxWidth: '200px' }}><span className="truncate block">{entry.target_label}</span><span className="font-mono text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{entry.target_id}</span></td>

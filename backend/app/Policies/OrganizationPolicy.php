@@ -13,7 +13,7 @@ class OrganizationPolicy
      */
     public function update(User $user, Organization $organization): bool
     {
-        if (($user->global_role ?? null) === 'Overseer') {
+        if (in_array($user->global_role ?? null, ['Super_Admin', 'Overseer'], true)) {
             return true;
         }
 

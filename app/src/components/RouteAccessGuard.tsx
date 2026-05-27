@@ -49,12 +49,12 @@ export default function RouteAccessGuard() {
         const payload = await res.json().catch(() => null);
         const role = payload?.data?.global_role as string | undefined;
 
-        if (pathname.startsWith('/admin') && role !== 'Overseer') {
+        if (pathname.startsWith('/admin') && role !== 'Super_Admin' && role !== 'Overseer') {
           router.replace(role === 'Officer' ? '/manage/dashboard' : '/events');
           return;
         }
 
-        if (pathname.startsWith('/manage') && role !== 'Officer' && role !== 'Overseer') {
+        if (pathname.startsWith('/manage') && role !== 'Officer' && role !== 'Super_Admin' && role !== 'Overseer') {
           router.replace('/events');
           return;
         }

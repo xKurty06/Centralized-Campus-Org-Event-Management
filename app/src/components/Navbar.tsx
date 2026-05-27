@@ -74,7 +74,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
     try {
       const parsed = JSON.parse(raw) as { first_name?: string; last_name?: string; school_id?: string; global_role?: string };
       const mappedRole: UserRole =
-        parsed.global_role === 'Overseer' ? 'admin' : parsed.global_role === 'Officer' ? 'officer' : 'student';
+        parsed.global_role === 'Super_Admin' || parsed.global_role === 'Overseer' ? 'admin' : parsed.global_role === 'Officer' ? 'officer' : 'student';
       return {
         role: mappedRole,
         user: {

@@ -488,7 +488,7 @@ function Sidebar({
                             className="text-[11px]"
                             style={{ color: 'var(--color-text-muted)' }}
                         >
-                            {sessionUser?.school_id ?? 'Overseer'}
+                            {sessionUser?.school_id ?? adminRoleLabel(sessionUser?.global_role)}
                         </p>
                     </div>
                 </div>
@@ -516,7 +516,7 @@ function Topbar({ pageTitle, sessionUser }: { pageTitle: string; sessionUser: Se
                     color: 'var(--color-primary)',
                 }}
             >
-                {sessionUser?.school_id && 'Overseer'}
+                {sessionUser?.school_id && adminRoleLabel(sessionUser.global_role)}
             </span>
         </header>
     );
@@ -532,10 +532,15 @@ interface SessionUser {
     first_name?: string;
     last_name?: string;
     school_id?: string;
+    global_role?: string;
 }
 function initials(first = '', last = '') {
     const value = `${first.slice(0, 1)}${last.slice(0, 1)}`.toUpperCase();
     return value || 'AD';
+}
+
+function adminRoleLabel(role?: string) {
+    return role === 'Super_Admin' ? 'Super Admin' : 'Overseer';
 }
 
 export default function AdminShell({
