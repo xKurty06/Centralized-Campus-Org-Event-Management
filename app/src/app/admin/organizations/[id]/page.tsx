@@ -616,6 +616,14 @@ export default function AdminOrgDetailPage() {
         }
     }
 
+    if (isLoading) {
+        return (
+            <main className="flex flex-col gap-6 animate-fade-in">
+                <DetailPageSkeleton />
+            </main>
+        );
+    }
+
     return (
         <>
             <main className="flex flex-col gap-6 animate-fade-in">
@@ -623,9 +631,6 @@ export default function AdminOrgDetailPage() {
                     <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--color-error)', color: 'var(--color-error)' }}>
                         {errorMsg}
                     </div>
-                )}
-                {isLoading && (
-                    <DetailPageSkeleton />
                 )}
 
                 {/* ── Breadcrumb ── */}

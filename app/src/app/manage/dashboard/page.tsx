@@ -312,6 +312,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
               </>
             )}
           </div>
+<<<<<<< HEAD
           <span
             className={`font-semibold ${isCompleted ? "text-gray-500" : isFull ? "text-red-500" : "text-green-700"}`}
           >
@@ -320,6 +321,10 @@ function EventCard({ event }: { event: ManagedEvent }) {
               : isFull
                 ? "Full"
                 : `${event.capacity - event.total_registered} left`}
+=======
+          <span className={`font-semibold ${isCompleted ? 'text-gray-500' : isFull ? 'text-red-500' : 'text-green-700'}`}>
+            {isCompleted ? 'Event ended' : isFull ? 'Full' : `${event.capacity - event.total_registered} left`}
+>>>>>>> afa27aa (feat: Enhance event status display in EventCard component to show 'Event ended' for completed events)
           </span>
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
