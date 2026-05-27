@@ -556,7 +556,7 @@ export default function ParticipantsPage() {
                                     {event?.title ?? "Event"}
                                 </h1>
                                     <p className="text-[13px] text-[var(--color-text-muted)] mt-1">
-                                        {fmt(event?.start_date ?? new Date().toISOString())} Â· Event
+                                        {fmt(event?.start_date ?? new Date().toISOString())} · Event
                                         Slug: <span className="font-mono">{eventRouteKey}</span>
                                     </p>
                                 </div>

@@ -613,7 +613,7 @@ export default function EventSettingsPage() {
                                         {event.title}
                                     </p>
                                     <p className="text-[12px] text-gray-400">
-                                        {formatDateRange(event.start_date, event.end_date)} Â· {event.total_registered}{" "}
+                                        {formatDateRange(event.start_date, event.end_date)} · {event.total_registered}{" "}
                                         registered
                                     </p>
                                 </div>

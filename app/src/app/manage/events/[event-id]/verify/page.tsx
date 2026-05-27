@@ -7,9 +7,9 @@ import { manageRequestHeaders } from '@/components/manageOrgSelection';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ────────────────────────────────────────────────────────────────
    TYPES
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+──────────────────────────────────────────────────────────────── */
 type PaymentStatus = 'Paid' | 'Pending';
 type AttendanceStatus = 'Not_Arrived' | 'Checked_In';
 type ActionType = 'Verify_Payment' | 'Check_In';
@@ -70,9 +70,9 @@ interface EventInfo {
   confirmedPaid: number;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ────────────────────────────────────────────────────────────────
    PLACEHOLDER DATA
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+──────────────────────────────────────────────────────────────── */
 const EMPTY_EVENT: EventInfo = {
   id: '',
   title: 'Event',
@@ -86,14 +86,14 @@ const EMPTY_EVENT: EventInfo = {
   confirmedPaid: 0,
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ────────────────────────────────────────────────────────────────
    HELPERS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+──────────────────────────────────────────────────────────────── */
 function getInitials(first: string, last: string) {
   return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
 }
 
-/* Shared avatar â€” shows profile pic if available, initials fallback */
+/* Shared avatar — shows profile pic if available, initials fallback */
 function StudentAvatar({
   student,
   size = 'md',
@@ -159,11 +159,11 @@ function normalizeEventStatus(rawStatus?: string | null, startDate?: string | nu
   return 'Open';
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ────────────────────────────────────────────────────────────────
    SUB-COMPONENTS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+──────────────────────────────────────────────────────────────── */
 
-/* â€” Connection Status Badge â€” */
+/* — Connection Status Badge — */
 function ConnectionBadge({ isOnline }: { isOnline: boolean }) {
   return (
     <div className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-300
@@ -178,7 +178,7 @@ function ConnectionBadge({ isOnline }: { isOnline: boolean }) {
   );
 }
 
-/* â€” Stat Pill â€” */
+/* — Stat Pill — */
 function StatPill({ label, value, color }: { label: string; value: number | string; color: string }) {
   return (
     <div className="flex flex-col items-center justify-center px-5 py-3 rounded-xl border border-[var(--color-border)] bg-white">
@@ -188,7 +188,7 @@ function StatPill({ label, value, color }: { label: string; value: number | stri
   );
 }
 
-/* â€” Result Card: Idle â€” */
+/* — Result Card: Idle — */
 function IdleCard() {
   return (
     <div className="flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg)] min-h-[260px]">
@@ -205,7 +205,7 @@ function IdleCard() {
   );
 }
 
-/* â€” Result Card: Not Found â€” */
+/* — Result Card: Not Found — */
 function NotFoundCard({ schoolId }: { schoolId: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-red-200 bg-red-50 min-h-[260px]">
@@ -224,7 +224,7 @@ function NotFoundCard({ schoolId }: { schoolId: string }) {
   );
 }
 
-/* â€” Result Card: Green (Confirmed) â€” */
+/* — Result Card: Green (Confirmed) — */
 function GreenCard({
   reg,
   onCheckIn,
@@ -249,7 +249,7 @@ function GreenCard({
         </div>
         {alreadyIn && (
           <span className="text-[11px] font-bold bg-white text-green-700 px-3 py-1 rounded-full">
-            Already Checked In Â· {reg.checkInAt ? formatTime(reg.checkInAt) : 'â€”'}
+            Already Checked In · {reg.checkInAt ? formatTime(reg.checkInAt) : '—'}
           </span>
         )}
       </div>
@@ -280,7 +280,7 @@ function GreenCard({
             </div>
             <p className="text-[13px] text-gray-500 mt-1">
               <span className="font-mono font-semibold text-gray-700">{student.schoolId}</span>
-              {' Â· '}{student.courseCode} {student.yearLevel}-{student.section}
+              {' · '}{student.courseCode} {student.yearLevel}-{student.section}
             </p>
             <p className="text-[12px] text-gray-500 mt-0.5 truncate">{student.department}</p>
           </div>
@@ -317,7 +317,7 @@ function GreenCard({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Checking inâ€¦
+                  Checking in…
                 </span>
               ) : (
                 <>
@@ -335,7 +335,7 @@ function GreenCard({
   );
 }
 
-/* â€” Result Card: Red (Pending Payment) â€” */
+/* — Result Card: Red (Pending Payment) — */
 function RedCard({
   reg,
   onConfirmPaymentOnly,
@@ -392,7 +392,7 @@ function RedCard({
             </div>
             <p className="text-[13px] text-gray-500 mt-1">
               <span className="font-mono font-semibold text-gray-700">{student.schoolId}</span>
-              {' Â· '}{student.courseCode} {student.yearLevel}-{student.section}
+              {' · '}{student.courseCode} {student.yearLevel}-{student.section}
             </p>
             <p className="text-[12px] text-gray-500 mt-0.5 truncate">{student.department}</p>
           </div>
@@ -416,7 +416,7 @@ function RedCard({
           Collect cash payment before allowing entry. Choose an action below.
         </div>
 
-        {/* â”€â”€ Two action buttons â”€â”€ */}
+        {/* ── Two action buttons ── */}
         <div className="mt-5 flex flex-col gap-2.5">
 
           {/* Primary: Confirm payment AND check in */}
@@ -432,7 +432,7 @@ function RedCard({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Confirming & checking inâ€¦
+                Confirming & checking in…
               </span>
             ) : (
               <>
@@ -462,7 +462,7 @@ function RedCard({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Confirming paymentâ€¦
+                Confirming payment…
               </span>
             ) : (
               <>
@@ -484,7 +484,7 @@ function RedCard({
   );
 }
 
-/* â€” Offline Queue Panel â€” */
+/* — Offline Queue Panel — */
 function OfflineQueuePanel({
   queue,
   onSync,
@@ -515,7 +515,7 @@ function OfflineQueuePanel({
           disabled={isSyncing || disabled}
           className="text-[12px] font-semibold text-amber-700 hover:text-amber-900 bg-white border border-amber-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
         >
-          {disabled ? 'Locked' : isSyncing ? 'Syncingâ€¦' : 'Sync Now'}
+          {disabled ? 'Locked' : isSyncing ? 'Syncing…' : 'Sync Now'}
         </button>
       </div>
       <div className="divide-y divide-amber-100">
@@ -524,7 +524,7 @@ function OfflineQueuePanel({
             <div className="flex items-center gap-2">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.syncStatus === 'Pending' ? 'bg-amber-500' : 'bg-green-500'}`} />
               <span className="text-[12px] font-medium text-gray-700">{item.studentName}</span>
-              <span className="text-[11px] text-gray-400">Â·</span>
+              <span className="text-[11px] text-gray-400">·</span>
               <span className="text-[11px] text-gray-500">
                 {item.actionType === 'Check_In' ? 'Check-in' : 'Payment confirmation'}
               </span>
@@ -537,7 +537,7 @@ function OfflineQueuePanel({
   );
 }
 
-/* â€” Recent Activity Feed â€” */
+/* — Recent Activity Feed — */
 function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
   return (
     <div className="card">
@@ -551,12 +551,12 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-[11px] font-bold
               ${a.action === 'Check_In' ? 'bg-green-500' : 'bg-blue-500'}`}
             >
-              {a.action === 'Check_In' ? 'âœ“' : 'â‚±'}
+              {a.action === 'Check_In' ? '✓' : '₱'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-[var(--color-text)] truncate">{a.studentName}</p>
               <p className="text-[11px] text-[var(--color-text-muted)]">
-                {a.action === 'Check_In' ? 'Checked in' : 'Payment confirmed'} Â· <span className="font-mono">{a.schoolId}</span>
+                {a.action === 'Check_In' ? 'Checked in' : 'Payment confirmed'} · <span className="font-mono">{a.schoolId}</span>
               </p>
             </div>
             <span className="text-[11px] font-mono text-[var(--color-text-muted)] flex-shrink-0">{a.timestamp}</span>
@@ -570,9 +570,9 @@ function RecentActivityFeed({ activities }: { activities: RecentActivity[] }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ────────────────────────────────────────────────────────────────
    MAIN PAGE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+──────────────────────────────────────────────────────────────── */
 export default function EntrancePanelPage() {
   const params  = useParams();
   const eventId = Array.isArray(params['event-id']) ? params['event-id'][0] : params['event-id'];
@@ -594,7 +594,7 @@ export default function EntrancePanelPage() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /* â€” Clock â€” */
+  /* — Clock — */
   useEffect(() => {
     const tick = () => setCurrentTime(new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     tick();
@@ -602,7 +602,7 @@ export default function EntrancePanelPage() {
     return () => clearInterval(id);
   }, []);
 
-  /* â€” Online/Offline â€” */
+  /* — Online/Offline — */
   useEffect(() => {
     const up   = () => setIsOnline(true);
     const down = () => setIsOnline(false);
@@ -611,10 +611,10 @@ export default function EntrancePanelPage() {
     return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down); };
   }, []);
 
-  /* â€” Auto-focus â€” */
+  /* — Auto-focus — */
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  /* â€” Load event info â€” */
+  /* — Load event info — */
   useEffect(() => {
     if (!eventId) return;
     (async () => {
@@ -645,14 +645,14 @@ export default function EntrancePanelPage() {
     })();
   }, [eventId]);
 
-  /* â€” Toast auto-dismiss â€” */
+  /* — Toast auto-dismiss — */
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(id);
   }, [toast]);
 
-  /* â€” Search â€” */
+  /* — Search — */
   const handleSearch = useCallback(() => {
     const q = searchInput.trim();
     if (!q || !eventId) return;
@@ -711,7 +711,7 @@ export default function EntrancePanelPage() {
     inputRef.current?.focus();
   };
 
-  /* â€” Check In (green card â€” payment already confirmed) â€” */
+  /* — Check In (green card — payment already confirmed) — */
   const handleCheckIn = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     if (isCompleted) {
@@ -752,7 +752,7 @@ export default function EntrancePanelPage() {
     }).finally(() => setActionLoading(false));
   }, [registration, isOnline, eventId, isCompleted]);
 
-  /* â€” Confirm Payment ONLY (no check-in) â€” */
+  /* — Confirm Payment ONLY (no check-in) — */
   const handleConfirmPaymentOnly = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     if (isCompleted) {
@@ -777,7 +777,7 @@ export default function EntrancePanelPage() {
         action:      'Verify_Payment',
         timestamp:   new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
       };
-      // Payment confirmed but attendance stays Not_Arrived â€” card flips to green
+      // Payment confirmed but attendance stays Not_Arrived — card flips to green
       setRegistration({ ...registration, paymentStatus: 'Paid' });
       setRecentActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
       setEvent((prev) => ({ ...prev, confirmedPaid: prev.confirmedPaid + 1 }));
@@ -795,7 +795,7 @@ export default function EntrancePanelPage() {
     }).finally(() => { setActionLoading(false); setLoadingAction(null); });
   }, [registration, isOnline, eventId, isCompleted]);
 
-  /* â€” Confirm Payment AND Check In â€” */
+  /* — Confirm Payment AND Check In — */
   const handleConfirmPaymentAndCheckIn = useCallback(() => {
     if (!registration || registration === 'not_found') return;
     if (isCompleted) {
@@ -837,7 +837,7 @@ export default function EntrancePanelPage() {
     }).finally(() => { setActionLoading(false); setLoadingAction(null); });
   }, [registration, isOnline, eventId, isCompleted]);
 
-  /* â€” Sync queue â€” */
+  /* — Sync queue — */
   const handleSync = () => {
     if (isCompleted) {
       setToast({ msg: 'Completed events are read-only.', type: 'error' });
@@ -867,13 +867,13 @@ export default function EntrancePanelPage() {
 
   const checkinPct = Math.round((event.checkedIn / event.totalRegistered) * 100) || 0;
 
-  /* â”€â”€ Render â”€â”€ */
+  /* ── Render ── */
   return (
     <>
       <>
         <div className="flex flex-col gap-6 animate-fade-in">
 
-          {/* â”€â”€ Header â”€â”€ */}
+          {/* ── Header ── */}
           <div className="flex flex-col gap-3">
             <nav className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-muted)] flex-wrap">
               <Link href="/manage/events" className="hover:text-[var(--color-primary)] transition-colors no-underline">Events</Link>
@@ -894,9 +894,9 @@ export default function EntrancePanelPage() {
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke="currentColor" strokeWidth="1.5" /><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5" /></svg>
                 {event.venue}
               </span>
-              <span>Â·</span>
+              <span>·</span>
               <span>{formatDate(event.startDate)}</span>
-              <span>Â·</span>
+              <span>·</span>
               <span className="font-mono font-semibold text-[var(--color-primary)]">{currentTime}</span>
             </div>
           </div>
@@ -907,7 +907,7 @@ export default function EntrancePanelPage() {
             </div>
           )}
 
-          {/* â”€â”€ Stats Row â”€â”€ */}
+          {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatPill label="Checked In"  value={event.checkedIn}       color="text-green-600" />
             <StatPill label="Registered"  value={event.totalRegistered} color="text-[var(--color-primary)]" />
@@ -926,10 +926,10 @@ export default function EntrancePanelPage() {
             </div>
           </div>
 
-          {/* â”€â”€ Main Grid â”€â”€ */}
+          {/* ── Main Grid ── */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
 
-            {/* Left â€” Scanner + Result */}
+            {/* Left — Scanner + Result */}
             <div className="flex flex-col gap-5">
 
               {/* Search box */}
@@ -991,7 +991,7 @@ export default function EntrancePanelPage() {
               )}
             </div>
 
-            {/* Right â€” Queue + Tips + Activity */}
+            {/* Right — Queue + Tips + Activity */}
             <div className="flex flex-col gap-5">
               <OfflineQueuePanel queue={queue} onSync={handleSync} isSyncing={isSyncing} disabled={isCompleted} />
 
@@ -1002,7 +1002,7 @@ export default function EntrancePanelPage() {
                     { icon: 'ðŸŸ¢', text: 'Green card = payment confirmed. Tap Check In.' },
                     { icon: 'ðŸ”´', text: 'Red card = collect cash. Confirm Payment & Check In for immediate entry, or Confirm Only if they enter later.' },
                     { icon: 'ðŸ“µ', text: 'Works offline. Actions sync when connection returns.' },
-                    { icon: 'â†©ï¸', text: 'Press Enter to instantly look up a School ID.' },
+                    { icon: '↩️', text: 'Press Enter to instantly look up a School ID.' },
                   ].map((tip, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--color-text-secondary)]">
                       <span className="mt-0.5">{tip.icon}</span>
@@ -1026,7 +1026,7 @@ export default function EntrancePanelPage() {
         </div>
       </>
 
-      {/* â”€â”€ Toast â”€â”€ */}
+      {/* ── Toast ── */}
       {toast && (
         <div className={`toast ${toast.type === 'success' ? 'toast-success' : 'toast-error'}`}>
           <div className="flex items-center gap-2">

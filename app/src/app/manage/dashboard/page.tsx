@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"use client";
 
 import Link from "next/link";
@@ -6,18 +5,9 @@ import { IconRefresh } from "@/components/ui/IconRefresh";
 import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/skeletons";
 import { manageRequestHeaders } from "@/components/manageOrgSelection";
-=======
-﻿'use client';
-
-import Link from 'next/link';
-import { IconRefresh } from '@/components/ui/IconRefresh';
-import { useEffect, useMemo, useState } from 'react';
-import { Skeleton } from '@/components/skeletons';
-import { manageRequestHeaders } from '@/components/manageOrgSelection';
->>>>>>> bbbf6ec (Refactor layout components and improve user session management)
 
 /* ----------------------------------------------------------------
-   Types â€” aligned to DB schema
+   Types — aligned to DB schema
    ---------------------------------------------------------------- */
 type EventStatus = "Upcoming" | "Open" | "Closed" | "Completed" | "Cancelled";
 type EventCategory =
@@ -125,7 +115,7 @@ function formatDateTimeRange(startIso: string, endIso?: string) {
   const sameDay = start.toDateString() === end.toDateString();
 
   if (sameDay) {
-    return `${formatDate(startIso)} Â· ${formatTime(startIso)} - ${formatTime(end.toISOString())}`;
+    return `${formatDate(startIso)} · ${formatTime(startIso)} - ${formatTime(end.toISOString())}`;
   }
   return `${formatDate(startIso)} ${formatTime(startIso)} - ${formatDate(end.toISOString())} ${formatTime(end.toISOString())}`;
 }
@@ -235,7 +225,7 @@ function StatCard({
 }
 
 /* ----------------------------------------------------------------
-   Event card â€” links to /manage/events/[event-id]
+   Event card — links to /manage/events/[event-id]
    ---------------------------------------------------------------- */
 function EventCard({ event }: { event: ManagedEvent }) {
   const fill = Math.min(
@@ -282,7 +272,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
           )}
       </div>
 
-      {/* Title â€” links to event overview */}
+      {/* Title — links to event overview */}
       <Link
         href={`/manage/events/${event.slug ?? event.id}`}
         className={`text-[15px] font-bold leading-snug transition-colors no-underline ${isCompleted ? "text-gray-600" : "text-gray-900 hover:text-green-700"}`}
@@ -340,7 +330,7 @@ function EventCard({ event }: { event: ManagedEvent }) {
         </div>
       </div>
 
-      {/* Actions â€” all pointing to /manage/events/[id] sub-routes */}
+      {/* Actions — all pointing to /manage/events/[id] sub-routes */}
       <div className="flex flex-wrap gap-2 pt-1">
         <Link
           href={`/manage/events/${event.slug ?? event.id}/participants`}
@@ -568,12 +558,7 @@ export default function ManageDashboardPage() {
   return (
     <>
       <div className="flex flex-col gap-6 animate-fade-in">
-<<<<<<< HEAD
         {/* ── Header ── */}
-=======
-
-        {/* â”€â”€ Header â”€â”€ */}
->>>>>>> bbbf6ec (Refactor layout components and improve user session management)
         <div>
           <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wide">
             Manage
@@ -591,7 +576,7 @@ export default function ManageDashboardPage() {
           </div>
         )}
 
-        {/* â”€â”€ Org identity strip â”€â”€ */}
+        {/* ── Org identity strip ── */}
         <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-100 overflow-hidden flex items-center justify-center flex-shrink-0 text-[14px] font-bold text-blue-700">
@@ -646,13 +631,8 @@ export default function ManageDashboardPage() {
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* ── Suspended alert ── */}
         {org?.accreditation_status === "Suspended" && (
-=======
-        {/* â”€â”€ Suspended alert â”€â”€ */}
-        {org?.accreditation_status === 'Suspended' && (
->>>>>>> bbbf6ec (Refactor layout components and improve user session management)
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3.5">
             <svg
               className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
@@ -678,7 +658,7 @@ export default function ManageDashboardPage() {
           </div>
         )}
 
-        {/* â”€â”€ Proofs alert â”€â”€ */}
+        {/* ── Proofs alert ── */}
         {totalProofsReview > 0 && (
           <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3.5">
             <svg
@@ -694,21 +674,16 @@ export default function ManageDashboardPage() {
               />
             </svg>
             <p className="text-[13px] font-semibold text-blue-800">
-<<<<<<< HEAD
               {totalProofsReview} payment proof
               {totalProofsReview > 1 ? "s" : ""} awaiting your review —{" "}
               <Link href="/manage/events" className="underline text-blue-700">
                 review now
               </Link>
-=======
-              {totalProofsReview} payment proof{totalProofsReview > 1 ? 's' : ''} awaiting your review â€”{' '}
-              <Link href="/manage/events" className="underline text-blue-700">review now</Link>
->>>>>>> bbbf6ec (Refactor layout components and improve user session management)
             </p>
           </div>
         )}
 
-        {/* â”€â”€ Stat cards â”€â”€ */}
+        {/* ── Stat cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatCard
             icon={<IconCalendar />}
@@ -750,7 +725,7 @@ export default function ManageDashboardPage() {
           />
         </div>
 
-        {/* â”€â”€ Recent active events â”€â”€ */}
+        {/* ── Recent active events ── */}
         <div className="flex flex-col gap-4">
           {/* Section header */}
           <div className="flex items-center justify-between">
@@ -847,7 +822,7 @@ export default function ManageDashboardPage() {
           )}
         </div>
 
-        {/* â”€â”€ Quick nav â”€â”€ */}
+        {/* ── Quick nav ── */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           {[
             {

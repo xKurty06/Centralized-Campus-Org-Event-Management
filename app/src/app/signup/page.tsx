@@ -354,7 +354,7 @@ function SignupPreview({ pointer, step }: { pointer: { x: number; y: number }; s
     );
 }
 
-// â”€â”€â”€ Step Indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Step Indicator ───────────────────────────────────────────
 const STEPS = [
     { n: 1 as Step, label: 'Credentials' },
     { n: 2 as Step, label: 'Identity' },
@@ -404,7 +404,7 @@ function StepBar({ current }: { current: Step }) {
     );
 }
 
-// â”€â”€â”€ Reusable Field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Reusable Field ───────────────────────────────────────────
 function Field({ id, label, hint, error, children }: {
     id: string; label: string; hint?: string; error?: string; children: React.ReactNode;
 }) {
@@ -418,7 +418,7 @@ function Field({ id, label, hint, error, children }: {
     );
 }
 
-// â”€â”€â”€ Step 1: Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Step 1: Credentials ──────────────────────────────────────
 function Step1({
     data,
     onChange,
@@ -572,7 +572,7 @@ function Step1({
     );
 }
 
-// â”€â”€â”€ Step 2: Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Step 2: Identity ─────────────────────────────────────────
 function Step2({
     data,
     departments,
@@ -724,7 +724,7 @@ function Step2({
     );
 }
 
-// â”€â”€â”€ Step 3: Review & Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Step 3: Review & Submit ──────────────────────────────────
 function Step3({
     data,
     departments,
@@ -805,7 +805,7 @@ function Step3({
     );
 }
 
-// â”€â”€â”€ Success Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Success Screen ───────────────────────────────────────────
 function SuccessScreen({ name }: { name: string }) {
     return (
         <div className="flex flex-col items-center gap-4 py-4 text-center animate-fade-in">
@@ -831,7 +831,7 @@ function SuccessScreen({ name }: { name: string }) {
     );
 }
 
-// â”€â”€â”€ Page Root â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Page Root ────────────────────────────────────────────────
 const INITIAL: FormData = {
     school_id: '', email: '', password: '', confirm_password: '',
     first_name: '', last_name: '', dept_id: '', course_id: '',

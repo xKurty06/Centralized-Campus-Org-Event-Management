@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 /* ================================================================
    Schema reference
    ================================================================
-   Organizations   â€” id, name, code_name, description, logo_url,
+   Organizations   — id, name, code_name, description, logo_url,
                      adviser, founded_date, category_id,
                      accreditation_status, accredited_by, accredited_at
-   Org_Officers    â€” id, user_id, org_id, position, is_active
-   Users           â€” id, school_id, first_name, last_name,
+   Org_Officers    — id, user_id, org_id, position, is_active
+   Users           — id, school_id, first_name, last_name,
                      email, course_id, dept_id, year_level, section
 
    API endpoints:
@@ -19,17 +19,17 @@ import { useRouter } from "next/navigation";
          body: { name, code_name, category_id, founded_date?,
                  description, adviser, logo_url?,
                  officers?: [{ school_id, position }] }
-         â†’ 201 { id, name, code_name }
+         → 201 { id, name, code_name }
 
    GET   /api/admin/users/lookup?school_id=:id
-         â†’ 200 { user_id, school_id, first_name, last_name,
+         → 200 { user_id, school_id, first_name, last_name,
                  email, course, dept, year_level, section }
-         â†’ 404 { message }
+         → 404 { message }
 ================================================================ */
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Types
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 type OrgCategory = "Academic" | "Non-Academic" | "Religious";
 type FormState = "idle" | "loading" | "success" | "error";
 type LookupState = "idle" | "loading" | "found" | "not_found" | "error";
@@ -49,7 +49,7 @@ interface OfficerLookupResult {
     section: number | string;
 }
 
-// â”€â”€ NEW: a committed officer entry (looked-up + position assigned) â”€â”€
+// ── NEW: a committed officer entry (looked-up + position assigned) ──
 interface OfficerEntry {
     userId: string;
     schoolId: string;
@@ -64,12 +64,12 @@ interface OfficerEntry {
 }
 
 interface OrgForm {
-    // Step 1 â€” Identity
+    // Step 1 — Identity
     name: string;
     codeName: string;
     category: OrgCategory | "";
     foundedDate: string;
-    // Step 2 â€” Profile
+    // Step 2 — Profile
     description: string;
     adviser: string;
     logoUrl: string;
@@ -79,9 +79,9 @@ interface FieldError {
     [key: string]: string;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Constants
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 const CATEGORY_ID_MAP: Record<OrgCategory, number> = {
     Academic: 1,
     "Non-Academic": 2,
@@ -105,7 +105,7 @@ const CATEGORIES: {
         {
             value: "Non-Academic",
             label: "Non-Academic",
-            desc: "Extracurricular and interest-based â€” arts, sports, student government.",
+            desc: "Extracurricular and interest-based — arts, sports, student government.",
             color: "var(--color-warning)",
             bg: "#fffbeb",
         },
@@ -134,18 +134,18 @@ const POSITIONS = [
     "Other",
 ];
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Helpers
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 const initials = (f: string, l: string) =>
     ((f?.[0] || "") + (l?.[0] || "")).toUpperCase();
 
 const fullName = (r: Pick<OfficerLookupResult, "firstName" | "lastName">) =>
     `${r.firstName} ${r.lastName}`;
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Shared micro-components
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 function Spinner({ size = 16 }: { size?: number }) {
     return (
         <svg
@@ -228,9 +228,9 @@ function AlertBanner({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Live Preview Card
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 function PreviewCard({
     form,
     officers,
@@ -385,7 +385,7 @@ function PreviewCard({
                                     ),
                                     val: form.foundedDate
                                         ? `Est. ${new Date(form.foundedDate).getFullYear()}`
-                                        : "Founded â€”",
+                                        : "Founded —",
                                 },
                             ].map((row, i) => (
                                 <div key={i} className="flex items-center gap-1.5">
@@ -397,7 +397,7 @@ function PreviewCard({
                                         style={{
                                             color:
                                                 row.val === "No adviser assigned" ||
-                                                    row.val === "Founded â€”"
+                                                    row.val === "Founded —"
                                                     ? "var(--color-text-muted)"
                                                     : "var(--color-text-secondary)",
                                         }}
@@ -470,9 +470,9 @@ function PreviewCard({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Step 1 â€” Identity
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
+// Step 1 — Identity
+// ─────────────────────────────────────────────────────────────
 function Step1({
     form,
     errors,
@@ -633,16 +633,16 @@ function Step1({
                     />
                 </div>
                 <p className="form-hint">
-                    Optional â€” records when the organization was officially established.
+                    Optional — records when the organization was officially established.
                 </p>
             </div>
         </div>
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Step 2 â€” Profile Details
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
+// Step 2 — Profile Details
+// ─────────────────────────────────────────────────────────────
 function Step2({
     form,
     errors,
@@ -674,7 +674,7 @@ function Step2({
                 <textarea
                     id="description"
                     rows={5}
-                    placeholder="Describe the organization's mission, goals, and what makes it unique on campusâ€¦"
+                    placeholder="Describe the organization's mission, goals, and what makes it unique on campus…"
                     value={form.description}
                     onChange={(e) => onChange("description", e.target.value)}
                     style={{ resize: "vertical", minHeight: "120px" }}
@@ -797,9 +797,9 @@ function Step2({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Officer Lookup Result Card (inline â€” shown before adding)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
+// Officer Lookup Result Card (inline — shown before adding)
+// ─────────────────────────────────────────────────────────────
 function OfficerLookupCard({
     result,
     onClear,
@@ -829,7 +829,7 @@ function OfficerLookupCard({
                     {fullName(result)}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--color-primary)" }}>
-                    {result.schoolId} Â· {result.course} {result.yearLevel || "?"}-
+                    {result.schoolId} · {result.course} {result.yearLevel || "?"}-
                     {result.section || "?"}
                 </p>
             </div>
@@ -866,9 +866,9 @@ function OfficerLookupCard({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Officer Row â€” committed entry in the officers list
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
+// Officer Row — committed entry in the officers list
+// ─────────────────────────────────────────────────────────────
 function OfficerRow({
     officer,
     index,
@@ -914,7 +914,7 @@ function OfficerRow({
                     {fullName(officer)}
                 </p>
                 <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                    {officer.schoolId} Â· {officer.course} {officer.yearLevel || "?"}-
+                    {officer.schoolId} · {officer.course} {officer.yearLevel || "?"}-
                     {officer.section || "?"}
                 </p>
             </div>
@@ -952,9 +952,9 @@ function OfficerRow({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Step 3 â€” Officers (multi-add with lookup)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
+// Step 3 — Officers (multi-add with lookup)
+// ─────────────────────────────────────────────────────────────
 function Step3({
     officers,
     onAddOfficer,
@@ -966,7 +966,7 @@ function Step3({
     onRemoveOfficer: (userId: string) => void;
     errors: FieldError;
 }) {
-    // Local state for the lookup input â€” scoped here so adding resets the form
+    // Local state for the lookup input — scoped here so adding resets the form
     const [schoolId, setSchoolId] = useState("");
     const [position, setPosition] = useState("");
     const [customPosition, setCustomPosition] = useState("");
@@ -977,7 +977,7 @@ function Step3({
     const [lookupError, setLookupError] = useState("");
     const [addError, setAddError] = useState("");
 
-    // The resolved position to store â€” either the selected value or the custom text
+    // The resolved position to store — either the selected value or the custom text
     const resolvedPosition =
         position === "Other" ? customPosition.trim() : position;
 
@@ -1152,7 +1152,7 @@ function Step3({
                 </div>
             </div>
 
-            {/* â”€â”€ Lookup input â”€â”€ */}
+            {/* ── Lookup input ── */}
             <div
                 className="flex flex-col gap-4 p-4 rounded-[--radius-md] border"
                 style={{
@@ -1277,7 +1277,7 @@ function Step3({
                                     setAddError("");
                                 }}
                             >
-                                <option value="">Select a positionâ€¦</option>
+                                <option value="">Select a position…</option>
                                 {POSITIONS.map((p) => (
                                     <option
                                         key={p}
@@ -1295,12 +1295,12 @@ function Step3({
                             </select>
                         </div>
 
-                        {/* Custom position input â€” shown only when Other is selected */}
+                        {/* Custom position input — shown only when Other is selected */}
                         {position === "Other" && (
                             <div className="mt-2 animate-fade-in">
                                 <input
                                     type="text"
-                                    placeholder="e.g. Sergeant-at-Arms, Historianâ€¦"
+                                    placeholder="e.g. Sergeant-at-Arms, Historian…"
                                     value={customPosition}
                                     onChange={(e) => {
                                         setCustomPosition(e.target.value);
@@ -1349,7 +1349,7 @@ function Step3({
                 )}
             </div>
 
-            {/* â”€â”€ Committed officers list â”€â”€ */}
+            {/* ── Committed officers list ── */}
             {officers.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
@@ -1422,9 +1422,9 @@ function Step3({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Success State
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 function SuccessPanel({
     orgName,
     orgCode,
@@ -1559,9 +1559,9 @@ function SuccessPanel({
     );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 // Page Root
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────
 export default function AdminCreateOrganizationPage() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -1574,7 +1574,7 @@ export default function AdminCreateOrganizationPage() {
     const [logoDimensions, setLogoDimensions] = useState("");
     const formTopRef = useRef<HTMLDivElement>(null);
 
-    // â”€â”€ Officers list (multi-add) â”€â”€
+    // ── Officers list (multi-add) ──
     const [officers, setOfficers] = useState<OfficerEntry[]>([]);
 
     const [form, setForm] = useState<OrgForm>({
@@ -1643,7 +1643,7 @@ export default function AdminCreateOrganizationPage() {
         img.src = previewUrl;
     }
 
-    // â”€â”€ Officer list handlers â”€â”€
+    // ── Officer list handlers ──
     const handleAddOfficer = useCallback(
         (result: OfficerLookupResult, position: string) => {
             setOfficers((prev) => [
@@ -1669,7 +1669,7 @@ export default function AdminCreateOrganizationPage() {
         setOfficers((prev) => prev.filter((o) => o.userId !== userId));
     }, []);
 
-    // â”€â”€ Validation per step â”€â”€
+    // ── Validation per step ──
     function validateStep(s: Step): FieldError {
         const e: FieldError = {};
         if (s === 1) {
@@ -1685,7 +1685,7 @@ export default function AdminCreateOrganizationPage() {
                 e.description = "Description must be at least 20 characters.";
             if (!form.adviser.trim()) e.adviser = "Faculty adviser name is required.";
         }
-        // Step 3 has no required fields â€” officers are optional
+        // Step 3 has no required fields — officers are optional
         return e;
     }
 
