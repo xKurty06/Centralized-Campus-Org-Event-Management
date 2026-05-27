@@ -1,20 +1,20 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// ─── Types ─────────────────────────────────────────────────────
+// --- Types
 type FormState = 'idle' | 'loading' | 'success' | 'error';
 type Step = 1 | 2 | 3;
 
 interface FormData {
-    // Step 1 — Credentials
+    // Step 1 - Credentials
     school_id: string;
     email: string;
     password: string;
     confirm_password: string;
-    // Step 2 — Identity
+    // Step 2 - Identity
     first_name: string;
     last_name: string;
     dept_id: string;
@@ -210,7 +210,7 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
     return { score, ...map[score] };
 }
 
-// ─── SVG Icons ────────────────────────────────────────────────
+// --- SVG Icons
 function BrandLogo({ size = 40 }: { size?: number }) {
     return (
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
@@ -244,22 +244,117 @@ function Spinner() {
     );
 }
 
-function BackgroundPattern() {
+function BackgroundPattern({ pointer }: { pointer: { x: number; y: number } }) {
     return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-            <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full"
-                style={{ background: 'radial-gradient(circle, rgba(34,160,80,.13) 0%, transparent 70%)' }} />
-            <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full"
-                style={{ background: 'radial-gradient(circle, rgba(34,160,80,.08) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#f2f6f4]" aria-hidden="true">
             <div className="absolute inset-0" style={{
-                backgroundImage: `linear-gradient(rgba(34,160,80,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(34,160,80,.04) 1px, transparent 1px)`,
-                backgroundSize: '40px 40px',
+                backgroundImage: `linear-gradient(rgba(20,95,46,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,95,46,.08) 1px, transparent 1px)`,
+                backgroundSize: '44px 44px',
+                transform: `translate(${(pointer.x - 50) * -0.08}px, ${(pointer.y - 50) * -0.08}px)`,
             }} />
+            <div
+                className="absolute inset-0"
+                style={{
+                    background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, rgba(34,160,80,.22), transparent 30%)`,
+                    mixBlendMode: 'multiply',
+                }}
+            />
+            <div className="absolute left-[-8%] top-[10%] h-[72%] w-[32%] -rotate-12 border-y border-green-900/10 bg-white/45" />
+            <div className="absolute right-[-6%] top-[16%] h-[68%] w-[28%] rotate-12 border-y border-green-900/10 bg-white/55" />
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white/90 to-transparent" />
         </div>
     );
 }
 
-// ─── Step Indicator ───────────────────────────────────────────
+function SignupPreview({ pointer, step }: { pointer: { x: number; y: number }; step: Step }) {
+    const tiltX = (pointer.y - 50) * -0.05;
+    const tiltY = (pointer.x - 50) * 0.05;
+    const checkpoints = [
+        { label: 'Credentials', detail: 'Student ID + CvSU email' },
+        { label: 'Identity', detail: 'Department, course, year, section' },
+        { label: 'Review', detail: 'Confirm before account creation' },
+    ];
+
+    return (
+        <section
+            className="hidden lg:flex relative min-h-[660px] flex-1 items-center justify-center overflow-hidden rounded-[28px] border border-white/70 bg-white/55 p-8 shadow-[0_24px_80px_rgba(20,95,46,.16)] backdrop-blur"
+            style={{ transform: `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)` }}
+        >
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,95,46,.10),rgba(240,165,0,.08),rgba(255,255,255,.30))]" />
+            <div className="absolute left-8 top-8 flex max-w-[calc(100%-4rem)] items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-2 text-[12px] font-semibold text-green-800 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-green-600" />
+                <span className="truncate">Verified campus onboarding</span>
+            </div>
+
+            <div className="relative w-full max-w-[640px] pt-14">
+                <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.24em] text-green-800/70">Account Setup</p>
+                <h2 className="max-w-[560px] text-[44px] font-bold leading-[1.04] tracking-normal text-[#132118]">
+                    Start with a verified CvSU identity, then enter the event ecosystem.
+                </h2>
+
+                <div className="mt-8 grid grid-cols-[.9fr_1.1fr] gap-4">
+                    <div className="rounded-2xl border border-white/70 bg-[#132118] p-5 text-white shadow-sm">
+                        <p className="text-[12px] font-semibold text-white/60">Registration path</p>
+                        <div className="mt-5 space-y-3">
+                            {checkpoints.map((item, index) => {
+                                const active = step === index + 1;
+                                const done = step > index + 1;
+                                return (
+                                    <div key={item.label} className="flex items-start gap-3">
+                                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${active || done ? 'bg-green-500 text-white' : 'bg-white/10 text-white'}`}>
+                                            {done ? 'check' : index + 1}
+                                        </span>
+                                        <span>
+                                            <span className="block text-[13px] font-semibold">{item.label}</span>
+                                            <span className="block text-[11px] text-white/50">{item.detail}</span>
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-sm">
+                        <div className="mb-5 flex items-center justify-between">
+                            <div>
+                                <p className="text-[13px] font-semibold text-gray-900">Access after signup</p>
+                                <p className="text-[11px] text-gray-400">Student-first permissions</p>
+                            </div>
+                            <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-semibold text-green-700">Default: User</span>
+                        </div>
+                        <div className="space-y-3">
+                            {[
+                                ['Browse organizations', 'Public + signed-in views'],
+                                ['Register for events', 'Student account required'],
+                                ['Track participation', 'Profile and My Events'],
+                            ].map(([label, detail]) => (
+                                <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
+                                    <span className="text-[12px] font-semibold text-gray-700">{label}</span>
+                                    <span className="text-right text-[11px] text-gray-400">{detail}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                    {[
+                        ['@cvsu.edu.ph', 'Email domain'],
+                        ['9 digits', 'Student ID'],
+                        ['Role-safe', 'User default'],
+                    ].map(([value, label]) => (
+                        <div key={label} className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm">
+                            <p className="text-[20px] font-bold text-green-800">{value}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// â”€â”€â”€ Step Indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STEPS = [
     { n: 1 as Step, label: 'Credentials' },
     { n: 2 as Step, label: 'Identity' },
@@ -268,14 +363,14 @@ const STEPS = [
 
 function StepBar({ current }: { current: Step }) {
     return (
-        <div className="flex items-center gap-0 mb-7">
+        <div className="flex items-center gap-0 mb-4">
             {STEPS.map((s, i) => (
                 <div key={s.n} className="flex items-center" style={{ flex: i < STEPS.length - 1 ? '1' : 'none' }}>
                     {/* dot */}
                     <div className="flex flex-col items-center gap-1">
                         <div
                             className={[
-                                'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300',
+                                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300',
                                 current > s.n
                                     ? 'bg-[--color-primary-light] text-[--color-text-muted] border-2 border-[--color-primary-light]'
                                     : current === s.n
@@ -289,8 +384,8 @@ function StepBar({ current }: { current: Step }) {
                                 </svg>
                             ) : s.n}
                         </div>
-                        <span
-                            className="text-[10px] font-medium whitespace-nowrap"
+            <span
+                            className="text-[9.5px] font-medium whitespace-nowrap"
                             style={{ color: current >= s.n ? 'var(--color-primary-light)' : 'var(--color-text-muted)' }}
                         >
                             {s.label}
@@ -299,7 +394,7 @@ function StepBar({ current }: { current: Step }) {
                     {/* line */}
                     {i < STEPS.length - 1 && (
                         <div
-                            className="flex-1 h-0.5 mb-3.5 mx-1 transition-all duration-500"
+                            className="flex-1 h-0.5 mb-3 mx-1 transition-all duration-500"
                             style={{ background: current > s.n ? 'var(--color-primary-light)' : 'var(--color-border)' }}
                         />
                     )}
@@ -309,7 +404,7 @@ function StepBar({ current }: { current: Step }) {
     );
 }
 
-// ─── Reusable Field ───────────────────────────────────────────
+// â”€â”€â”€ Reusable Field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Field({ id, label, hint, error, children }: {
     id: string; label: string; hint?: string; error?: string; children: React.ReactNode;
 }) {
@@ -323,7 +418,7 @@ function Field({ id, label, hint, error, children }: {
     );
 }
 
-// ─── Step 1: Credentials ──────────────────────────────────────
+// â”€â”€â”€ Step 1: Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step1({
     data,
     onChange,
@@ -358,7 +453,7 @@ function Step1({
     }
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in">
+        <div className="flex flex-col gap-3 animate-fade-in">
             {/* Student ID */}
             <Field id="school_id" label="Student ID" hint="Format: YYYYMMNNN (e.g. 202405123)" error={errors.school_id}>
                 <div className="input-icon-wrapper">
@@ -477,7 +572,7 @@ function Step1({
     );
 }
 
-// ─── Step 2: Identity ─────────────────────────────────────────
+// â”€â”€â”€ Step 2: Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step2({
     data,
     departments,
@@ -524,7 +619,7 @@ function Step2({
     }
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in">
+        <div className="flex flex-col gap-3 animate-fade-in">
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
                 <Field id="first_name" label="First Name" error={errors.first_name}>
@@ -558,9 +653,9 @@ function Step2({
                     onChange={e => { handleDeptChange(e.target.value); setErrors(p => ({ ...p, dept_id: '' })); }}
                     style={errors.dept_id ? { borderColor: 'var(--color-error)' } : {}}
                 >
-                    <option value="">Select department…</option>
+                    <option value="">Select department...</option>
                     {departments.map(d => (
-                        <option key={d.id} value={d.id}>{d.code} — {d.name}</option>
+                        <option key={d.id} value={d.id}>{d.code} - {d.name}</option>
                     ))}
                 </select>
             </Field>
@@ -575,10 +670,10 @@ function Step2({
                     style={errors.course_id ? { borderColor: 'var(--color-error)' } : {}}
                 >
                     <option value="">
-                        {data.dept_id ? 'Select course…' : 'Select a department first'}
+                        {data.dept_id ? 'Select course...' : 'Select a department first'}
                     </option>
                     {availableCourses.map(c => (
-                        <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+                        <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
                     ))}
                 </select>
             </Field>
@@ -592,7 +687,7 @@ function Step2({
                         onChange={e => { onChange('year_level', e.target.value); setErrors(p => ({ ...p, year_level: '' })); }}
                         style={errors.year_level ? { borderColor: 'var(--color-error)' } : {}}
                     >
-                        <option value="">Year…</option>
+                        <option value="">Year...</option>
                         {[1, 2, 3, 4, 5].map(y => <option key={y} value={String(y)}>{y}{y === 5 ? ' (5th+)' : ''}</option>)}
                     </select>
                 </Field>
@@ -611,7 +706,7 @@ function Step2({
                 </Field>
             </div>
 
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-1">
                 <button type="button" className="btn btn-ghost" onClick={onBack} style={{ flex: '0 0 auto', padding: '10px 18px' }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                         <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
@@ -629,7 +724,7 @@ function Step2({
     );
 }
 
-// ─── Step 3: Review & Submit ──────────────────────────────────
+// â”€â”€â”€ Step 3: Review & Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step3({
     data,
     departments,
@@ -653,16 +748,16 @@ function Step3({
         { label: 'Student ID', value: data.school_id },
         { label: 'Email', value: data.email },
         { label: 'Full Name', value: `${data.first_name} ${data.last_name}` },
-        { label: 'Department', value: dept ? `${dept.code} — ${dept.name}` : '—' },
-        { label: 'Course', value: course ? `${course.code} — ${course.name}` : '—' },
+        { label: 'Department', value: dept ? `${dept.code} - ${dept.name}` : '-' },
+        { label: 'Course', value: course ? `${course.code} - ${course.name}` : '-' },
         { label: 'Year / Section', value: `Year ${data.year_level}, Section ${data.section}` },
     ];
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in">
+        <div className="flex flex-col gap-3 animate-fade-in">
             {/* Info note */}
             <div
-                className="flex items-start gap-2.5 px-3.5 py-3 rounded-[--radius-md] border"
+                className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-[--radius-md] border"
                 style={{ background: 'var(--color-primary-muted)', borderColor: 'rgba(34,160,80,.2)' }}
             >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: '1px' }}>
@@ -677,7 +772,7 @@ function Step3({
             <div className="card" style={{ boxShadow: 'none' }}>
                 <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
                     {rows.map(r => (
-                        <div key={r.label} className="flex gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <div key={r.label} className="flex gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <span className="text-xs font-medium shrink-0 w-28" style={{ color: 'var(--color-text-secondary)', paddingTop: '1px' }}>
                                 {r.label}
                             </span>
@@ -703,14 +798,14 @@ function Step3({
                     onClick={onSubmit}
                     disabled={isLoading}
                 >
-                    {isLoading ? <><Spinner /> Creating account…</> : <>Create Account</>}
+                    {isLoading ? <><Spinner /> Creating account...</> : <>Create Account</>}
                 </button>
             </div>
         </div>
     );
 }
 
-// ─── Success Screen ───────────────────────────────────────────
+// â”€â”€â”€ Success Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SuccessScreen({ name }: { name: string }) {
     return (
         <div className="flex flex-col items-center gap-4 py-4 text-center animate-fade-in">
@@ -736,7 +831,7 @@ function SuccessScreen({ name }: { name: string }) {
     );
 }
 
-// ─── Page Root ────────────────────────────────────────────────
+// â”€â”€â”€ Page Root â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const INITIAL: FormData = {
     school_id: '', email: '', password: '', confirm_password: '',
     first_name: '', last_name: '', dept_id: '', course_id: '',
@@ -754,6 +849,7 @@ export default function SignupPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [catalogLoading, setCatalogLoading] = useState(true);
     const [catalogError, setCatalogError] = useState('');
+    const [pointer, setPointer] = useState({ x: 50, y: 50 });
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -862,105 +958,120 @@ export default function SignupPage() {
         3: 'Review & confirm',
     };
     const stepSub: Record<Step, string> = {
-        1: 'Set up your login credentials',
-        2: 'Link your academic profile',
-        3: 'Almost there — verify your information',
+        1: 'Set up your verified login credentials.',
+        2: 'Link your academic profile to your account.',
+        3: 'Almost there. Check your information before submission.',
     };
 
     return (
-        <div className="page-shell relative flex items-center justify-center px-4 py-10" style={{ minHeight: '100vh' }}>
-            <BackgroundPattern />
+        <div
+            className="page-shell relative min-h-screen overflow-hidden px-4 py-3 sm:px-6 lg:px-8"
+            style={{ minHeight: '100vh' }}
+            onPointerMove={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                setPointer({
+                    x: ((event.clientX - rect.left) / rect.width) * 100,
+                    y: ((event.clientY - rect.top) / rect.height) * 100,
+                });
+            }}
+        >
+            <BackgroundPattern pointer={pointer} />
 
             <div
-                className="relative z-10 w-full max-w-[480px] transition-all duration-300"
+                className="relative z-10 mx-auto flex min-h-[calc(100vh-24px)] w-full max-w-[1380px] items-center gap-5 transition-all duration-300"
                 style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(12px)' }}
             >
-                {/* Brand */}
-                <div className="flex flex-col items-center text-center mb-8">
-                    <div className="flex items-center gap-3 mb-4">
-                        <BrandLogo size={44} />
-                        <div className="text-left">
-                            <p className="text-lg font-bold leading-tight" style={{ color: 'var(--color-text)' }}>Salikop</p>
-                            <p className="text-[11px] font-medium uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
-                                Student Events Portal
-                            </p>
-                        </div>
-                    </div>
-                    {formState !== 'success' && (
-                        <>
-                            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>{stepTitle[step]}</h1>
-                            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{stepSub[step]}</p>
-                            <div className="flex items-center justify-center gap-1.5 mt-3">
-                                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>In partnership with</span>
-                                <span className="text-[11px] font-semibold" style={{ color: 'var(--color-primary-light)' }}>Dalisay</span>
-                            </div>
-                        </>
-                    )}
-                </div>
+                <SignupPreview pointer={pointer} step={step} />
 
-                {/* Card */}
-                <div className="card" style={{ boxShadow: 'var(--shadow-lg)' }}>
-                    <div className="card-body">
-                        {formState === 'success' ? (
-                            <SuccessScreen name={formData.first_name} />
-                        ) : (
-                            <>
-                                <StepBar current={step} />
-                                {submitError && (
-                                    <div
-                                        role="alert"
-                                        className="mb-4 rounded-[--radius-md] border px-3.5 py-3 text-sm"
-                                        style={{
-                                            background: 'var(--color-error-light)',
-                                            borderColor: 'rgba(217,48,37,.2)',
-                                            color: 'var(--color-error)',
-                                        }}
-                                    >
-                                        {submitError}
-                                    </div>
-                                )}
-                                {step === 1 && <Step1 data={formData} onChange={handleChange} onNext={() => setStep(2)} />}
-                                {step === 2 && (
-                                    <Step2
-                                        data={formData}
-                                        departments={departments}
-                                        courses={courses}
-                                        catalogLoading={catalogLoading}
-                                        catalogError={catalogError}
-                                        onChange={handleChange}
-                                        onNext={() => setStep(3)}
-                                        onBack={() => setStep(1)}
-                                    />
-                                )}
-                                {step === 3 && (
-                                    <Step3
-                                        data={formData}
-                                        departments={departments}
-                                        courses={courses}
-                                        onBack={() => setStep(2)}
-                                        onSubmit={handleSubmit}
-                                        formState={formState}
-                                    />
-                                )}
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Footer */}
-                {formState !== 'success' && (
-                    <p className="text-center mt-5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                        Already have an account?{' '}
-                        <Link href="/" className="font-semibold" style={{ color: 'var(--color-primary-light)' }}>
+                <section className="mx-auto flex w-full max-w-[500px] flex-col lg:mx-0">
+                    <div className="mb-3 flex items-center justify-between">
+                        <Link href="/events" className="flex items-center gap-3 text-gray-900 no-underline">
+                            <BrandLogo size={42} />
+                            <span>
+                                <span className="block text-[18px] font-bold leading-tight">Salikop</span>
+                                <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-400">CvSU Events Portal</span>
+                            </span>
+                        </Link>
+                        <Link href="/" className="rounded-full border border-green-200 bg-white/75 px-3 py-1.5 text-[12px] font-semibold text-green-800 shadow-sm backdrop-blur">
                             Sign in
                         </Link>
+                    </div>
+
+                    <div className="rounded-[24px] border border-white/70 bg-white/88 shadow-[0_24px_80px_rgba(20,95,46,.18)] backdrop-blur-xl">
+                        <div className="px-6 pb-3 pt-5 sm:px-7">
+                            {formState === 'success' ? (
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-800/70">Account ready</p>
+                            ) : (
+                                <>
+                                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-green-800/70">
+                                        Step {step} of 3
+                                    </p>
+                                    <h1 className="text-[26px] font-bold leading-tight text-gray-950">{stepTitle[step]}</h1>
+                                    <p className="mt-1.5 text-[13px] text-gray-500">{stepSub[step]}</p>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="px-6 pb-5 sm:px-7">
+                            {formState === 'success' ? (
+                                <SuccessScreen name={formData.first_name} />
+                            ) : (
+                                <>
+                                    <StepBar current={step} />
+                                    {submitError && (
+                                        <div
+                                            role="alert"
+                                            className="mb-4 rounded-[--radius-md] border px-3.5 py-3 text-sm"
+                                            style={{
+                                                background: 'var(--color-error-light)',
+                                                borderColor: 'rgba(217,48,37,.2)',
+                                                color: 'var(--color-error)',
+                                            }}
+                                        >
+                                            {submitError}
+                                        </div>
+                                    )}
+                                    {step === 1 && <Step1 data={formData} onChange={handleChange} onNext={() => setStep(2)} />}
+                                    {step === 2 && (
+                                        <Step2
+                                            data={formData}
+                                            departments={departments}
+                                            courses={courses}
+                                            catalogLoading={catalogLoading}
+                                            catalogError={catalogError}
+                                            onChange={handleChange}
+                                            onNext={() => setStep(3)}
+                                            onBack={() => setStep(1)}
+                                        />
+                                    )}
+                                    {step === 3 && (
+                                        <Step3
+                                            data={formData}
+                                            departments={departments}
+                                            courses={courses}
+                                            onBack={() => setStep(2)}
+                                            onSubmit={handleSubmit}
+                                            formState={formState}
+                                        />
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {formState !== 'success' && (
+                        <p className="mt-3 text-center text-sm text-gray-600">
+                            Already have an account?{' '}
+                            <Link href="/" className="font-semibold text-green-700">
+                                Sign in
+                            </Link>
+                        </p>
+                    )}
+                    <p className="mt-2 text-center text-xs leading-relaxed text-gray-500">
+                        Accounts start as regular student users. Officer and admin access are assigned through protected workflows.
                     </p>
-                )}
-                <p className="text-center mt-3 text-[11px] tracking-wide" style={{ color: 'gray' }}>
-                    Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
-                </p>
+                </section>
             </div>
         </div>
     );
 }
-

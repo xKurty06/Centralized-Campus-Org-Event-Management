@@ -1,14 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// ─── Types ────────────────────────────────────────────────────
+// --- Types
 type FormState = 'idle' | 'loading' | 'error';
 type Tab       = 'login' | 'guest';
 
-// ─── Config ───────────────────────────────────────────────────
+// --- Config
 // school_id format: YYYYMMNNN  e.g. 202405123
 const SCHOOL_ID_REGEX = /^\d{9}$/;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
@@ -30,9 +30,9 @@ interface LoginApiResponse {
   error?: string;
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Sub-components
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function BrandLogo({ size = 40 }: { size?: number }) {
   return (
@@ -67,25 +67,113 @@ function Spinner() {
   );
 }
 
-/** Subtle dot-grid + glow decorations */
-function BackgroundPattern() {
+/** Interactive campus-grid backdrop for the login screen. */
+function BackgroundPattern({ pointer }: { pointer: { x: number; y: number } }) {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      {/* top-right glow */}
-      <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(34,160,80,.13) 0%, transparent 70%)' }} />
-      {/* bottom-left glow */}
-      <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(34,160,80,.08) 0%, transparent 70%)' }} />
-      {/* grid */}
-      <div className="absolute inset-0" style={{
-        backgroundImage: `
-          linear-gradient(rgba(34,160,80,.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(34,160,80,.04) 1px, transparent 1px)
-        `,
-        backgroundSize: '40px 40px',
-      }} />
+    <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#f2f6f4]" aria-hidden="true">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(20,95,46,.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(20,95,46,.08) 1px, transparent 1px)
+          `,
+          backgroundSize: '44px 44px',
+          transform: `translate(${(pointer.x - 50) * -0.08}px, ${(pointer.y - 50) * -0.08}px)`,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, rgba(34,160,80,.22), transparent 30%)`,
+          mixBlendMode: 'multiply',
+        }}
+      />
+      <div className="absolute left-[-8%] top-[10%] h-[72%] w-[32%] -rotate-12 border-y border-green-900/10 bg-white/45" />
+      <div className="absolute right-[-6%] top-[16%] h-[68%] w-[28%] rotate-12 border-y border-green-900/10 bg-white/55" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white/90 to-transparent" />
     </div>
+  );
+}
+
+function CampusPreview({ pointer }: { pointer: { x: number; y: number } }) {
+  const tiltX = (pointer.y - 50) * -0.05;
+  const tiltY = (pointer.x - 50) * 0.05;
+
+  return (
+    <section
+      className="hidden lg:flex relative min-h-[620px] flex-1 items-center justify-center overflow-hidden rounded-[28px] border border-white/70 bg-white/55 p-8 shadow-[0_24px_80px_rgba(20,95,46,.16)] backdrop-blur"
+      style={{ transform: `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)` }}
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,95,46,.10),rgba(240,165,0,.08),rgba(255,255,255,.30))]" />
+      <div className="absolute left-8 top-8 flex max-w-[calc(100%-4rem)] items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-2 text-[12px] font-semibold text-green-800 shadow-sm">
+        <span className="h-2 w-2 rounded-full bg-green-600" />
+        <span className="truncate">Live campus operations</span>
+      </div>
+
+      <div className="relative w-full max-w-[620px] pt-14">
+        <div className="mb-7">
+          <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.24em] text-green-800/70">Salikop Command Desk</p>
+          <h2 className="max-w-[520px] text-[44px] font800 leading-[1.04] tracking-normal text-[#132118]">
+            One entry point for events, officers, and campus oversight.
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-[1.2fr_.8fr] gap-4">
+          <div className="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-semibold text-gray-900">Today&apos;s activity</p>
+                <p className="text-[11px] text-gray-400">Realtime event flow</p>
+              </div>
+              <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-semibold text-green-700">Open</span>
+            </div>
+            <div className="space-y-3">
+              {[
+                ['Org fair registration', '84 participants', '72%'],
+                ['Payment proof review', '12 pending', '38%'],
+                ['Entrance check-in', 'Live scanning', '56%'],
+              ].map(([label, detail, width]) => (
+                <div key={label}>
+                  <div className="mb-1.5 flex items-center justify-between text-[12px]">
+                    <span className="font-semibold text-gray-700">{label}</span>
+                    <span className="text-gray-400">{detail}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100">
+                    <div className="h-full rounded-full bg-green-600" style={{ width }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/70 bg-[#132118] p-5 text-white shadow-sm">
+            <p className="text-[12px] font-semibold text-white/60">Access layers</p>
+            <div className="mt-5 space-y-3">
+              {['Student', 'Officer', 'Overseer', 'Super Admin'].map((role, index) => (
+                <div key={role} className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[11px] font-bold">{index + 1}</span>
+                  <span className="text-[13px] font-semibold">{role}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-4">
+          {[
+            ['Events', '128'],
+            ['Organizations', '36'],
+            ['Audit-ready', '100%'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm">
+              <p className="text-[24px] font-bold text-green-800">{value}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -107,9 +195,9 @@ function InputIcon({ children }: { children: React.ReactNode }) {
   return <span className="input-icon-left">{children}</span>;
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Icon SVGs
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Campus ID card icon */
 const IdCardIcon = () => (
@@ -153,9 +241,9 @@ const UserIcon = () => (
   </svg>
 );
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Auto-formats a school ID as the user types.
@@ -170,9 +258,9 @@ function validateSchoolId(val: string): string | null {
   return null;
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Login Tab
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LoginForm() {
   const router = useRouter();
   const [schoolId, setSchoolId]     = useState('');
@@ -340,15 +428,15 @@ function LoginForm() {
         className="btn btn-primary btn-full mt-1"
         style={{ opacity: isLoading ? 0.85 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
       >
-        {isLoading ? <><Spinner /> Signing in…</> : <>Sign In <ArrowIcon /></>}
+        {isLoading ? <><Spinner /> Signing in...</> : <>Sign In <ArrowIcon /></>}
       </button>
     </form>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Guest Tab
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function GuestAccess() {
   return (
     <div className="flex flex-col gap-5">
@@ -415,19 +503,20 @@ function GuestAccess() {
       </Link>
 
       <p className="text-center text-xs" style={{ color: 'var(--color-text-muted)' }}>
-        No account required &nbsp;·&nbsp; Limited access
+        No account required &nbsp;-&nbsp; Limited access
       </p>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Page Root
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function LoginPage() {
   const router = useRouter();
-  const [tab, setTab]         = useState<Tab>('login');
+  const [tab, setTab] = useState<Tab>('login');
   const [mounted, setMounted] = useState(false);
+  const [pointer, setPointer] = useState({ x: 50, y: 50 });
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -438,109 +527,96 @@ export default function LoginPage() {
 
   return (
     <div
-      className="page-shell relative flex items-center justify-center px-4 py-8"
+      className="page-shell relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8"
       style={{ minHeight: '100vh' }}
+      onPointerMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setPointer({
+          x: ((event.clientX - rect.left) / rect.width) * 100,
+          y: ((event.clientY - rect.top) / rect.height) * 100,
+        });
+      }}
     >
-      <BackgroundPattern />
+      <BackgroundPattern pointer={pointer} />
 
       <div
-        className="relative z-10 w-full max-w-[440px] transition-all duration-300"
+        className="relative z-10 mx-auto flex min-h-[calc(100vh-40px)] w-full max-w-[1380px] items-center gap-6 transition-all duration-300"
         style={{
           opacity: mounted ? 1 : 0,
           transform: mounted ? 'translateY(0)' : 'translateY(12px)',
         }}
       >
-        {/* ── Brand ── */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="flex items-center gap-3 mb-5">
-            <BrandLogo size={46} />
-            <div className="text-left">
-              <p className="text-lg font-bold leading-tight" style={{ color: 'var(--color-text)' }}>
-                Salikop
+        <CampusPreview pointer={pointer} />
+
+        <section className="mx-auto flex w-full max-w-[460px] flex-col lg:mx-0">
+          <div className="mb-5 flex items-center justify-between">
+            <Link href="/events" className="flex items-center gap-3 text-gray-900 no-underline">
+              <BrandLogo size={42} />
+              <span>
+                <span className="block text-[18px] font-bold leading-tight">Salikop</span>
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-400">CvSU Events Portal</span>
+              </span>
+            </Link>
+            <Link href="/events" className="rounded-full border border-green-200 bg-white/75 px-3 py-1.5 text-[12px] font-semibold text-green-800 shadow-sm backdrop-blur">
+              Browse events
+            </Link>
+          </div>
+
+          <div className="rounded-[28px] border border-white/70 bg-white/88 shadow-[0_24px_80px_rgba(20,95,46,.18)] backdrop-blur-xl">
+            <div className="px-6 pb-4 pt-6 sm:px-7">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-green-800/70">
+                {tab === 'login' ? 'Secure campus access' : 'Public browsing mode'}
               </p>
-              <p className="text-[11px] font-medium uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
-                Student Events Portal
+              <h1 className="text-[30px] font-bold leading-tight text-gray-950">
+                {tab === 'login' ? 'Welcome back' : 'Continue as Guest'}
+              </h1>
+              <p className="mt-2 text-[14px] text-gray-500">
+                {tab === 'login'
+                  ? 'Sign in with your CvSU Student ID to continue.'
+                  : 'Browse open events without an account.'}
               </p>
+            </div>
+
+            <div className="mx-4 grid grid-cols-2 rounded-2xl bg-gray-100/80 p-1">
+              {(['login', 'guest'] as Tab[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={[
+                    'flex items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-semibold transition-all duration-200',
+                    tab === t
+                      ? 'bg-white text-green-800 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900',
+                  ].join(' ')}
+                >
+                  {t === 'login' ? <UserIcon /> : <GlobeIcon />}
+                  {t === 'login' ? 'Sign In' : 'Guest'}
+                </button>
+              ))}
+            </div>
+
+            <div className="px-6 py-6 sm:px-7">
+              {tab === 'login' ? <LoginForm /> : <GuestAccess />}
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold mb-1.5" style={{ color: 'var(--color-text)' }}>
-            {tab === 'login' ? 'Welcome back' : 'Continue as Guest'}
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          {tab === 'login' && (
+            <p className="mt-5 text-center text-sm text-gray-600">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="font-semibold text-green-700">
+                Create one
+              </Link>
+            </p>
+          )}
+
+          <p className="mt-3 text-center text-xs leading-relaxed text-gray-500">
             {tab === 'login'
-              ? 'Sign in with your CvSU Student ID to continue'
-              : 'Browse open events without an account'}
+              ? <>Access is restricted to enrolled CvSU students and staff.<br />Contact your administrator for account issues.</>
+              : <>Guest access is read-only.<br />Sign in to register and track participation.</>
+            }
           </p>
-
-          {/* Partnership line */}
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-              In partnership with
-            </span>
-            <span
-              className="text-[11px] font-semibold"
-              style={{ color: 'var(--color-primary-light)' }}
-            >
-              Dalisay
-            </span>
-          </div>
-        </div>
-
-        {/* ── Card ── */}
-        <div className="card" style={{ boxShadow: 'var(--shadow-lg)' }}>
-
-          {/* Tab switcher */}
-          <div
-            className="flex border-b"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            {(['login', 'guest'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={[
-                  'flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium border-b-2 transition-all duration-150 bg-transparent',
-                  tab === t
-                    ? 'border-[--color-primary-light] text-[--color-primary-light]'
-                    : 'border-transparent text-[--color-text-muted] hover:text-[--color-text]',
-                ].join(' ')}
-                style={{ marginBottom: '-1px' }}
-              >
-                {t === 'login' ? <UserIcon /> : <GlobeIcon />}
-                {t === 'login' ? 'Sign In' : 'Guest Access'}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab body */}
-          <div className="card-body">
-            {tab === 'login' ? <LoginForm /> : <GuestAccess />}
-          </div>
-        </div>
-
-        {/* ── Sign-up nudge (only on login tab) ── */}
-        {tab === 'login' && (
-          <p className="text-center mt-5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold" style={{ color: 'var(--color-primary-light)' }}>
-              Create one
-            </Link>
-          </p>
-        )}
-
-        {/* ── Footer ── */}
-        <p className="text-center mt-3 text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-          {tab === 'login'
-            ? <>Access is restricted to enrolled CvSU students and staff.<br />Contact your administrator for account issues.</>
-            : <>Guest registrations require a valid contact email.<br />You may be asked to show ID at the event entrance.</>
-          }
-        </p>
-        <p className="text-center mt-2.5 text-[11px] tracking-wide" style={{ color: 'gray' }}>
-          Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
-        </p>
+        </section>
       </div>
     </div>
   );
 }
-
