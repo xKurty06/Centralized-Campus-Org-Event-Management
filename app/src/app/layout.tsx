@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
 import "./globals.css";
 import RouteAccessGuard from "@/components/RouteAccessGuard";
 import RootShell from "@/components/RootShell";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Salikop - Centralized Org & Event Management System",
@@ -28,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-poppins)] bg-gray-50 text-gray-900">
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
         <RouteAccessGuard />
         <RootShell>{children}</RootShell>
       </body>

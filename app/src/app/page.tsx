@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { redirectIfAuthenticated } from '@/components/publicAuthRedirect';
 
 // --- Types
 type FormState = 'idle' | 'loading' | 'error';
@@ -523,8 +524,11 @@ export default function LoginPage() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
-    if (token) router.replace('/events');
+    const controller = new AbortController();
+
+    redirectIfAuthenticated(() => router.replace('/events'), controller.signal);
+
+    return () => controller.abort();
   }, [router]);
 
   return (

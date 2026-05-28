@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { clearSelectedManageOrgId } from "./manageOrgSelection";
+import { clearAuthSession } from "./authStorage";
 
 interface ShellProfileUser {
   first_name?: string;
@@ -40,13 +40,7 @@ export default function ShellProfileMenu({ collapsed, role, user }: ShellProfile
   const sectionLabel = role === "admin" ? "Admin Panel" : "Manage Org";
 
   function handleLogout() {
-    window.localStorage.removeItem("auth_token");
-    window.localStorage.removeItem("auth_user");
-    window.sessionStorage.removeItem("auth_token");
-    window.sessionStorage.removeItem("auth_user");
-    clearSelectedManageOrgId();
-    document.cookie = "auth_role=; Path=/; Max-Age=0; SameSite=Lax";
-    document.cookie = "auth_session=; Path=/; Max-Age=0; SameSite=Lax";
+    clearAuthSession();
     setOpen(false);
     router.push("/");
   }

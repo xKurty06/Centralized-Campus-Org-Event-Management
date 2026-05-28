@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { clearSelectedManageOrgId } from './manageOrgSelection';
+import { clearAuthSession } from './authStorage';
 
 /* ----------------------------------------------------------------
    Types
@@ -124,13 +124,7 @@ export default function Navbar({ role = 'guest', user }: NavbarProps) {
   const isLoggedIn = sessionRole !== 'guest';
 
   function handleLogout() {
-    window.localStorage.removeItem('auth_token');
-    window.localStorage.removeItem('auth_user');
-    window.sessionStorage.removeItem('auth_token');
-    window.sessionStorage.removeItem('auth_user');
-    clearSelectedManageOrgId();
-    document.cookie = 'auth_role=; Path=/; Max-Age=0; SameSite=Lax';
-    document.cookie = 'auth_session=; Path=/; Max-Age=0; SameSite=Lax';
+    clearAuthSession();
     setSessionRole('guest');
     setSessionUser(undefined);
     setProfileOpen(false);

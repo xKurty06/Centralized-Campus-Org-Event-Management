@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { clearSelectedManageOrgId } from '@/components/manageOrgSelection';
+import { clearAuthSession } from '@/components/authStorage';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -512,13 +512,7 @@ export default function SupportPage() {
     function handleLogout() {
         if (typeof window === 'undefined') return;
 
-        window.localStorage.removeItem('auth_token');
-        window.localStorage.removeItem('auth_user');
-        window.sessionStorage.removeItem('auth_token');
-        window.sessionStorage.removeItem('auth_user');
-        clearSelectedManageOrgId();
-        document.cookie = 'auth_role=; Path=/; Max-Age=0; SameSite=Lax';
-        document.cookie = 'auth_session=; Path=/; Max-Age=0; SameSite=Lax';
+        clearAuthSession();
         setSessionRole('guest');
         setSessionUser(null);
         setProfileOpen(false);
