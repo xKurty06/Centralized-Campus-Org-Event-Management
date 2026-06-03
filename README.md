@@ -110,6 +110,7 @@ The system is designed around practical campus operations:
 ## Project Context
 
 - `Course Requirement`: DCIT 55 - Advanced Database Management System
+- `Professor`: Mark Mina
 - `Institution`: Cavite State University - Main Campus, Indang, Cavite
 - `Program`: Bachelor of Science in Computer Science (BSCS 2-2)
 - `Project Type`: Database-driven web application
