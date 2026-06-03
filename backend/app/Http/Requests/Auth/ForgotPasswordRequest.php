@@ -14,7 +14,7 @@ class ForgotPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email|exists:users,email|ends_with:@cvsu.edu.ph',
+            'email' => 'required|email|ends_with:@cvsu.edu.ph',
         ];
     }
 }

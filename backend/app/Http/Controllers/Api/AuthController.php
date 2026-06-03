@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\VerifyResetOtpRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Resources\UserResource;
@@ -14,8 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -240,11 +242,78 @@ class AuthController extends Controller
     public function forgotPassword(ForgotPasswordRequest $req)
     {
         try {
-            $status = Password::sendResetLink($req->only('email'));
-            if ($status === Password::RESET_LINK_SENT) {
-                return response()->json(['success' => true, 'message' => 'Reset link sent to your email.'], 200);
+            $email = strtolower(trim((string) $req->input('email')));
+            $user = User::where('email', $email)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'If an account exists for that email, a reset code has been sent.',
+                ], 200);
             }
-            return response()->json(['success' => false, 'error' => 'Unable to send reset link.'], 400);
+
+            $code = (string) random_int(100000, 999999);
+            $expiresAt = Carbon::now()->addMinutes(10);
+
+            DB::table('password_resets')->updateOrInsert(
+                ['email' => $email],
+                [
+                    'code_hash' => hash('sha256', $code),
+                    'attempts' => 0,
+                    'expires_at' => $expiresAt,
+                    'created_at' => Carbon::now(),
+                ]
+            );
+
+            Mail::raw(
+                "Your Salikop password reset code is {$code}.\n\nThis code expires in 10 minutes. If you did not request this, you can ignore this email.",
+                function ($message) use ($email) {
+                    $message->to($email)
+                        ->subject('Salikop Password Reset Code');
+                }
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'email' => $email,
+                    'expires_at' => $expiresAt->toISOString(),
+                ],
+                'message' => 'If an account exists for that email, a reset code has been sent.',
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Password reset OTP email failed.', [
+                'email' => $req->input('email'),
+                'exception' => $e,
+            ]);
+
+            return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
+        }
+    }
+
+    public function verifyResetOtp(VerifyResetOtpRequest $req)
+    {
+        try {
+            $email = strtolower(trim((string) $req->input('email')));
+            $otp = (string) $req->input('token');
+
+            $resetRow = DB::table('password_resets')->where('email', $email)->first();
+            if (!$resetRow) {
+                return response()->json(['success' => false, 'error' => 'No reset request found.'], 400);
+            }
+            if (Carbon::parse($resetRow->expires_at)->isPast()) {
+                DB::table('password_resets')->where('email', $email)->delete();
+                return response()->json(['success' => false, 'error' => 'OTP expired. Please request a new one.'], 400);
+            }
+            if ((int) $resetRow->attempts >= 5) {
+                return response()->json(['success' => false, 'error' => 'Too many invalid attempts. Request a new OTP.'], 429);
+            }
+            if (!hash_equals((string) $resetRow->code_hash, hash('sha256', $otp))) {
+                DB::table('password_resets')->where('email', $email)->increment('attempts');
+                return response()->json(['success' => false, 'error' => 'Invalid OTP.'], 400);
+            }
+
+            return response()->json(['success' => true, 'message' => 'OTP verified.'], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
@@ -253,16 +322,33 @@ class AuthController extends Controller
     public function resetPassword(ResetPasswordRequest $req)
     {
         try {
-            $status = Password::reset(
-                $req->only('email', 'password', 'password_confirmation', 'token'),
-                function (User $user, string $password) {
-                    $user->update(['password_hash' => Hash::make($password)]);
-                }
-            );
-            if ($status === Password::PASSWORD_RESET) {
-                return response()->json(['success' => true, 'message' => 'Password reset successful.'], 200);
+            $email = strtolower(trim((string) $req->input('email')));
+            $otp = (string) $req->input('token');
+
+            $resetRow = DB::table('password_resets')->where('email', $email)->first();
+            if (!$resetRow) {
+                return response()->json(['success' => false, 'error' => 'No reset request found.'], 400);
             }
-            return response()->json(['success' => false, 'error' => 'Invalid or expired token.'], 400);
+            if (Carbon::parse($resetRow->expires_at)->isPast()) {
+                DB::table('password_resets')->where('email', $email)->delete();
+                return response()->json(['success' => false, 'error' => 'OTP expired. Please request a new one.'], 400);
+            }
+            if ((int) $resetRow->attempts >= 5) {
+                return response()->json(['success' => false, 'error' => 'Too many invalid attempts. Request a new OTP.'], 429);
+            }
+            if (!hash_equals((string) $resetRow->code_hash, hash('sha256', $otp))) {
+                DB::table('password_resets')->where('email', $email)->increment('attempts');
+                return response()->json(['success' => false, 'error' => 'Invalid OTP.'], 400);
+            }
+
+            $user = User::where('email', $email)->first();
+            if (!$user) {
+                return response()->json(['success' => false, 'error' => 'Invalid or expired reset request.'], 400);
+            }
+
+            $user->update(['password_hash' => Hash::make((string) $req->input('password'))]);
+            DB::table('password_resets')->where('email', $email)->delete();
+            return response()->json(['success' => true, 'message' => 'Password reset successful.'], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => 'Something went wrong.'], 500);
         }
