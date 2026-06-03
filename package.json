@@ -2,7 +2,7 @@
     "name": "salikop",
     "version": "1.0.0",
     "private": true,
-    "description": "Root workspace to run Salikop Next.js and Laravel concurrently",
+    "description": "Root workspace for Salikop, the Centralized Campus Organization and Event Management System",
     "workspaces": [
         "app"
     ],

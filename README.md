@@ -1,7 +1,7 @@
 # SALIKOP
 
 ## Project Title
-SALIKOP: Centralized Campus Organization & Event Management System
+SALIKOP: Centralized Campus Organization and Event Management System
 
 ## Course Requirement
 This project is the final requirement for DCIT 55 - Advanced Database Management System. The requirement is a **DATABASE-DRIVEN WEB APPLICATION** built for campus organization and event management.
@@ -33,7 +33,7 @@ SALIKOP is a web-based platform designed to centralize the management of student
 - **Administrator / Overseer:** Manage organizations, users, events, and accreditation status
 
 ## System Modules
-- Authentication & User Management
+- Authentication and User Management
 - Organization Management
 - Event Management and Catalog
 - Participant Registration and Dashboard
@@ -50,8 +50,8 @@ SALIKOP is a web-based platform designed to centralize the management of student
 SALIKOP aims to improve campus event coordination by providing one central digital environment for discovering events, registering participants, and verifying payments at the venue. The system supports more efficient communication between student organizations and their audience while reducing manual errors and administrative overhead.
 
 ## Folder Structure
-- `/app` — Frontend application code
-- `/backend` — Laravel backend application and API
+- `/app` - Salikop frontend application code
+- `/backend` - Salikop Laravel backend application and API
 
 ## Notes
-This README summarizes the overall system, course context, and the final project requirement as a database-driven web application.
+This README summarizes the overall Salikop system, course context, and the final project requirement as a database-driven web application.

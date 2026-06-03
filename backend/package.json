@@ -1,7 +1,9 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
+    "name": "salikop-backend",
     "private": true,
     "type": "module",
+    "description": "Salikop Laravel asset pipeline for the Centralized Campus Organization and Event Management System",
     "scripts": {
         "build": "vite build",
         "dev": "vite"
