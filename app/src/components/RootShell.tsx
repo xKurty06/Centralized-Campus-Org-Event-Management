@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Navbar from "./Navbar";
+import { APP_VERSION_LABEL } from "./appVersion";
 
 const HIDDEN_NAVBAR_PATHS = [
   // Global shells / auth flows
@@ -63,7 +64,9 @@ export default function RootShell({ children }: { children: React.ReactNode }) {
                 Contact Support
               </Link>
 
-              <span className="text-xs text-gray-500">v1.0 · 2026</span>
+              <span className="text-xs text-gray-500">
+                {APP_VERSION_LABEL} · {new Date().getFullYear()}
+              </span>
             </div>
           </div>
         </footer>

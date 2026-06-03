@@ -1,6 +1,6 @@
 {
     "name": "salikop-app",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "private": true,
     "description": "Salikop Next.js frontend for the Centralized Campus Organization and Event Management System",
     "scripts": {

@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { APP_VERSION_LABEL } from '@/components/appVersion';
 
 // ─── Types ────────────────────────────────────────────────────
 type FormState = 'idle' | 'loading' | 'success' | 'error';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 // ─── Password strength ────────────────────────────────────────
 interface StrengthResult {
@@ -265,6 +268,7 @@ function SuccessView() {
 // Change Password Form
 // ─────────────────────────────────────────────────────────────
 function ChangePasswordForm() {
+    const router = useRouter();
     const [current, setCurrent] = useState('');
     const [newPass, setNewPass] = useState('');
     const [confirm, setConfirm] = useState('');
@@ -303,21 +307,34 @@ function ChangePasswordForm() {
         if (!validate()) return;
 
         setFormState('loading');
+        const token = window.localStorage.getItem('auth_token') ?? window.sessionStorage.getItem('auth_token');
+        if (!token) {
+            setFormState('error');
+            setErrorMsg('Your session has expired. Please sign in again.');
+            router.push('/');
+            return;
+        }
 
-        // TODO: Replace with real API call
-        // await fetch('/api/auth/change-password', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ currentPassword: current, newPassword: newPass }),
-        // });
+        const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                current_password: current,
+                new_password: newPass,
+                new_password_confirmation: confirm,
+            }),
+        }).catch(() => null);
 
-        await new Promise(r => setTimeout(r, 1400)); // placeholder delay
-
-        // Simulate a wrong current-password error for demo — remove in production
-        // setFormState('error');
-        // setErrorMsg('Your current password is incorrect. Please try again.');
-        // return;
-
+        const payload = await res?.json().catch(() => null) as { success?: boolean; error?: string } | null;
+        if (!res || !res.ok || !payload?.success) {
+            setFormState('error');
+            setErrorMsg(payload?.error ?? 'Unable to update password right now.');
+            return;
+        }
         setFormState('success');
     }
 
@@ -518,7 +535,7 @@ export default function ChangePasswordPage() {
                     For account recovery issues, contact your system administrator.
                 </p>
                 <p className="text-center mt-2.5 text-[11px] tracking-wide" style={{ color: 'gray' }}>
-                    Salikop v1.0 &nbsp;·&nbsp; {new Date().getFullYear()}
+                    Salikop {APP_VERSION_LABEL} &nbsp;·&nbsp; {new Date().getFullYear()}
                 </p>
             </div>
         </div>
