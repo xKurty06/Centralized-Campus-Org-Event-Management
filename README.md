@@ -14,6 +14,12 @@ This project is the final requirement for DCIT 55 - Advanced Database Management
   - Ibasco, Lawrence Rain
   - Reyes, Raphael A.
 
+## Team Roles
+- **Zean Kurt G. Balboa** - Lead Developer / Full-Stack Developer / Release Manager
+- **Lawrence Rain Ibasco** - Database Architect / System Analyst / Documentation Lead
+- **Raphael A. Reyes** - QA Tester / Documentation Specialist / Usability Reviewer
+- **Kurt Oswill McCarver** - Lead Frontend Developer / UI Implementation
+
 ## Project Overview
 SALIKOP is a web-based platform designed to centralize the management of student organizations, campus events, and participant registrations. It replaces disconnected manual processes like social media announcements, printed sign-up sheets, and paper-based payment verification with a single unified system for students, organization officers, and administrators.
 
