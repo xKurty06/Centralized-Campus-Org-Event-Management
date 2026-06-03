@@ -1,63 +1,137 @@
-# SALIKOP
+# Salikop
 
-## Project Title
-SALIKOP: Centralized Campus Organization and Event Management System
+<p align="center">
+  <strong>Centralized Campus Organization and Event Management System</strong>
+</p>
 
-## Course Requirement
-This project is the final requirement for DCIT 55 - Advanced Database Management System. The requirement is a **DATABASE-DRIVEN WEB APPLICATION** built for campus organization and event management.
+<p align="center">
+  A database-driven web platform for managing campus organizations, memberships, events, registrations, and administrative workflows in one system.
+</p>
 
-## School & Team
-- **Institution:** Cavite State University - Main Campus, Indang, Cavite
-- **Program:** Bachelor of Science in Computer Science (BSCS 2-2)
-- **Group Members:**
-  - Balboa, Zean Kurt G.
-  - Ibasco, Lawrence Rain
-  - Reyes, Raphael A.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-1f7a4f?style=flat-square" alt="Version 1.0.0" />
+  <img src="https://img.shields.io/badge/status-active%20development-2f6fdd?style=flat-square" alt="Active development" />
+  <img src="https://img.shields.io/badge/frontend-Next.js%2016-111111?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/backend-Laravel%2013-ff2d20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 13" />
+  <img src="https://img.shields.io/badge/database-MySQL-0b6b8a?style=flat-square&logo=mysql&logoColor=white" alt="MySQL" />
+</p>
 
-## Team Roles
-- **Zean Kurt G. Balboa** - Lead Developer / Full-Stack Developer / Release Manager
-- **Lawrence Rain Ibasco** - Database Architect / System Analyst / Documentation Lead
-- **Raphael A. Reyes** - QA Tester / Documentation Specialist / Usability Reviewer
-- **Kurt Oswill McCarver** - Lead Frontend Developer / UI Implementation
+---
 
-## Project Overview
-SALIKOP is a web-based platform designed to centralize the management of student organizations, campus events, and participant registrations. It replaces disconnected manual processes like social media announcements, printed sign-up sheets, and paper-based payment verification with a single unified system for students, organization officers, and administrators.
+## Overview
 
-## Key Features
-- Central event discovery for all campus activities
-- Public organization directory grouped by Academic, Non-Academic, and Religious organizations
-- Student registration with automatic profile and School ID matching
-- Paid event payment verification and attendance confirmation
-- Role-based access for Guests, Students, Organization Officers, and Administrators
-- Offline-capable entrance panel for venue payment and check-in verification
-- Transactional notifications and registration tracking
+Salikop is a web-based platform built to centralize how campus organizations operate, how memberships are managed, and how students interact with campus events. It replaces scattered manual processes such as social media-only announcements, paper sign-up sheets, fragmented membership tracking, and paper-based payment verification with one unified workflow for students, organization officers, and administrators.
+
+The system is designed around practical campus operations:
+
+- event discovery and registration
+- organization visibility and membership management
+- officer-side event and participant management
+- administrative oversight for users, organizations, and system activity
+
+---
+
+## Preview
+
+<p align="center">
+  <img src="app/assets/screenshots/login.png" alt="Salikop login screen" width="90%" />
+</p>
+
+<p align="center">
+  <sub>Current screenshot: Login interface</sub>
+</p>
+
+---
+
+## Core Features
+
+### Student Experience
+
+- Browse campus events from one central catalog
+- View complete event details before registration
+- Track joined and registered events
+- Manage profile information and account access
+
+### Organization and Membership Workflows
+
+- Public organization directory for Academic, Non-Academic, and Religious groups
+- Membership-related workflows for tracking and managing organization participation
+- Support for organization member records and membership status handling
+- Structured organization profiles with clearer visibility for campus users
+
+### Officer Tools
+
+- Create and manage events
+- Manage organization memberships and member-related workflows
+- Review participants and registration records
+- Verify payments and event-related submissions
+- Operate through dedicated management views and dashboards
+
+### Administrative Oversight
+
+- Manage organizations, users, and events
+- Oversee membership-related records and organization activity
+- Review organization status and system activity
+- Support broader campus-level coordination and control
+
+---
 
 ## User Roles
-- **Guest:** Browse events and organization information without registering
-- **Student:** Register for events, view registrations, and manage profile data
-- **Organization Officer:** Create and manage events, verify payments, and review participants
-- **Administrator / Overseer:** Manage organizations, users, events, and accreditation status
+
+- `Guest`: Browse public events and organization information
+- `Student`: Register for events, track participation, and manage profile data
+- `Organization Officer`: Manage memberships, events, participants, and verification workflows
+- `Administrator / Overseer`: Manage users, organizations, memberships, events, and oversight functions
+
+---
 
 ## System Modules
+
 - Authentication and User Management
-- Organization Management
-- Event Management and Catalog
-- Participant Registration and Dashboard
-- Manual ID Verification and Offline Sync
-- Notifications and Admin Oversight
+- Organization and Membership Management
+- Event Catalog and Event Management
+- Participant Registration and Tracking
+- Payment Verification and Attendance Support
+- Notifications and Administrative Oversight
 
-## Technical Stack
-- **Frontend:** Next.js, Tailwind CSS
-- **Backend:** Laravel (PHP)
-- **Database:** MySQL
-- **Deployment Target:** TBA
+---
 
-## Purpose and Impact
-SALIKOP aims to improve campus event coordination by providing one central digital environment for discovering events, registering participants, and verifying payments at the venue. The system supports more efficient communication between student organizations and their audience while reducing manual errors and administrative overhead.
+## Tech Stack
 
-## Folder Structure
-- `/app` - Salikop frontend application code
-- `/backend` - Salikop Laravel backend application and API
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js, React, Tailwind CSS, TypeScript |
+| Backend | Laravel, PHP |
+| Database | MySQL |
+| Tooling | npm workspaces, Concurrently |
 
-## Notes
-This README summarizes the overall Salikop system, course context, and the final project requirement as a database-driven web application.
+---
+
+## Project Context
+
+- `Course Requirement`: DCIT 55 - Advanced Database Management System
+- `Institution`: Cavite State University - Main Campus, Indang, Cavite
+- `Program`: Bachelor of Science in Computer Science (BSCS 2-2)
+- `Project Type`: Database-driven web application
+
+---
+
+## Team
+
+- `Zean Kurt G. Balboa` - Lead Developer / Full-Stack Developer / Release Manager
+- `Kurt Oswill McCarver` - Lead Frontend Developer / UI Implementation
+- `Lawrence Rain Ibasco` - Database Architect / System Analyst / Documentation Lead
+- `Raphael A. Reyes` - QA Tester / Documentation Specialist / Usability Reviewer
+
+---
+
+## Workspace Structure
+
+- [`app`](/d:/zeank/Desktop/Projects/centralized-campus-org-event-management/app) - Salikop frontend application
+- [`backend`](/d:/zeank/Desktop/Projects/centralized-campus-org-event-management/backend) - Laravel backend API and server-side logic
+
+---
+
+## Purpose
+
+Salikop aims to improve campus coordination by giving student organizations and campus administrators a single environment for event operations, registrations, visibility, and verification. The system is intended to reduce manual errors, make event participation easier to manage, and provide a more consistent digital workflow across campus activities.
