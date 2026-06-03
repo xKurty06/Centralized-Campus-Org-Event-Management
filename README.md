@@ -31,6 +31,12 @@ The system is designed around practical campus operations:
 
 ---
 
+## Purpose
+
+Salikop aims to improve campus coordination by giving student organizations and campus administrators a single environment for event operations, registrations, visibility, and verification. The system is intended to reduce manual errors, make event participation easier to manage, and provide a more consistent digital workflow across campus activities.
+
+---
+
 ## Preview
 
 <p align="center">
@@ -130,9 +136,3 @@ The system is designed around practical campus operations:
 
 - [`app`](/d:/zeank/Desktop/Projects/centralized-campus-org-event-management/app) - Salikop frontend application
 - [`backend`](/d:/zeank/Desktop/Projects/centralized-campus-org-event-management/backend) - Laravel backend API and server-side logic
-
----
-
-## Purpose
-
-Salikop aims to improve campus coordination by giving student organizations and campus administrators a single environment for event operations, registrations, visibility, and verification. The system is intended to reduce manual errors, make event participation easier to manage, and provide a more consistent digital workflow across campus activities.
