@@ -312,10 +312,6 @@ function EventCard({ event }: { event: ManagedEvent }) {
               </>
             )}
           </div>
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
           <span
             className={`font-semibold ${isCompleted ? "text-gray-500" : isFull ? "text-red-500" : "text-green-700"}`}
           >
@@ -324,13 +320,6 @@ function EventCard({ event }: { event: ManagedEvent }) {
               : isFull
                 ? "Full"
                 : `${event.capacity - event.total_registered} left`}
-<<<<<<< HEAD
-=======
-          <span className={`font-semibold ${isCompleted ? 'text-gray-500' : isFull ? 'text-red-500' : 'text-green-700'}`}>
-            {isCompleted ? 'Event ended' : isFull ? 'Full' : `${event.capacity - event.total_registered} left`}
->>>>>>> afa27aa (feat: Enhance event status display in EventCard component to show 'Event ended' for completed events)
-=======
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
           </span>
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -387,10 +376,6 @@ export default function ManageDashboardPage() {
         return;
       }
       const [dashRes, orgRes, membersRes] = await Promise.all([
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
         fetch(`${API_BASE_URL}/manage/dashboard`, {
           headers: manageRequestHeaders(token),
         }).catch(() => null),
@@ -400,7 +385,6 @@ export default function ManageDashboardPage() {
         fetch(`${API_BASE_URL}/manage/members`, {
           headers: manageRequestHeaders(token),
         }).catch(() => null),
-<<<<<<< HEAD
       ]);
       if (!dashRes && !orgRes && !membersRes) {
         setLoadError("Unable to connect to manage APIs.");
@@ -426,46 +410,6 @@ export default function ManageDashboardPage() {
           (orgPayload as any)?.error ??
           "Failed to load organization.",
         );
-=======
-        fetch(`${API_BASE_URL}/manage/dashboard`, { headers: manageRequestHeaders(token) }).catch(() => null),
-        fetch(`${API_BASE_URL}/manage/org-profile`, { headers: manageRequestHeaders(token) }).catch(() => null),
-        fetch(`${API_BASE_URL}/manage/members`, { headers: manageRequestHeaders(token) }).catch(() => null),
-=======
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
-      ]);
-      if (!dashRes && !orgRes && !membersRes) {
-        setLoadError("Unable to connect to manage APIs.");
-        setIsLoading(false);
-        return;
-      }
-<<<<<<< HEAD
-      const dashPayload = await dashRes?.json().catch(() => null) as { success?: boolean; data?: any[]; org?: any } | null;
-      const orgPayload = await orgRes?.json().catch(() => null) as { success?: boolean; data?: any } | null;
-      const membersPayload = await membersRes?.json().catch(() => null) as { success?: boolean; data?: any[] } | null;
-      if ((dashRes && !dashRes.ok) && (orgRes && !orgRes.ok)) {
-        setLoadError((dashPayload as any)?.error ?? (orgPayload as any)?.error ?? 'Failed to load organization.');
->>>>>>> a4ea865 (feat: Enhance dashboard data fetching to include active members count from members API)
-=======
-      const dashPayload = (await dashRes?.json().catch(() => null)) as {
-        success?: boolean;
-        data?: any[];
-        org?: any;
-      } | null;
-      const orgPayload = (await orgRes?.json().catch(() => null)) as {
-        success?: boolean;
-        data?: any;
-      } | null;
-      const membersPayload = (await membersRes?.json().catch(() => null)) as {
-        success?: boolean;
-        data?: any[];
-      } | null;
-      if (dashRes && !dashRes.ok && orgRes && !orgRes.ok) {
-        setLoadError(
-          (dashPayload as any)?.error ??
-          (orgPayload as any)?.error ??
-          "Failed to load organization.",
-        );
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
       } else {
         setLoadError("");
       }
@@ -500,10 +444,6 @@ export default function ManageDashboardPage() {
         });
       }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
       setEvents(
         eventsData.map((e: any) => ({
           id: e.id,
@@ -529,39 +469,10 @@ export default function ManageDashboardPage() {
       const membersRows = Array.isArray(membersPayload?.data)
         ? membersPayload.data
         : [];
-<<<<<<< HEAD
       const hasMembersPayload = Array.isArray(membersPayload?.data);
       const activeMembersFromMembersApi = membersRows.filter(
         (m: any) =>
           String(m?.membership_status ?? "").toLowerCase() === "active",
-=======
-      setEvents(eventsData.map((e: any) => ({
-        id: e.id,
-        slug: e.slug ?? e.id,
-        title: e.title ?? 'Untitled Event',
-        category: e.category_name ?? 'Other',
-        start_date: e.start_date,
-        end_date: e.end_date ?? e.start_date,
-        venue_name: e.venue_name ?? 'TBA',
-        status: normalizeStatus(e.effective_status ?? e.status, e.start_date, e.end_date),
-        is_paid: Boolean(e.is_paid),
-        capacity: Number(e.capacity ?? 0),
-        total_registered: Number(e.total_registered ?? 0),
-        total_paid: Number(e.total_paid ?? 0),
-        total_pending: Number(e.total_pending ?? 0),
-        proofs_pending_review: Number(e.proofs_pending_review ?? 0),
-      })));
-      const membersRows = Array.isArray(membersPayload?.data) ? membersPayload.data : [];
-      const hasMembersPayload = Array.isArray(membersPayload?.data);
-      const activeMembersFromMembersApi = membersRows.filter(
-        (m: any) => String(m?.membership_status ?? '').toLowerCase() === 'active',
->>>>>>> a4ea865 (feat: Enhance dashboard data fetching to include active members count from members API)
-=======
-      const hasMembersPayload = Array.isArray(membersPayload?.data);
-      const activeMembersFromMembersApi = membersRows.filter(
-        (m: any) =>
-          String(m?.membership_status ?? "").toLowerCase() === "active",
->>>>>>> 726c8cd (refactor: update dashboard and profile pages)
       ).length;
       setActiveMembers(
         hasMembersPayload

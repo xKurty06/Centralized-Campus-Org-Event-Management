@@ -325,65 +325,33 @@ class EventController extends Controller
 
             $officers = DB::table('org_officers as oo')
                 ->leftJoin('users as u', 'oo.user_id', '=', 'u.id')
-                ->leftJoin('courses as cc', 'u.course_id', '=', 'cc.id')
-                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
                 ->select(
                     'oo.id',
-                    'oo.org_id',
-                    'oo.user_id',
                     'oo.position',
                     'oo.is_active',
-                    'oo.created_at',
-                    'oo.updated_at',
                     'u.first_name',
-                    'u.last_name',
-                    'u.school_id',
-                    'u.email',
-                    'u.year_level',
-                    'u.section',
-                    'cc.course_code as course_code',
-                    'cc.course_name as course_name',
-                    'd.name as department',
-                    'd.code as department_code'
+                    'u.last_name'
                 )
                 ->where('oo.org_id', $orgId)
+                ->where('oo.is_active', 1)
                 ->orderByDesc('oo.is_active')
                 ->orderBy('u.last_name')
                 ->orderBy('u.first_name')
-                ->get();
-
-            $members = DB::table('org_members as om')
-                ->leftJoin('users as u', 'om.user_id', '=', 'u.id')
-                ->leftJoin('courses as c', 'u.course_id', '=', 'c.id')
-                ->leftJoin('departments as d', 'u.dept_id', '=', 'd.id')
-                ->where('om.org_id', $orgId)
-                ->select(
-                    'om.id',
-                    'om.org_id',
-                    'om.user_id',
-                    'om.membership_status',
-                    'om.paid_membership_fee',
-                    'om.created_at',
-                    'om.updated_at',
-                    'u.first_name',
-                    'u.last_name',
-                    'u.school_id',
-                    'u.email',
-                    'u.year_level',
-                    'u.section',
-                    'c.course_code as course_code',
-                    'd.name as department',
-                    'd.code as department_code'
-                )
-                ->orderByDesc('om.created_at')
-                ->get();
+                ->get()
+                ->map(fn ($officer) => [
+                    'id' => $officer->id,
+                    'user_name' => trim(($officer->first_name ?? '') . ' ' . ($officer->last_name ?? '')) ?: null,
+                    'position' => $officer->position ?? null,
+                    'role' => $officer->position ?? null,
+                    'is_active' => (bool) $officer->is_active,
+                ]);
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'org' => new \App\Http\Resources\OrganizationResource($org),
-                    'officers' => \App\Http\Resources\OrgOfficerResource::collection($officers),
-                    'members' => $members,
+                    'officers' => $officers,
+                    'members' => [],
                 ],
             ], 200);
         } catch (\Exception $e) {
