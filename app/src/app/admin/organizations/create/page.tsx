@@ -528,15 +528,16 @@ function Step1({
                         id="codeName"
                         type="text"
                         className="input-has-left-icon"
-                        placeholder="e.g. ACTS"
+                        placeholder="e.g. ACTS, C.S.G., cys-elite"
                         value={form.codeName}
-                        onChange={(e) => onChange("codeName", e.target.value.toUpperCase())}
+                        onChange={(e) => onChange("codeName", e.target.value)}
                         maxLength={12}
                         style={{ fontFamily: "monospace", letterSpacing: "0.05em" }}
                     />
                 </div>
                 <p className="form-hint">
-                    Unique shorthand used in badges and URL routing. Uppercase only.
+                    Unique shorthand used in badges and URL routing. Letters, numbers,
+                    spaces, and common acronym symbols are allowed.
                 </p>
                 <FieldErr msg={errors.codeName} />
             </div>
@@ -1676,8 +1677,9 @@ export default function AdminCreateOrganizationPage() {
             if (!form.name.trim()) e.name = "Organization name is required.";
             if (!form.codeName.trim())
                 e.codeName = "Code name / acronym is required.";
-            if (!/^[A-Z0-9]+$/.test(form.codeName) && form.codeName)
-                e.codeName = "Code name must be uppercase letters and numbers only.";
+            if (!/^[A-Za-z0-9 .&'()+#/_-]+$/.test(form.codeName) && form.codeName)
+                e.codeName =
+                    "Code name can use letters, numbers, spaces, and common acronym symbols.";
             if (!form.category) e.category = "Please select a category.";
         }
         if (s === 2) {
