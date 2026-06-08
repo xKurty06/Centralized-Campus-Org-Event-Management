@@ -1456,7 +1456,7 @@ function SuccessPanel({
                     </svg>
                 </div>
                 <div
-                    className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white"
+                    className="absolute -bottom-1 -right-1 pl-1 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white"
                     style={{ backgroundColor: "var(--color-primary-light)" }}
                 >
                     <svg
