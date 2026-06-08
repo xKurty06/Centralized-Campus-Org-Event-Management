@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -163,9 +164,16 @@ return new class extends Migration
         // Drop trigger and procedure
         DB::unprepared('DROP TRIGGER IF EXISTS after_registration_insert');
         DB::unprepared('DROP PROCEDURE IF EXISTS register_student_for_event');
-        // Drop index
-        Schema::table('registrations', function (Blueprint $table) {
-            $table->dropIndex('idx_registrations_event_id');
-        });
+        // MySQL may use this index to support the registrations.event_id foreign key.
+        // If so, keep it; the registrations migration will remove it when the table is dropped.
+        try {
+            Schema::table('registrations', function (Blueprint $table) {
+                $table->dropIndex('idx_registrations_event_id');
+            });
+        } catch (QueryException $exception) {
+            if (($exception->errorInfo[1] ?? null) !== 1553) {
+                throw $exception;
+            }
+        }
     }
 };
