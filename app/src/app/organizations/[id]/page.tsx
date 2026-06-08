@@ -303,9 +303,7 @@ export default function OrgProfilePage() {
         name: orgPayload.data.org.name ?? "Organization",
         acronym: String(
           orgPayload.data.org.code_name ?? orgPayload.data.org.name ?? "ORG",
-        )
-          .slice(0, 8)
-          .toUpperCase(),
+        ),
         logoUrl: normalizeImageUrl(orgPayload.data.org.logo_url),
         category: (orgPayload.data.org.category_name ?? "Non-Academic") as OrgCategory,
         categoryName: orgPayload.data.org.category_name ?? null,
@@ -448,7 +446,7 @@ export default function OrgProfilePage() {
             <h1 className="text-[22px] font-bold text-gray-900 leading-tight">
               {org.name}
             </h1>
-            <p className="text-[13px] text-gray-400 font-medium mt-0.5 mb-4">
+            <p className="text-[13px] text-gray-400 font-medium mt-0.5 mb-4 break-words">
               {org.acronym} · Est. {org.established}
             </p>
 

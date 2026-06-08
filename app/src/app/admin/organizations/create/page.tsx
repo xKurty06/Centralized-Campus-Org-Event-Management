@@ -531,7 +531,7 @@ function Step1({
                         placeholder="e.g. ACTS, C.S.G., cys-elite"
                         value={form.codeName}
                         onChange={(e) => onChange("codeName", e.target.value)}
-                        maxLength={12}
+                        maxLength={50}
                         style={{ fontFamily: "monospace", letterSpacing: "0.05em" }}
                     />
                 </div>

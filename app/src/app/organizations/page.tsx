@@ -210,7 +210,7 @@ function OrgCard({ org }: { org: Organization }) {
               </span>
             )}
           </div>
-          <span className="text-[11px] text-gray-400 font-medium">
+          <span className="text-[11px] text-gray-400 font-medium break-all">
             {org.acronym}
           </span>
         </div>
@@ -321,9 +321,7 @@ export default function OrganizationsPage() {
           id: String(o.id ?? ""),
           slug: o.slug ? String(o.slug) : String(o.id ?? ""),
           name: o.name ?? "Organization",
-          acronym: String(o.code_name ?? o.name ?? "ORG")
-            .slice(0, 8)
-            .toUpperCase(),
+          acronym: String(o.code_name ?? o.name ?? "ORG"),
           logoUrl: normalizeImageUrl(o.logo_url),
           category: (o.category_name ?? "Non-Academic") as Exclude<
             OrgCategory,
