@@ -65,7 +65,12 @@ Salikop aims to improve campus coordination by giving student organizations and 
     </td>
   </tr>
   <tr>
-    <td colspan="2">
+    <td width="50%">
+      <img src="app/assets/screenshots/my-events.png" alt="Salikop my events screen" />
+      <br />
+      <sub>My events</sub>
+    </td>
+    <td width="50%">
       <img src="app/assets/screenshots/profile.png" alt="Salikop profile screen" />
       <br />
       <sub>User profile</sub>
