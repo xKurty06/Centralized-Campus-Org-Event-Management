@@ -39,13 +39,39 @@ Salikop aims to improve campus coordination by giving student organizations and 
 
 ## Preview
 
-<p align="center">
-  <img src="app/assets/screenshots/login.png" alt="Salikop login screen" width="90%" />
-</p>
-
-<p align="center">
-  <sub>Current screenshot: Login interface</sub>
-</p>
+<table>
+  <tr>
+    <td width="50%">
+      <img src="app/assets/screenshots/login.png" alt="Salikop login screen" />
+      <br />
+      <sub>Login interface</sub>
+    </td>
+    <td width="50%">
+      <img src="app/assets/screenshots/signup.png" alt="Salikop sign-up screen" />
+      <br />
+      <sub>Sign-up interface</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="app/assets/screenshots/events.png" alt="Salikop events screen" />
+      <br />
+      <sub>Events catalog</sub>
+    </td>
+    <td width="50%">
+      <img src="app/assets/screenshots/organizations.png" alt="Salikop organizations screen" />
+      <br />
+      <sub>Organization directory</sub>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <img src="app/assets/screenshots/profile.png" alt="Salikop profile screen" />
+      <br />
+      <sub>User profile</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
